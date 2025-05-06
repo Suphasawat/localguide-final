@@ -97,3 +97,4 @@ type Notification struct {
 	Message string `gorm:"not null"`
 	IsRead bool `gorm:"not null"`
 }
+
