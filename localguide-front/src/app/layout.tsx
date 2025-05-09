@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Sarabun } from "next/font/google";
 import "./globals.css";
+import { LocaleProvider } from "./context/LocaleContext";
 
 const SarabunFont = Sarabun({
   subsets: ["latin", "thai"],
@@ -19,8 +20,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en,th">
-      <body className={`${SarabunFont.className} ${SarabunFont.className}`}>
-        {children}
+      <body className={`${SarabunFont.className}`}>
+        <LocaleProvider>{children}</LocaleProvider>
       </body>
     </html>
   );

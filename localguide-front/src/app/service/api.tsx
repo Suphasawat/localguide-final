@@ -1,3 +1,10 @@
 import axios from "axios";
 
-const baseURL = "http://localhost:8080";
+const api = axios.create({
+  baseURL: "http://localhost:8080",
+  timeout: 1000,
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
+});
