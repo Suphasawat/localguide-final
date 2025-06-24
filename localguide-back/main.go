@@ -19,14 +19,32 @@ func main() {
 		&models.Language{}, &models.Role{}, &models.Permission{},
 		&models.Review{}, &models.TouristAttraction{}, &models.Booking{},
 		&models.Notification{},
-	)
+	)	
 
 	app := fiber.New()
-	app.Use(cors.New())
+	
+	// CORS configuration
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
+		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
+	}))
 
-	app.Post("/register", controllers.Register)
-	app.Post("/login", controllers.Login)
+	// API routes group
+	api := app.Group("/api")
+	
+	// Auth routes
+	api.Post("/register", controllers.Register)
+	api.Post("/login", controllers.Login)
+	// Guide routes
+	api.Get("/guides", controllers.GetGuides)
+	api.Get("/guides/:id", controllers.GetGuideByID)
 
+	// Admin routes
+	admin := api.Group("/admin")
+	admin.Get("/guides", controllers.GetAllGuides)
+	admin.Put("/guides/:id/status", controllers.UpdateGuideStatus)
+	
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"

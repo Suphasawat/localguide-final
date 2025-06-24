@@ -1,152 +1,191 @@
 "use client";
 
-import Navbar from "./components/Navbar";
-import { useLocale, formatCurrency } from "./context/LocaleContext";
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { Guide, getGuides } from "./services/guide.service";
+import GuideCard from "./components/GuideCard";
 
 export default function Home() {
-  const { currency, language } = useLocale();
+  const [guides, setGuides] = useState<Guide[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadGuides = async () => {
+      try {
+        const data = await getGuides();
+        setGuides(data.slice(0, 6)); // Show only first 6 guides
+      } catch (error) {
+        console.error("Error loading guides:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadGuides();
+  }, []);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      {/* Header */}
-      <Navbar />
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <div className="relative bg-gray-900">
+        <div className="absolute inset-0">
+          <Image
+            src="https://s359.kapook.com/pagebuilder/f6a29d7d-b7ab-4a1e-9b79-a1ed7022f465.jpg"
+            alt="Thailand Travel"
+            fill
+            priority
+            className="object-cover"
+            quality={90}
+          />
+          <div className="absolute inset-0 bg-gray-900/70 mix-blend-multiply" />
+        </div>
 
-      {/* Search Bar */}
-      <div className="mt-4 flex justify-center">
-        <div className="flex items-center rounded-full border shadow-sm hover:shadow-md p-2 w-full max-w-xl">
-          <div className="flex-1 px-4 py-1 text-sm border-r">
-            <div className="font-semibold">
-              {language === "th" ? "สถานที่" : "Location"}
-            </div>
-            <div className="text-gray-500">
-              {language === "th" ? "ไปที่ไหน?" : "Where to?"}
-            </div>
+        <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8">
+          <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
+            สัมผัสประสบการณ์ท่องเที่ยวกับไกด์ท้องถิ่น
+          </h1>
+          <p className="mt-6 max-w-3xl text-xl text-gray-300">
+            ค้นพบมุมมองใหม่ของการท่องเที่ยวกับไกด์ท้องถิ่นที่มีความเชี่ยวชาญ
+            พร้อมแบ่งปันเรื่องราวและประสบการณ์ที่แตกต่าง
+          </p>
+          <div className="mt-10">
+            <Link
+              href="/guides"
+              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-rose-600 hover:bg-rose-700"
+            >
+              ค้นหาไกด์ท้องถิ่น
+            </Link>
           </div>
-          <div className="flex-1 px-4 py-1 text-sm border-r">
-            <div className="font-semibold">
-              {language === "th" ? "วันที่เช็คอิน" : "Check-in"}
-            </div>
-            <div className="text-gray-500">
-              {language === "th" ? "เพิ่มวันที่" : "Add date"}
-            </div>
-          </div>
-          <div className="flex-1 px-4 py-1 text-sm border-r">
-            <div className="font-semibold">
-              {language === "th" ? "วันที่เช็คเอาท์" : "Check-out"}
-            </div>
-            <div className="text-gray-500">
-              {language === "th" ? "เพิ่มวันที่" : "Add date"}
-            </div>
-          </div>
-          <div className="flex-1 px-4 py-1 text-sm pr-2">
-            <div className="font-semibold">
-              {language === "th" ? "ผู้เข้าพัก" : "Guests"}
-            </div>
-            <div className="text-gray-500">
-              {language === "th" ? "เพิ่มผู้เข้าพัก" : "Add guests"}
-            </div>
-          </div>
-          <button className="bg-rose-500 text-white p-2 rounded-full">
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-            </svg>
-          </button>
         </div>
       </div>
 
-      {/* Category Filters */}
-      <div className="mt-6 flex space-x-8 overflow-x-auto pb-4 scrollbar-hide">
-        {[
-          { th: "วิวสวย", en: "Scenic Views" },
-          { th: "วิลล่า", en: "Villas" },
-          { th: "ชายหาด", en: "Beach" },
-          { th: "สระว่ายน้ำ", en: "Swimming Pool" },
-          { th: "คอนโด", en: "Condo" },
-          { th: "บ้านพัก", en: "House" },
-          { th: "รีสอร์ท", en: "Resort" },
-          { th: "เมือง", en: "City" },
-          { th: "ภูเขา", en: "Mountains" },
-          { th: "กระท่อม", en: "Cabins" },
-        ].map((category) => (
-          <div
-            key={category.th}
-            className="flex flex-col items-center space-y-2 min-w-fit"
-          >
-            <div className="h-6 w-6 text-gray-500">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm4 0h-2V7h2v10z" />
-              </svg>
+      {/* Featured Guides Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center">
+          <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+            ไกด์ท้องถิ่นแนะนำ
+          </h2>
+          <p className="mt-4 text-lg text-gray-500">
+            เลือกไกด์ท้องถิ่นที่ใช่สำหรับคุณ
+          </p>
+        </div>
+
+        <div className="mt-12">
+          {loading ? (
+            <div className="flex justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rose-500"></div>
             </div>
-            <span className="text-xs text-gray-600">
-              {language === "th" ? category.th : category.en}
-            </span>
+          ) : (
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              {guides.map((guide) => (
+                <GuideCard key={guide.id} guide={guide} />
+              ))}
+            </div>
+          )}
+
+          <div className="mt-12 text-center">
+            <Link
+              href="/guides"
+              className="inline-flex items-center px-6 py-3 border-2 border-rose-600 text-base font-medium rounded-md text-rose-600 hover:bg-rose-50"
+            >
+              ดูไกด์ทั้งหมด
+            </Link>
           </div>
-        ))}
+        </div>
       </div>
 
-      {/* Listings Grid */}
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {[...Array(8)].map((_, index) => (
-          <div key={index} className="rounded-xl overflow-hidden">
-            <div className="relative pb-[66.666%]">
-              <div className="absolute inset-0 bg-gray-200 rounded-xl"></div>
-              <button className="absolute top-2 right-2 text-white">
+      {/* Features Section */}
+      <div className="bg-gray-50 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+              ทำไมต้องเลือกไกด์ท้องถิ่น
+            </h2>
+          </div>
+
+          <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="text-rose-600 mb-4">
                 <svg
-                  className="h-6 w-6"
-                  viewBox="0 0 24 24"
+                  className="h-8 w-8"
                   fill="none"
+                  viewBox="0 0 24 24"
                   stroke="currentColor"
-                  strokeWidth="2"
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                    strokeWidth={2}
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                   />
                 </svg>
-              </button>
-            </div>
-            <div className="mt-2">
-              <div className="flex justify-between">
-                <span className="font-semibold">
-                  {language === "th" ? "กรุงเทพ, ไทย" : "Bangkok, Thailand"}
-                </span>
-                <div className="flex items-center">
-                  <svg
-                    className="h-4 w-4 text-gray-900"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                  </svg>
-                  <span className="ml-1">4.95</span>
-                </div>
               </div>
-              <p className="text-gray-500">
-                {language === "th" ? "ระยะห่าง 32 กม." : "Distance 32 km"}
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                ความรู้ท้องถิ่นแท้
+              </h3>
+              <p className="text-gray-600">
+                ไกด์ของเราเป็นคนในพื้นที่ที่มีความรู้ความเข้าใจในวัฒนธรรมและประวัติศาสตร์ท้องถิ่นอย่างลึกซึ้ง
               </p>
-              <p className="text-gray-500">
-                {language === "th" ? "วันที่ 10-15 พ.ค." : "May 10-15"}
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="text-rose-600 mb-4">
+                <svg
+                  className="h-8 w-8"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                ประสบการณ์พิเศษ
+              </h3>
+              <p className="text-gray-600">
+                สัมผัสประสบการณ์ท่องเที่ยวที่แตกต่างและเป็นส่วนตัว
+                พร้อมเรื่องราวที่น่าจดจำ
               </p>
-              <p className="mt-1">
-                <span className="font-semibold">
-                  {formatCurrency(3500, currency)}
-                </span>{" "}
-                {language === "th" ? "คืน" : "night"}
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="text-rose-600 mb-4">
+                <svg
+                  className="h-8 w-8"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                ความปลอดภัยและความไว้วางใจ
+              </h3>
+              <p className="text-gray-600">
+                ไกด์ทุกคนผ่านการคัดกรองและตรวจสอบประวัติ
+                เพื่อความปลอดภัยและความไว้วางใจของผู้ใช้บริการ
               </p>
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* Show Map Button */}
-      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2">
-        <button className="bg-gray-900 text-white px-4 py-3 rounded-full font-medium flex items-center shadow-lg">
-          <span>{language === "th" ? "ดูแผนที่" : "Show map"}</span>
-          <svg className="h-5 w-5 ml-2" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z" />
-          </svg>
-        </button>
+        </div>
       </div>
     </div>
   );

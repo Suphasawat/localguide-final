@@ -14,80 +14,79 @@ type AuthUser struct {
 
 type User struct {
 	gorm.Model
-	AuthUserID uint   `gorm:"not null"`
+	AuthUserID uint   `gorm:"not null"` 
 	AuthUser  AuthUser `gorm:"foreignKey:AuthUserID"`
-	FirstName string `gorm:"not null"`
-	LastName  string `gorm:"not null"`
-	Nickname  string `gorm:"not null"`
+	FirstName string `gorm:"not null"` 
+	LastName  string `gorm:"not null"` 
+	Nickname  string 
 	BirthDate time.Time `gorm:"not null"`
-	RoleID   uint   `gorm:"not null"`
+	RoleID   uint   `gorm:"not null"` 
 	Role     Role   `gorm:"foreignKey:RoleID"`
-	Nationality string `gorm:"not null"`
-	Phone     string `gorm:"not null"`
+	Nationality string `gorm:"not null"` 
+	Phone     string `gorm:"not null"` 
 	Sex 	 string `gorm:"not null"`
-	Avatar     string `gorm:"not null"`
+	Avatar     string 
 }
 
 type Guide struct {
 	gorm.Model
 	UserID   uint   `gorm:"not null"`
-	User     User   `gorm:"foreignKey:UserID"`
-	Bio 	string 
-	Experience string `gorm:"not null"`
+	User     User   `gorm:"foreignKey:UserID"`	
+	Bio      string  
+	Experience string `gorm:"not null"` 
+	Status string `gorm:"not null;default:'pending'"` // pending, approved, rejected
 	Language []Language `gorm:"many2many:guide_languages"`
-	Status string `gorm:"not null"`
-	Price  float64 `gorm:"not null"`
-	Rating float64 `gorm:"not null"`
-	AvarageReview float64 `gorm:"not null"`
-	Availability string `gorm:"not null"`
-	District string `gorm:"not null"`
-	City string `gorm:"not null"`
-	Province string `gorm:"not null"`
-	TouristAttraction []TouristAttraction `gorm:"many2many:guide_tourist_attractions"`
+	Price  float64 `gorm:"not null"` 
+	Rating float64 // เก็บค่าเฉลี่ยของ ratings จาก reviews
+	Availability bool `gorm:"not null"` 
+	District string `gorm:"not null"` 
+	City string `gorm:"not null"` 
+	Province string `gorm:"not null"` 
+	TouristAttraction []TouristAttraction `gorm:"many2many:guide_tourist_attractions"` 
 }
 
 type Language struct {
-	gorm.Model
+	ID uint `gorm:"primaryKey"`
 	Name string `gorm:"not null"`
 	Guides []Guide `gorm:"many2many:guide_languages"`
 }
 
 type Role struct {
-	gorm.Model
+	ID uint `gorm:"primaryKey"`
 	Name string `gorm:"not null"`
 	Permissions []Permission `gorm:"many2many:role_permissions"`
 }
 
 type Review struct {
 	gorm.Model
-	GuideID  uint   `gorm:"not null"`
+	GuideID  uint   `gorm:"not null"` 
 	Guide    Guide  `gorm:"foreignKey:GuideID"`
-	UserID   uint   `gorm:"not null"`
+	UserID   uint   `gorm:"not null"` 
 	User     User   `gorm:"foreignKey:UserID"`
-	Rating   float64 `gorm:"not null"`
-	Comment  string `gorm:"not null"`
+	Rating   float64 `gorm:"not null"` 
+	Comment  string 
 }
 
 type TouristAttraction struct {
-	gorm.Model
+	ID uint `gorm:"primaryKey"`
 	Name	 string `gorm:"not null"`
 	Guides []Guide `gorm:"many2many:guide_tourist_attractions"`
 }
 
 type Permission struct {
-	gorm.Model
+	ID uint `gorm:"primaryKey"`
 	Name     string `gorm:"not null"`
 	Roles []Role `gorm:"many2many:role_permissions"`
 }
 
 type Booking struct {
 	gorm.Model
-	UserID   uint   `gorm:"not null"`
+	UserID   uint   `gorm:"not null"` 
 	User     User   `gorm:"foreignKey:UserID"`
-	GuideID  uint   `gorm:"not null"`
+	GuideID  uint   `gorm:"not null"` 
 	Guide    Guide  `gorm:"foreignKey:GuideID"`
-	Description string `gorm:"not null"`
-	Status string `gorm:"not null"`
+	Description string 
+	Status string `gorm:"not null"` 
 }
 
 type Notification struct {
