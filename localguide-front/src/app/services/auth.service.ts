@@ -11,22 +11,6 @@ interface LoginData {
 interface RegisterData {
   email: string;
   password: string;
-  firstName: string;
-  lastName: string;
-  nickname?: string;
-  birthDate: string;
-  nationality: string;
-  phone: string;
-  sex: string;
-  roleId: number;
-  // Guide specific fields
-  bio?: string;
-  experience?: string;
-  price?: number;
-  district?: string;
-  city?: string;
-  province?: string;
-  languages?: number[];
 }
 
 interface AuthResponse {
@@ -34,12 +18,7 @@ interface AuthResponse {
   user: {
     id: number;
     email: string;
-    firstName: string;
-    lastName: string;
-    role: {
-      id: number;
-      name: string;
-    };
+    role: number;
   };
 }
 

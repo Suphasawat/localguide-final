@@ -14,26 +14,8 @@ import (
 
 func Register(c *fiber.Ctx) error {
 	var req struct {
-		Email         string  `json:"email"`
-		Password      string  `json:"password"`
-		FirstName     string  `json:"firstName"`
-		LastName      string  `json:"lastName"`
-		Nickname      string  `json:"nickname"`
-		BirthDate     string  `json:"birthDate"`
-		Nationality   string  `json:"nationality"`
-		Phone         string  `json:"phone"`
-		Sex           string  `json:"sex"`
-		RoleId        uint    `json:"roleId"`
-		// Guide specific fields
-		Bio           string  `json:"bio"`
-		Experience    string  `json:"experience"`
-		Certification string  `json:"certification"`
-		Availability  bool    `json:"availability"`
-		Price         float64 `json:"price"`
-		District      string  `json:"district"`
-		City          string  `json:"city"`
-		Province      string  `json:"province"`
-		Languages     []uint  `json:"languages"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 
 	if err := c.BodyParser(&req); err != nil {
@@ -58,76 +40,31 @@ func Register(c *fiber.Ctx) error {
 	}
 
 	tx := config.DB.Begin()
-
 	authUser := models.AuthUser{
 		Email:    req.Email,
 		Password: string(hashedPassword),
 	}
-
 	if err := tx.Create(&authUser).Error; err != nil {
 		tx.Rollback()
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to create auth user"})
 	}
 
-	birthDate, err := time.Parse("2006-01-02", req.BirthDate)
-	if err != nil {
-		tx.Rollback()
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid birth date format (use YYYY-MM-DD)"})
-	}
-
+	// สมัคร user อย่างเดียว (role = 1, ข้อมูลอื่นเป็นค่าว่างหรือ default)
 	user := models.User{
 		AuthUserID:  authUser.ID,
-		FirstName:   req.FirstName,
-		LastName:    req.LastName,
-		Nickname:    req.Nickname,
-		BirthDate:   birthDate,
-		RoleID:      req.RoleId,
-		Nationality: req.Nationality,
-		Phone:       req.Phone,
-		Sex:         req.Sex,
+		FirstName:   "",
+		LastName:    "",
+		Nickname:    "",
+		BirthDate:   time.Now(),
+		RoleID:      1,
+		Nationality: "",
+		Phone:       "",
+		Sex:         "",
 	}
 
 	if err := tx.Create(&user).Error; err != nil {
 		tx.Rollback()
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to create user"})
-	}
-
-	var createdGuide *models.Guide
-	if req.RoleId == 2 {
-		guide := models.Guide{
-			UserID:        user.ID,
-			Bio:           req.Bio,
-			Experience:    req.Experience,
-			Certification: req.Certification,
-			Status:        "pending",
-			Price:         req.Price,
-			Availability:  req.Availability,
-			District:      req.District,
-			City:          req.City,
-			Province:      req.Province,
-		}
-
-		if err := tx.Create(&guide).Error; err != nil {
-			tx.Rollback()
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to create guide"})
-		}
-
-		if len(req.Languages) > 0 {
-			var languages []models.Language
-			if err := tx.Find(&languages, req.Languages).Error; err != nil {
-				tx.Rollback()
-				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch languages"})
-			}
-			if len(languages) != len(req.Languages) {
-				tx.Rollback()
-				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Some languages not found"})
-			}
-			if err := tx.Model(&guide).Association("Language").Replace(languages); err != nil {
-				tx.Rollback()
-				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to assign languages"})
-			}
-		}
-		createdGuide = &guide
 	}
 
 	if err := tx.Commit().Error; err != nil {
@@ -146,17 +83,9 @@ func Register(c *fiber.Ctx) error {
 	}
 
 	userResponse := fiber.Map{
-		"id":        user.ID,
-		"email":     authUser.Email,
-		"firstName": user.FirstName,
-		"lastName":  user.LastName,
-		"nickname":  user.Nickname,
-		"role":      user.RoleID,
-	}
-
-	if createdGuide != nil {
-		config.DB.Preload("Language").First(createdGuide, createdGuide.ID)
-		userResponse["guide"] = createdGuide
+		"id":    user.ID,
+		"email": authUser.Email,
+		"role":  user.RoleID,
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
@@ -183,13 +112,7 @@ func Login(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "User not found"})
 	}
 
-	if user.RoleID == 2 {
-		var guide models.Guide
-		if err := config.DB.Where("user_id = ?", user.ID).First(&guide).Error; err != nil || guide.Status != "approved" {
-			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Guide not approved"})
-		}
-	}
-
+	// ไม่ต้องเช็ค guide อีกต่อไป
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": user.ID,
 		"role_id": user.RoleID,

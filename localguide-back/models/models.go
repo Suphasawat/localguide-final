@@ -16,15 +16,15 @@ type User struct {
 	gorm.Model
 	AuthUserID uint   `gorm:"not null"` 
 	AuthUser  AuthUser `gorm:"foreignKey:AuthUserID"`
-	FirstName string `gorm:"not null"` 
-	LastName  string `gorm:"not null"` 
+	FirstName string `gorm:"not null;default:''"` // ให้ค่าเริ่มต้นเป็น empty string
+	LastName  string `gorm:"not null;default:''"` 
 	Nickname  string 
-	BirthDate time.Time `gorm:"not null"`
-	RoleID   uint   `gorm:"not null"` 
+	BirthDate time.Time `gorm:"not null;default:CURRENT_TIMESTAMP"` // ใช้วันที่ปัจจุบัน
+	RoleID   uint   `gorm:"not null;default:1"` // default เป็น role user
 	Role     Role   `gorm:"foreignKey:RoleID"`
-	Nationality string `gorm:"not null"` 
-	Phone     string `gorm:"not null"` 
-	Sex 	 string `gorm:"not null"`
+	Nationality string `gorm:"not null;default:''"` 
+	Phone     string `gorm:"not null;default:''"` 
+	Sex 	 string `gorm:"not null;default:''"` // หรือจะใช้ default:'unspecified'
 	Avatar     string 
 }
 
