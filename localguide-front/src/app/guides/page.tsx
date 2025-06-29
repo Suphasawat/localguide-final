@@ -31,7 +31,7 @@ export default function Guides() {
     loadGuides();
   }, []);
 
-  const filteredGuides = guides.filter((guide) => {
+  const filteredGuides = guides?.filter((guide) => {
     const matchesSearch =
       filters.search === "" ||
       guide.user.firstName
@@ -152,10 +152,10 @@ export default function Guides() {
       ) : (
         <div>
           <p className="mb-4 text-gray-600">
-            พบ {filteredGuides.length} รายการ
+            พบ {filteredGuides?.length} รายการ
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredGuides.map((guide) => (
+            {filteredGuides?.map((guide) => (
               <GuideCard key={guide.id} guide={guide} />
             ))}
           </div>

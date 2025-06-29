@@ -34,6 +34,7 @@ type Guide struct {
 	User     User   `gorm:"foreignKey:UserID"`	
 	Bio      string  
 	Experience string `gorm:"not null"` 
+	Certification string `gorm:"not null"` // ใบอนุญาตไกด์
 	Status string `gorm:"not null;default:'pending'"` // pending, approved, rejected
 	Language []Language `gorm:"many2many:guide_languages"`
 	Price  float64 `gorm:"not null"` 

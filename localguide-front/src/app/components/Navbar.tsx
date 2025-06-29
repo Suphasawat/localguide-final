@@ -85,7 +85,7 @@ export default function Navbar() {
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="px-4 py-2 text-sm font-medium text-white bg-rose-600 rounded-md hover:bg-rose-700"
+                  className="px-2 py-2 text-sm font-medium text-rose-600 hover:text-rose-700 border border-rose-600 rounded-md bg-white flex items-center"
                 >
                   ลงทะเบียน
                 </Link>
@@ -178,7 +178,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/auth/register"
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-rose-600 hover:bg-gray-50"
+                className="block px-3 py-2 text-base font-medium text-rose-600 hover:text-rose-700 hover:bg-gray-50"
               >
                 ลงทะเบียน
               </Link>

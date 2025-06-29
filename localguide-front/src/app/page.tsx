@@ -14,7 +14,7 @@ export default function Home() {
     const loadGuides = async () => {
       try {
         const data = await getGuides();
-        setGuides(data.slice(0, 6)); // Show only first 6 guides
+        setGuides(data?.slice(0, 6)); // Show only first 6 guides
       } catch (error) {
         console.error("Error loading guides:", error);
       } finally {
@@ -78,7 +78,7 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              {guides.map((guide) => (
+              {guides?.map((guide) => (
                 <GuideCard key={guide.id} guide={guide} />
               ))}
             </div>
