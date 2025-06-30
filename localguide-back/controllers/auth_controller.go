@@ -25,8 +25,8 @@ func Register(c *fiber.Ctx) error {
 	if !isValidEmail(req.Email) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid email format"})
 	}
-	if utf8.RuneCountInString(req.Password) < 8 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Password must be at least 8 characters"})
+	if !isStrongPassword(req.Password) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Password must be at least 8 characters, contain uppercase, lowercase, number, and special character"})
 	}
 
 	var existing models.AuthUser
@@ -138,4 +138,30 @@ func Login(c *fiber.Ctx) error {
 func isValidEmail(email string) bool {
 	regex := regexp.MustCompile(`^[a-zA-Z0-9._%%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
 	return regex.MatchString(email)
+}
+
+// Password strength validation
+func isStrongPassword(password string) bool {
+	if utf8.RuneCountInString(password) < 8 {
+		return false
+	}
+	var (
+		hasUpper  = false
+		hasLower  = false
+		hasNumber  = false
+		hasSpecial = false
+	)
+	for _, c := range password {
+		switch {
+		case c >= 'A' && c <= 'Z':
+			hasUpper = true
+		case c >= 'a' && c <= 'z':
+			hasLower = true
+		case c >= '0' && c <= '9':
+			hasNumber = true
+		case (c >= 33 && c <= 47) || (c >= 58 && c <= 64) || (c >= 91 && c <= 96) || (c >= 123 && c <= 126):
+			hasSpecial = true
+		}
+	}
+	return hasUpper && hasLower && hasNumber && hasSpecial
 }

@@ -39,6 +39,8 @@ func main() {
 	// Guide routes
 	api.Get("/guides", controllers.GetGuides)
 	api.Get("/guides/:id", controllers.GetGuideByID)
+	// User routes
+	api.Get("/users/:id", controllers.GetUserByID)
 
 	// Admin routes
 	admin := api.Group("/admin")

@@ -1,170 +1,124 @@
 "use client";
-
-import { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { getUser } from "../services/auth.service";
+import { getUser, logout } from "../services/auth.service";
+import { getUserById } from "../services/user.service";
 import { useRouter } from "next/navigation";
+import { MdPerson } from "react-icons/md";
+import { useEffect, useState } from "react";
 
-const Profile = () => {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState("profile");
+export default function Profile() {
   const user = getUser();
+  const router = useRouter();
+  const [userDetail, setUserDetail] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (user?.id) {
+      setLoading(true);
+      getUserById(user.id)
+        .then((data) => {
+          setUserDetail(data);
+          setLoading(false);
+        })
+        .catch((err) => {
+          setError(err.message);
+          setLoading(false);
+        });
+    }
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    router.push("/auth/login");
+  };
 
   if (!user) {
-    router.push("/auth/login");
-    return null;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] bg-gradient-to-br from-rose-100 via-white to-blue-100">
+        <div className="bg-white/90 p-8 rounded-2xl shadow-xl border border-rose-100 max-w-md w-full text-center">
+          <h1 className="text-2xl font-bold text-rose-700 mb-2">โปรไฟล์</h1>
+          <p className="text-gray-500 mb-4">
+            กรุณาเข้าสู่ระบบเพื่อดูข้อมูลโปรไฟล์
+          </p>
+          <button
+            className="bg-rose-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-rose-700 transition"
+            onClick={() => router.push("/auth/login")}
+          >
+            ไปหน้าเข้าสู่ระบบ
+          </button>
+        </div>
+      </div>
+    );
   }
 
-  const isGuide = user.roleId === 2;
-  const isAdmin = user.roleId === 3;
-
-  const renderProfileContent = () => {
+  if (loading) {
     return (
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex items-center space-x-6 mb-6">
-          <div className="relative h-24 w-24">
-            <Image
-              src={user.avatar || "https://via.placeholder.com/96"}
-              alt="Profile"
-              fill
-              className="rounded-full object-cover"
-            />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">
-              {user.firstName} {user.lastName}
-            </h2>
-            <p className="text-gray-600">{user.email}</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 className="text-gray-600 text-sm font-semibold mb-2">ชื่อเล่น</h3>
-            <p className="text-gray-900">{user.nickname || "-"}</p>
-          </div>
-          <div>
-            <h3 className="text-gray-600 text-sm font-semibold mb-2">วันเกิด</h3>
-            <p className="text-gray-900">
-              {new Date(user.birthDate).toLocaleDateString("th-TH")}
-            </p>
-          </div>
-          <div>
-            <h3 className="text-gray-600 text-sm font-semibold mb-2">เบอร์โทร</h3>
-            <p className="text-gray-900">{user.phone}</p>
-          </div>
-          <div>
-            <h3 className="text-gray-600 text-sm font-semibold mb-2">เพศ</h3>
-            <p className="text-gray-900">{user.sex}</p>
-          </div>
-          <div>
-            <h3 className="text-gray-600 text-sm font-semibold mb-2">สัญชาติ</h3>
-            <p className="text-gray-900">{user.nationality}</p>
-          </div>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] bg-gradient-to-br from-rose-100 via-white to-blue-100">
+        <div className="bg-white/90 p-8 rounded-2xl shadow-xl border border-rose-100 max-w-md w-full text-center">
+          <h1 className="text-2xl font-bold text-rose-700 mb-2">
+            กำลังโหลดข้อมูลโปรไฟล์...
+          </h1>
         </div>
       </div>
     );
-  };
+  }
 
-  const renderGuideContent = () => {
-    if (!isGuide) return null;
+  if (error) {
     return (
-      <div className="bg-white shadow rounded-lg p-6 mt-6">
-        <h2 className="text-xl font-semibold mb-4">ข้อมูลไกด์</h2>
-        {/* Add guide specific content here */}
-      </div>
-    );
-  };
-
-  const renderAdminContent = () => {
-    if (!isAdmin) return null;
-    return (
-      <div className="bg-white shadow rounded-lg p-6 mt-6">
-        <h2 className="text-xl font-semibold mb-4">จัดการระบบ</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link
-            href="/admin/guides"
-            className="p-4 bg-rose-50 rounded-lg hover:bg-rose-100"
-          >
-            <h3 className="font-semibold text-rose-600">จัดการไกด์</h3>
-            <p className="text-sm text-gray-600">อนุมัติและจัดการข้อมูลไกด์</p>
-          </Link>
-          <Link
-            href="/admin/users"
-            className="p-4 bg-rose-50 rounded-lg hover:bg-rose-100"
-          >
-            <h3 className="font-semibold text-rose-600">จัดการผู้ใช้</h3>
-            <p className="text-sm text-gray-600">ดูและจัดการข้อมูลผู้ใช้</p>
-          </Link>
-          <Link
-            href="/admin/bookings"
-            className="p-4 bg-rose-50 rounded-lg hover:bg-rose-100"
-          >
-            <h3 className="font-semibold text-rose-600">จัดการการจอง</h3>
-            <p className="text-sm text-gray-600">ดูและจัดการข้อมูลการจอง</p>
-          </Link>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] bg-gradient-to-br from-rose-100 via-white to-blue-100">
+        <div className="bg-white/90 p-8 rounded-2xl shadow-xl border border-rose-100 max-w-md w-full text-center">
+          <h1 className="text-2xl font-bold text-rose-700 mb-2">
+            เกิดข้อผิดพลาด
+          </h1>
+          <p className="text-gray-500 mb-4">{error}</p>
         </div>
       </div>
     );
-  };
+  }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <nav className="mb-8">
-        <ul className="flex space-x-4 border-b">
-          <li>
-            <button
-              onClick={() => setActiveTab("profile")}
-              className={`px-4 py-2 font-medium ${
-                activeTab === "profile"
-                  ? "text-rose-600 border-b-2 border-rose-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              โปรไฟล์
-            </button>
-          </li>
-          <li>
-            <button
-              onClick={() => setActiveTab("bookings")}
-              className={`px-4 py-2 font-medium ${
-                activeTab === "bookings"
-                  ? "text-rose-600 border-b-2 border-rose-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              การจอง
-            </button>
-          </li>
-          {isGuide && (
-            <li>
-              <button
-                onClick={() => setActiveTab("guide")}
-                className={`px-4 py-2 font-medium ${
-                  activeTab === "guide"
-                    ? "text-rose-600 border-b-2 border-rose-600"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                ข้อมูลไกด์
-              </button>
-            </li>
-          )}
-        </ul>
-      </nav>
-
-      {activeTab === "profile" && (
-        <>
-          {renderProfileContent()}
-          {renderGuideContent()}
-          {renderAdminContent()}
-        </>
-      )}
-      {activeTab === "bookings" && <div>Bookings content</div>}
-      {activeTab === "guide" && isGuide && <div>Guide management content</div>}
+    <div className="flex flex-col items-center justify-center min-h-[60vh] bg-gradient-to-br from-rose-100 via-white to-blue-100">
+      <div className="bg-white/90 p-8 rounded-2xl shadow-xl border border-rose-100 max-w-md w-full flex flex-col items-center">
+        <div className="bg-rose-100 rounded-full p-4 mb-4">
+          <MdPerson className="text-rose-600 w-12 h-12" />
+        </div>
+        <h1 className="text-2xl font-bold text-rose-700 mb-2">โปรไฟล์ผู้ใช้</h1>
+        <div className="text-gray-700 text-lg mb-2">{user.email}</div>
+        <div className="text-gray-500 text-sm mb-2">User ID: {user.id}</div>
+        {userDetail && (
+          <div className="text-left w-full mt-4">
+            <div className="mb-1">
+              <span className="font-semibold">ชื่อ:</span>{" "}
+              {userDetail.FirstName} {userDetail.LastName}
+            </div>
+            <div className="mb-1">
+              <span className="font-semibold">ชื่อเล่น:</span>{" "}
+              {userDetail.Nickname}
+            </div>
+            <div className="mb-1">
+              <span className="font-semibold">เบอร์โทร:</span>{" "}
+              {userDetail.Phone}
+            </div>
+            <div className="mb-1">
+              <span className="font-semibold">วันเกิด:</span>{" "}
+              {userDetail.BirthDate}
+            </div>
+            <div className="mb-1">
+              <span className="font-semibold">สัญชาติ:</span>{" "}
+              {userDetail.Nationality}
+            </div>
+            <div className="mb-1">
+              <span className="font-semibold">เพศ:</span> {userDetail.Sex}
+            </div>
+          </div>
+        )}
+        <button
+          className="bg-gray-200 text-rose-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition mt-6"
+          onClick={handleLogout}
+        >
+          ออกจากระบบ
+        </button>
+      </div>
     </div>
   );
-};
-
-export default Profile;
+}
