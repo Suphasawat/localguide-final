@@ -84,32 +84,45 @@ export default function Profile() {
         </div>
         <h1 className="text-2xl font-bold text-rose-700 mb-2">โปรไฟล์ผู้ใช้</h1>
         <div className="text-gray-700 text-lg mb-2">{user.email}</div>
-        <div className="text-gray-500 text-sm mb-2">User ID: {user.id}</div>
         {userDetail && (
           <div className="text-left w-full mt-4">
             <div className="mb-1">
               <span className="font-semibold">ชื่อ:</span>{" "}
-              {userDetail.FirstName} {userDetail.LastName}
+              {userDetail.FirstName ? userDetail.FirstName : "-"}{" "}
+              {userDetail.LastName ? userDetail.LastName : ""}
             </div>
             <div className="mb-1">
               <span className="font-semibold">ชื่อเล่น:</span>{" "}
-              {userDetail.Nickname}
+              {userDetail.Nickname ? userDetail.Nickname : "-"}
             </div>
             <div className="mb-1">
               <span className="font-semibold">เบอร์โทร:</span>{" "}
-              {userDetail.Phone}
+              {userDetail.Phone ? userDetail.Phone : "-"}
             </div>
             <div className="mb-1">
               <span className="font-semibold">วันเกิด:</span>{" "}
-              {userDetail.BirthDate}
+              {userDetail.BirthDate
+                ? new Date(userDetail.BirthDate).toLocaleDateString("th-TH")
+                : "-"}
             </div>
             <div className="mb-1">
               <span className="font-semibold">สัญชาติ:</span>{" "}
-              {userDetail.Nationality}
+              {userDetail.Nationality ? userDetail.Nationality : "-"}
             </div>
             <div className="mb-1">
-              <span className="font-semibold">เพศ:</span> {userDetail.Sex}
+              <span className="font-semibold">เพศ:</span>{" "}
+              {userDetail.Sex ? userDetail.Sex : "-"}
             </div>
+            {userDetail.Avatar && (
+              <div className="mb-1">
+                <span className="font-semibold">Avatar:</span>{" "}
+                <img
+                  src={userDetail.Avatar}
+                  alt="avatar"
+                  className="inline w-12 h-12 rounded-full border ml-2"
+                />
+              </div>
+            )}
           </div>
         )}
         <button

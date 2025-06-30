@@ -19,7 +19,7 @@ type User struct {
 	FirstName string `gorm:"not null;default:''"` // ให้ค่าเริ่มต้นเป็น empty string
 	LastName  string `gorm:"not null;default:''"` 
 	Nickname  string 
-	BirthDate time.Time `gorm:"not null;default:CURRENT_TIMESTAMP"` // ใช้วันที่ปัจจุบัน
+	BirthDate *time.Time 
 	RoleID   uint   `gorm:"not null;default:1"` // default เป็น role user
 	Role     Role   `gorm:"foreignKey:RoleID"`
 	Nationality string `gorm:"not null;default:''"` 
