@@ -39,7 +39,6 @@ type Guide struct {
 	Language []Language `gorm:"many2many:guide_languages"`
 	Price  float64 `gorm:"not null"` 
 	Rating float64 // เก็บค่าเฉลี่ยของ ratings จาก reviews
-	Availability bool `gorm:"not null"` 
 	District string `gorm:"not null"` 
 	City string `gorm:"not null"` 
 	Province string `gorm:"not null"` 
@@ -98,3 +97,22 @@ type Notification struct {
 	IsRead bool `gorm:"not null"`
 }
 
+type UnAvailable struct {
+	gorm.Model
+	GuideID uint   `gorm:"not null"`
+	Guide   Guide  `gorm:"foreignKey:GuideID"`
+	StartTime time.Time `gorm:"not null"`
+	EndTime   time.Time `gorm:"not null"`
+	Available bool `gorm:"not null"` // true = available, false = not available
+}
+
+type Payment struct {
+	gorm.Model
+	BookingID uint   `gorm:"not null"`
+	Booking   Booking `gorm:"foreignKey:BookingID"`
+	Amount    float64 `gorm:"not null"`
+	PaymentMethod string `gorm:"not null"` // e.g., credit card, bank transfer
+	TransactionID string `gorm:"not null;unique"` // unique transaction identifier
+	TransactionDate time.Time `gorm:"not null"` // date of the transaction
+	Status    string  `gorm:"not null"` // pending, completed, failed
+}
