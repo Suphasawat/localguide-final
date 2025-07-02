@@ -31,3 +31,23 @@ export const getUserById = async (id: number): Promise<User> => {
     }
   }
 };
+
+export const editUser = async (
+  id: number,
+  data: Partial<User>
+): Promise<User> => {
+  try {
+    const response = await axios.put<User>(`${API_URL}/users/${id}`, data, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.error || "Failed to edit user");
+    } else {
+      throw new Error("An unexpected error occurred");
+    }
+  }
+};

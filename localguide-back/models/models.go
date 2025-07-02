@@ -97,7 +97,7 @@ type Notification struct {
 	IsRead bool `gorm:"not null"`
 }
 
-type UnAvailable struct {
+type Unavailable struct {
 	gorm.Model
 	GuideID uint   `gorm:"not null"`
 	Guide   Guide  `gorm:"foreignKey:GuideID"`

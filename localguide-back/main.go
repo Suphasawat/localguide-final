@@ -18,7 +18,7 @@ func main() {
 		&models.AuthUser{}, &models.User{}, &models.Guide{},
 		&models.Language{}, &models.Role{}, &models.Permission{},
 		&models.Review{}, &models.TouristAttraction{}, &models.Booking{},
-		&models.Notification{},
+		&models.Notification{},&models.Payment{},&models.Unavailable{},
 	)	
 
 	app := fiber.New()
@@ -41,6 +41,7 @@ func main() {
 	api.Get("/guides/:id", controllers.GetGuideByID)
 	// User routes
 	api.Get("/users/:id", controllers.GetUserByID)
+	api.Put("/users/:id", controllers.EditUser)
 
 	// Admin routes
 	admin := api.Group("/admin")
