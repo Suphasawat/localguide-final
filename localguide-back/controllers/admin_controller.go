@@ -36,23 +36,6 @@ func UpdateGuideStatus(c *fiber.Ctx) error {
 		})
 	}
 
-	// Create notification for the guide
-	notification := models.Notification{
-		UserID:  guide.UserID,
-		IsRead:  false,
-	}
-
-	if req.Status == "approved" {
-		notification.Message = "คุณได้รับการอนุมัติเป็นมัคคุเทศก์แล้ว"
-	} else if req.Status == "rejected" {
-		notification.Message = "คำขอเป็นมัคคุเทศก์ของคุณถูกปฏิเสธ"
-	}
-
-	if err := config.DB.Create(&notification).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to create notification",
-		})
-	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Guide status updated successfully",

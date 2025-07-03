@@ -25,6 +25,7 @@ func Register(c *fiber.Ctx) error {
 	if !isValidEmail(req.Email) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid email format"})
 	}
+	
 	if utf8.RuneCountInString(req.Password) < 8 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Password must be at least 8 characters"})
 	}

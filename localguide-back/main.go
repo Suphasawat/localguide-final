@@ -19,6 +19,9 @@ func main() {
 		&models.Language{}, &models.Role{}, &models.Permission{},
 		&models.Review{}, &models.TouristAttraction{}, &models.Booking{},
 		&models.Notification{},&models.Payment{},&models.Unavailable{},
+		&models.GuidingTransaction{},&models.GuideCertification{},
+		&models.GuideVertification{}, &models.ChatRoom{},
+		&models.Message{},
 	)	
 
 	app := fiber.New()
@@ -39,6 +42,7 @@ func main() {
 	// Guide routes
 	api.Get("/guides", controllers.GetGuides)
 	api.Get("/guides/:id", controllers.GetGuideByID)
+	api.Post("/guides", controllers.CreateGuide)
 	// User routes
 	api.Get("/users/:id", controllers.GetUserByID)
 	api.Put("/users/:id", controllers.EditUser)

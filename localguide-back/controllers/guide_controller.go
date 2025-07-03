@@ -157,3 +157,25 @@ func GetGuideByID(c *fiber.Ctx) error {
 	})
 }
 
+func CreateGuide(c *fiber.Ctx) error {
+	var req models.Guide
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	if err := config.DB.Where("user_id = ?", req.UserID).First(&models.Guide{}).Error; err == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Guide already exists for this user"})
+	}
+
+	// Validate required fields
+	if req.UserID == 0 || req.Bio == "" || req.Experience == "" || req.Price <= 0 || len(req.Language) == 0  || req.District == "" || req.City == "" || req.Province == "" || req.Certification == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Missing required fields"})
+	}
+
+	// Create guide
+	if err := config.DB.Create(&req).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to create guide"})
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(req)
+}
