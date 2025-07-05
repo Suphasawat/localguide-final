@@ -12,14 +12,15 @@ func UpdateGuideStatus(c *fiber.Ctx) error {
 		Status string `json:"status"` // approved, rejected
 	}
 
+	// Get guide ID from params
+	guideID := c.Params("id")
+	
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
 		})
 	}
 
-	// Get guide ID from params
-	guideID := c.Params("id")
 
 	// Find guide
 	var guide models.Guide
@@ -46,15 +47,12 @@ func UpdateGuideStatus(c *fiber.Ctx) error {
 func GetAllGuides(c *fiber.Ctx) error {
 	var guides []models.Guide
 
-	// Fetch all guides with their user details and languages
-	if err := config.DB.
-		Preload("User").
-		Preload("Language").
-		Find(&guides).Error; err != nil {
+	if err := config.DB.Find(&guides).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to fetch guides",
+			"error": "Failed to retrieve guides",
 		})
 	}
-
-	return c.JSON(guides)
+	return c.JSON(fiber.Map{
+		"guides": guides,
+	})
 }

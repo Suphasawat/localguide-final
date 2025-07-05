@@ -160,12 +160,16 @@ type ChatRoom struct {
 
 type Message struct {
 	gorm.Model
-	ChatRoomID uint        `gorm:"not null"`
-	ChatRoom   ChatRoom    `gorm:"foreignKey:ChatRoomID"`
+	ChatRoomID uint     `gorm:"not null"`
+	ChatRoom   ChatRoom `gorm:"foreignKey:ChatRoomID"`
 
-	SenderID   uint        `gorm:"not null"`      // ใครเป็นคนส่ง
-	SenderType string      `gorm:"not null"`      // "user" หรือ "guide"
-	Content    string      `gorm:"not null"`      // ข้อความ
-	IsRead     bool        `gorm:"default:false"` // ถูกอ่านหรือยัง
-	SentAt     time.Time   `gorm:"not null"`
+	SenderUserID  *uint // ถ้าคนส่งเป็น User
+	SenderGuideID *uint // ถ้าคนส่งเป็น Guide
+
+	Content    string     // ข้อความ text (อาจว่างถ้าเป็นไฟล์ล้วน)
+	ImageURL   *string    // ลิงก์ของรูปที่แนบ (เช่น PNG, JPG)
+	FileURL    *string    // ลิงก์ของไฟล์แนบอื่น (PDF, DOCX ฯลฯ)
+	FileType   *string    // "image", "pdf", "video", etc. (optional)
+	IsRead     bool       `gorm:"default:false"`
+	SentAt     time.Time  `gorm:"not null"`
 }
