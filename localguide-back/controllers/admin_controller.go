@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"localguide-back/config"
 	"localguide-back/models"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -56,6 +57,14 @@ func ApproveGuide(c *fiber.Ctx) error {
 			Rating:      0,    // เริ่มต้นที่ 0
 		}
 
+		// เช็คว่า Guide นี้มีอยู่แล้วหรือไม่
+		var existingGuide models.Guide
+		if err := tx.Where("user_id = ?", verification.UserID).First(&existingGuide).Error; err == nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Guide already exists",
+			})
+		}
+
 		// สร้าง Guide ใหม่
 		if err := tx.Create(&newGuide).Error; err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -82,7 +91,7 @@ func ApproveGuide(c *fiber.Ctx) error {
 				}
 			}
 		}
-		// --- จบส่วนเพิ่ม GuideCertification ---
+		
 
 		// อัปเดต GuideID ใน GuideVertification
 		if err := tx.Model(&verification).Update("guide_id", newGuide.ID).Error; err != nil {
@@ -98,12 +107,27 @@ func ApproveGuide(c *fiber.Ctx) error {
 			})
 		}
 
-		// เชื่อมโยง guide กับ tourist attractions
-		
+		// --- เชื่อมโยง guide กับภาษาใน many2many ---
+		if verification.Language != "" {
+			languageNames := strings.Split(verification.Language, ",")
+			for _, name := range languageNames {
+				langName := strings.TrimSpace(name)
+				if langName == "" {
+					continue
+				}
+				var lang models.Language
+				if err := tx.Where("name = ?", langName).First(&lang).Error; err == nil {
+					// เชื่อมโยง guide กับ language (many2many)
+					if err := tx.Model(&newGuide).Association("Language").Append(&lang); err != nil {
+						return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+							"error": "Failed to associate guide with language",
+						})
+					}
+				}
+			}
+		}
+		// --- จบส่วนเชื่อมโยงภาษา ---
 
-		// TODO: สร้าง Language และ TouristAttraction relationships
-		// ตอนนี้ข้อมูลเหล่านี้ถูกเก็บเป็น string ใน verification
-		// จะต้องมีการ parse และสร้าง relationships ในภายหลัง
 	}
 
 	// Commit transaction
