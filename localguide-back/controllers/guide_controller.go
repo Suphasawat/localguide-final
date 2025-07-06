@@ -3,6 +3,7 @@ package controllers
 import (
 	"localguide-back/config"
 	"localguide-back/models"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -43,39 +44,64 @@ func GetGuideByID(c *fiber.Ctx) error {
 }
 
 func CreateGuide(c *fiber.Ctx) error {
-	var req models.Guide
+	var req models.GuideVertification
+
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
 	}
 
-	// ตรวจสอบว่ามี guide สำหรับ user นี้อยู่แล้วหรือยัง
+	// ตรวจสอบข้อมูลที่จำเป็น
+	if req.UserID == 0 || req.Bio == "" || req.Description == "" || 
+	   req.Price <= 0 || req.District == "" || req.City == "" || 
+	   req.Province == "" || req.Language == "" || len(req.CertificationData) == 0{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Missing required fields",
+		})
+	}
+
+	// ตรวจสอบว่ามีคำขอที่รออยู่แล้วหรือไม่
+	var existingVerification models.GuideVertification
+	if err := config.DB.Where("user_id = ? AND status = ?", req.UserID, "pending").
+		First(&existingVerification).Error; err == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "You already have a pending guide application",
+		})
+	}
+
+	// ตรวจสอบว่าเป็นไกด์อยู่แล้วหรือไม่
 	var existingGuide models.Guide
 	if err := config.DB.Where("user_id = ?", req.UserID).First(&existingGuide).Error; err == nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "User has already created a guide"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "You are already a guide",
+		})
 	}
 
-	if req.UserID == 0 || req.Bio == "" || req.Experience == "" || req.Price <= 0 || len(req.Language) == 0 || req.District == "" || req.City == "" || req.Province == "" || req.Certification == nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Missing required fields"})
-	}
-
-	// เปลี่ยน role user เป็น 2 (guide)
-	if err := config.DB.Model(&models.User{}).Where("id = ?", req.UserID).Update("role_id", 2).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update user role"})
-	}
-
-	// Create guide
+	// เริ่ม transaction
 	tx := config.DB.Begin()
 	defer tx.Rollback()
+
+	// กำหนดค่าเริ่มต้น
+	req.Status = "pending"
+	req.VerificationDate = time.Now()
+	req.GuideID = nil // ยังไม่มี GuideID จนกว่าจะได้รับการอนุมัติ
+
+	// บันทึกข้อมูลคำขอสมัครเป็นไกด์
 	if err := tx.Create(&req).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to create guide"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to create guide application",
+		})
 	}
+
 	if err := tx.Commit().Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to commit guide creation"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to commit transaction",
+		})
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"message": "Guide created and user role updated to guide",
-		"guide": req,
+		"message": "Guide application submitted successfully. Please wait for admin approval.",
+		"verification": req,
 	})
-
 }

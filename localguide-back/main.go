@@ -50,7 +50,7 @@ func main() {
 	// Admin routes
 	admin := api.Group("/admin")
 	admin.Get("/guides", controllers.GetAllGuides)
-	admin.Put("/guides/:id/status", controllers.UpdateGuideStatus)
+	admin.Put("/guides/:id/status", controllers.ApproveGuide)
 	
 	port := os.Getenv("PORT")
 	if port == "" {

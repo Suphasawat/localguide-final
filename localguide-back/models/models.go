@@ -33,9 +33,9 @@ type Guide struct {
 	UserID   uint   `gorm:"not null"`
 	User     User   `gorm:"foreignKey:UserID"`	
 	Bio      string  
-	Experience string `gorm:"not null"` 
+	Description string `gorm:"not null"` 
 	Certification []GuideCertification `gorm:"foreignKey:GuideID"`
-	Status string `gorm:"not null;default:'pending'"` // pending, approved, rejected
+	Available bool // true = available, false = not available
 	Language []Language `gorm:"many2many:guide_languages"`
 	Price  float64 `gorm:"not null"` 
 	Rating float64 // เก็บค่าเฉลี่ยของ ratings จาก reviews
@@ -127,13 +127,26 @@ type Payment struct {
 
 type GuideVertification struct {
 	gorm.Model
-	GuideID uint   `gorm:"not null"`
-	Guide   Guide  `gorm:"foreignKey:GuideID"`
-	Certification string `gorm:"not null"` // ใบอนุญาตไกด์
-	Status string `gorm:"not null;default:'pending'"` // pending, approved, rejected
-	ReviewedBy uint `gorm:"not null"` // ID of the admin who reviewed the verification
-	ReviewedAt time.Time `gorm:"not null"` // date when the verification was reviewed
-	Comments string // comments from the admin regarding the verification
+	UserID            uint      `gorm:"not null"` // ID of the user applying
+	User              User      `gorm:"foreignKey:UserID"`
+	GuideID           *uint     // Pointer to allow null, will be set on approval
+	Guide             Guide     `gorm:"foreignKey:GuideID"`
+	Status            string    `gorm:"not null;default:'pending'"` // pending, approved, rejected
+	VerificationDate  time.Time `gorm:"not null"`
+	ReviewedBy        *uint     // Admin UserID
+	ReviewedAt        *time.Time
+	AdminComments     string
+
+	// --- Data from application form ---
+	Bio               string
+	Description       string
+	Price             float64
+	District          string
+	City              string
+	Province          string
+	Language       string 
+	Attraction     string 
+	CertificationData string
 }
 
 type GuidingTransaction struct {
