@@ -55,7 +55,7 @@ func CreateGuide(c *fiber.Ctx) error {
 	// ตรวจสอบข้อมูลที่จำเป็น
 	if req.UserID == 0 || req.Bio == "" || req.Description == "" || 
 	   req.Price <= 0 || req.District == "" || req.City == "" || 
-	   req.Province == "" || req.Language == "" || len(req.CertificationData) == 0{
+	   req.Province == "" || req.Language == "" || req.CertificationData == ""{
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Missing required fields",
 		})

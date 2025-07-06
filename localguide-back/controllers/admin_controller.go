@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"localguide-back/config"
 	"localguide-back/models"
 
@@ -62,19 +63,26 @@ func ApproveGuide(c *fiber.Ctx) error {
 			})
 		}
 
-		// // คัดลอกข้อมูลการรับรองจาก GuideVertification ไปยัง GuideCertification
-		// for _, cert := range verification.CertificationData {
-		// 	guideCert := models.GuideCertification{
-		// 		GuideID: 	newGuide.ID,
-		// 		ImagePath: cert.ImagePath,
-		// 		Description: cert.Description,
-		// 	}
-		// 	if err := tx.Create(&guideCert).Error; err != nil {
-		// 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-		// 			"error": "Failed to create guide certification",
-		// 		})
-		// 	}
-		// }
+		// --- เพิ่มส่วนนี้เพื่อสร้าง GuideCertification ---
+		var certs []struct {
+			ImagePath   string `json:"ImagePath"`
+			Description string `json:"Description"`
+		}
+		if err := json.Unmarshal([]byte(verification.CertificationData), &certs); err == nil {
+			for _, cert := range certs {
+				guideCert := models.GuideCertification{
+					GuideID:     newGuide.ID,
+					ImagePath:   cert.ImagePath,
+					Description: cert.Description,
+				}
+				if err := tx.Create(&guideCert).Error; err != nil {
+					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+						"error": "Failed to create guide certification",
+					})
+				}
+			}
+		}
+		// --- จบส่วนเพิ่ม GuideCertification ---
 
 		// อัปเดต GuideID ใน GuideVertification
 		if err := tx.Model(&verification).Update("guide_id", newGuide.ID).Error; err != nil {
