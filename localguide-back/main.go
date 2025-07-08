@@ -50,6 +50,7 @@ func main() {
 	// Admin routes
 	admin := api.Group("/admin")
 	admin.Get("/guides", controllers.GetAllGuides)
+	admin.Get("/verifications", controllers.GetPendingVerifications)
 	admin.Put("/guides/:id/status", controllers.ApproveGuide)
 	
 	port := os.Getenv("PORT")

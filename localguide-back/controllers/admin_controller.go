@@ -156,3 +156,18 @@ func GetAllGuides(c *fiber.Ctx) error {
 		"guides": guides,
 	})
 }
+
+// GetPendingVerifications returns all pending guide verification requests
+func GetPendingVerifications(c *fiber.Ctx) error {
+	var verifications []models.GuideVertification
+
+	if err := config.DB.Where("status = ?", "pending").Find(&verifications).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to retrieve verification requests",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"verifications": verifications,
+	})
+}
