@@ -62,7 +62,6 @@ type Language struct {
 type Role struct {
 	ID uint `gorm:"primaryKey"`
 	Name string `gorm:"not null"`
-	Permissions []Permission `gorm:"many2many:role_permissions"`
 }
 
 type Review struct {
@@ -79,12 +78,6 @@ type TouristAttraction struct {
 	ID uint `gorm:"primaryKey"`
 	Name	 string `gorm:"not null"`
 	Guides []Guide `gorm:"many2many:guide_tourist_attractions"`
-}
-
-type Permission struct {
-	ID uint `gorm:"primaryKey"`
-	Name     string `gorm:"not null"`
-	Roles []Role `gorm:"many2many:role_permissions"`
 }
 
 type Booking struct {
