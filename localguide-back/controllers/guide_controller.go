@@ -10,8 +10,12 @@ import (
 
 func GetGuides(c *fiber.Ctx) error {
 	var guides []models.Guide
-	
-	result := config.DB.Find(&guides)
+
+	result := config.DB.
+		Preload("User").
+		Preload("Languages").
+		Preload("TouristAttractions").
+		Find(&guides)
 
 	if result.Error != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -29,7 +33,11 @@ func GetGuideByID(c *fiber.Ctx) error {
 	id := c.Params("id")
 	var guide models.Guide
 
-	result := config.DB.Find(&guide, id)
+	result := config.DB.
+		Preload("User").
+		Preload("Languages").
+		Preload("TouristAttractions").
+		First(&guide, id)
 
 	if result.Error != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{

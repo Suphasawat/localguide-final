@@ -147,7 +147,12 @@ func ApproveGuide(c *fiber.Ctx) error {
 func GetAllGuides(c *fiber.Ctx) error {
 	var guides []models.Guide
 
-	if err := config.DB.Find(&guides).Error; err != nil {
+	if err := config.DB.
+		Preload("User").
+		Preload("Languages").
+		Preload("TouristAttractions").
+		Preload("Certification").
+		Find(&guides).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to retrieve guides",
 		})
@@ -161,7 +166,11 @@ func GetAllGuides(c *fiber.Ctx) error {
 func GetPendingVerifications(c *fiber.Ctx) error {
 	var verifications []models.GuideVertification
 
-	if err := config.DB.Where("status = ?", "pending").Find(&verifications).Error; err != nil {
+	if err := config.DB.
+		Where("status = ?", "pending").
+		Preload("User").
+		Preload("Guide").
+		Find(&verifications).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to retrieve verification requests",
 		})

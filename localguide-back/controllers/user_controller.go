@@ -11,7 +11,11 @@ func GetUserByID(c *fiber.Ctx) error {
 	userID := c.Params("id")
 	var user models.User
 
-	if err:= config.DB.Find(&user, userID).Error; err != nil {
+	if err := config.DB.
+		Preload("AuthUser").
+		Preload("Role").
+		Preload("Guide").
+		First(&user, userID).Error; err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
 	}
 
