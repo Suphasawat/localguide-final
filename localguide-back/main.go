@@ -54,7 +54,7 @@ func main() {
 	admin := api.Group("/admin", middleware.AuthRequired(), middleware.AdminRequired())
 	admin.Get("/guides", controllers.GetAllGuides)
 	admin.Get("/verifications", controllers.GetPendingVerifications)
-	admin.Put("/verifications/:id/status", controllers.ApproveGuide) // แก้ path ให้ถูกต้อง
+	admin.Put("/verifications/:id/status", controllers.ApproveGuide) 
 	
 	port := os.Getenv("PORT")
 	if port == "" {

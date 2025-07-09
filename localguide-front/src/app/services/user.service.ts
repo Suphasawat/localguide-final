@@ -1,4 +1,4 @@
-import axios from "axios";
+import { authAxios } from "./auth.service";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const API_URL = `${BASE_URL}/api`;
@@ -17,14 +17,10 @@ export interface User {
 
 export const getUserById = async (id: number): Promise<User> => {
   try {
-    const response = await axios.get<User>(`${API_URL}/users/${id}`, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await authAxios.get<User>(`/users/${id}`);
     return response.data;
   } catch (error: any) {
-    if (axios.isAxiosError(error)) {
+    if (error.response) {
       throw new Error(error.response?.data?.error || "Failed to fetch user");
     } else {
       throw new Error("An unexpected error occurred");
@@ -37,14 +33,10 @@ export const editUser = async (
   data: Partial<User>
 ): Promise<User> => {
   try {
-    const response = await axios.put<User>(`${API_URL}/users/${id}`, data, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await authAxios.put<User>(`/users/${id}`, data);
     return response.data;
   } catch (error: any) {
-    if (axios.isAxiosError(error)) {
+    if (error.response) {
       throw new Error(error.response?.data?.error || "Failed to edit user");
     } else {
       throw new Error("An unexpected error occurred");

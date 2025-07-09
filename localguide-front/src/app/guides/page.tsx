@@ -20,9 +20,10 @@ export default function Guides() {
     const loadGuides = async () => {
       try {
         const data = await getGuides();
-        setGuides(data);
+        setGuides(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Error loading guides:", error);
+        setGuides([]);
       } finally {
         setLoading(false);
       }
@@ -31,28 +32,33 @@ export default function Guides() {
     loadGuides();
   }, []);
 
-  const filteredGuides = guides?.filter((guide) => {
-    const matchesSearch =
-      filters.search === "" ||
-      guide.user.firstName
-        .toLowerCase()
-        .includes(filters.search.toLowerCase()) ||
-      guide.user.lastName
-        .toLowerCase()
-        .includes(filters.search.toLowerCase()) ||
-      guide.province.toLowerCase().includes(filters.search.toLowerCase());
+  const filteredGuides = Array.isArray(guides)
+    ? guides.filter((guide) => {
+        const matchesSearch =
+          filters.search === "" ||
+          guide.user.firstName
+            .toLowerCase()
+            .includes(filters.search.toLowerCase()) ||
+          guide.user.lastName
+            .toLowerCase()
+            .includes(filters.search.toLowerCase()) ||
+          guide.province.toLowerCase().includes(filters.search.toLowerCase());
 
-    const matchesProvince =
-      filters.province === "" || guide.province === filters.province;
+        const matchesProvince =
+          filters.province === "" || guide.province === filters.province;
 
-    const matchesPrice =
-      (filters.minPrice === "" || guide.price >= Number(filters.minPrice)) &&
-      (filters.maxPrice === "" || guide.price <= Number(filters.maxPrice));
+        const matchesPrice =
+          (filters.minPrice === "" ||
+            guide.price >= Number(filters.minPrice)) &&
+          (filters.maxPrice === "" || guide.price <= Number(filters.maxPrice));
 
-    const matchesRating = guide.rating >= filters.minRating;
+        const matchesRating = guide.rating >= filters.minRating;
 
-    return matchesSearch && matchesProvince && matchesPrice && matchesRating;
-  });
+        return (
+          matchesSearch && matchesProvince && matchesPrice && matchesRating
+        );
+      })
+    : [];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -70,7 +76,7 @@ export default function Guides() {
               onChange={(e) =>
                 setFilters((prev) => ({ ...prev, search: e.target.value }))
               }
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-rose-500 focus:ring-rose-500"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
               placeholder="ชื่อ หรือ จังหวัด"
             />
           </div>
@@ -84,7 +90,7 @@ export default function Guides() {
               onChange={(e) =>
                 setFilters((prev) => ({ ...prev, province: e.target.value }))
               }
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-rose-500 focus:ring-rose-500"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
             >
               <option value="">ทั้งหมด</option>
               {PROVINCES.map((province) => (
@@ -106,7 +112,7 @@ export default function Guides() {
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, minPrice: e.target.value }))
                 }
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-rose-500 focus:ring-rose-500"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
                 placeholder="ต่ำสุด"
               />
               <input
@@ -115,7 +121,7 @@ export default function Guides() {
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, maxPrice: e.target.value }))
                 }
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-rose-500 focus:ring-rose-500"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
                 placeholder="สูงสุด"
               />
             </div>
@@ -133,7 +139,7 @@ export default function Guides() {
                   minRating: Number(e.target.value),
                 }))
               }
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-rose-500 focus:ring-rose-500"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
             >
               <option value={0}>ทั้งหมด</option>
               <option value={3}>3 ดาวขึ้นไป</option>
@@ -147,15 +153,15 @@ export default function Guides() {
       {/* Results */}
       {loading ? (
         <div className="flex justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rose-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
         </div>
       ) : (
         <div>
           <p className="mb-4 text-gray-600">
-            พบ {filteredGuides?.length} รายการ
+            พบ {filteredGuides.length} รายการ
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredGuides?.map((guide) => (
+            {filteredGuides.map((guide) => (
               <GuideCard key={guide.id} guide={guide} />
             ))}
           </div>

@@ -89,7 +89,9 @@ export const isAuthenticated = (): boolean => {
 };
 
 // Create axios instance with auth header
-export const authAxios = axios.create();
+export const authAxios = axios.create({
+  baseURL: API_URL,
+});
 
 // Add a request interceptor to include the JWT token
 authAxios.interceptors.request.use(

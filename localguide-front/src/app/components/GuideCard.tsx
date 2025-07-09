@@ -55,7 +55,7 @@ export default function GuideCard({ guide }: GuideCardProps) {
               </span>
             </div>
           </div>
-          <div className="text-lg font-semibold text-rose-600">
+          <div className="text-lg font-semibold text-amber-600">
             ฿{guide.price.toLocaleString()}/วัน
           </div>
         </div>
@@ -64,7 +64,7 @@ export default function GuideCard({ guide }: GuideCardProps) {
           {guide.languages.map((lang) => (
             <span
               key={lang.id}
-              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800"
+              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800"
             >
               {lang.name}
             </span>

@@ -17,11 +17,33 @@ export default function Navbar() {
     window.location.href = "/";
   };
 
-  const navLinks = [
-    { href: "/", label: "หน้าหลัก" },
-    { href: "/guides", label: "ค้นหาไกด์" },
-    ...(isLoggedIn ? [{ href: "/profile", label: "โปรไฟล์" }] : []),
-  ];
+  const getNavLinks = () => {
+    const baseLinks = [
+      { href: "/", label: "หน้าหลัก" },
+      { href: "/guides", label: "ค้นหาไกด์" },
+    ];
+
+    if (!isLoggedIn) return baseLinks;
+
+    const userLinks = [...baseLinks, { href: "/profile", label: "โปรไฟล์" }];
+
+    // Role 2 = Guide
+    if (user?.role === 2) {
+      userLinks.push({ href: "/guide-dashboard", label: "แดชบอร์ดไกด์" });
+    }
+
+    // Role 3 = Admin
+    if (user?.role === 3) {
+      userLinks.push(
+        { href: "/admin/guides", label: "จัดการไกด์" },
+        { href: "/admin/verifications", label: "อนุมัติไกด์" }
+      );
+    }
+
+    return userLinks;
+  };
+
+  const navLinks = getNavLinks();
 
   const NavLink = ({
     href,
@@ -34,8 +56,8 @@ export default function Navbar() {
       href={href}
       className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors duration-200 ${
         pathname === href
-          ? "text-rose-600 border-rose-600"
-          : "text-gray-700 hover:text-rose-600 border-transparent"
+          ? "text-amber-600 border-amber-600"
+          : "text-gray-700 hover:text-amber-600 border-transparent"
       }`}
     >
       {children}
@@ -49,8 +71,15 @@ export default function Navbar() {
           {/* Logo & Desktop Nav */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
-              <Image src="/globe.svg" alt="Local Guide" width={32} height={32} />
-              <span className="ml-2 text-xl font-bold text-gray-900">Local Guide</span>
+              <Image
+                src="/globe.svg"
+                alt="Local Guide"
+                width={32}
+                height={32}
+              />
+              <span className="ml-2 text-xl font-bold text-gray-900">
+                Local Guide
+              </span>
             </Link>
             <div className="hidden sm:flex sm:ml-6 sm:space-x-4">
               {navLinks.map((link) => (
@@ -64,22 +93,27 @@ export default function Navbar() {
           <div className="hidden sm:flex sm:items-center space-x-4">
             {isLoggedIn ? (
               <>
-                <span className="text-sm text-gray-700">สวัสดี, {user?.firstName || "ผู้ใช้"}</span>
+                <span className="text-sm text-gray-700">
+                  สวัสดี, {user?.firstName || "ผู้ใช้"}
+                </span>
                 <button
                   onClick={handleLogout}
-                  className="px-4 py-2 text-sm font-medium text-rose-600 hover:text-rose-700"
+                  className="px-4 py-2 text-sm font-medium text-amber-600 hover:text-amber-700"
                 >
                   ออกจากระบบ
                 </button>
               </>
             ) : (
               <>
-                <Link href="/auth/login" className="px-4 py-2 text-sm font-medium text-rose-600 hover:text-rose-700">
+                <Link
+                  href="/auth/login"
+                  className="px-4 py-2 text-sm font-medium text-amber-600 hover:text-amber-700"
+                >
                   เข้าสู่ระบบ
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="px-2 py-2 text-sm font-medium text-rose-600 hover:text-rose-700 border border-rose-600 rounded-md bg-white flex items-center"
+                  className="px-2 py-2 text-sm font-medium text-amber-600 hover:text-amber-700 border border-amber-600 rounded-md bg-white flex items-center"
                 >
                   ลงทะเบียน
                 </Link>
@@ -95,13 +129,33 @@ export default function Navbar() {
             >
               {isMobileMenuOpen ? (
                 // Close icon
-                <svg className="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="h-6 w-6"
+                  stroke="currentColor"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               ) : (
                 // Hamburger icon
-                <svg className="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                <svg
+                  className="h-6 w-6"
+                  stroke="currentColor"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
                 </svg>
               )}
             </button>
@@ -116,7 +170,7 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-rose-600 hover:bg-gray-50"
+                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-amber-600 hover:bg-gray-50"
               >
                 {link.label}
               </Link>
@@ -130,7 +184,7 @@ export default function Navbar() {
                 </span>
                 <button
                   onClick={handleLogout}
-                  className="block w-full text-left px-3 py-2 text-base font-medium text-rose-600 hover:text-rose-700 hover:bg-gray-50"
+                  className="block w-full text-left px-3 py-2 text-base font-medium text-amber-600 hover:text-amber-700 hover:bg-gray-50"
                 >
                   ออกจากระบบ
                 </button>
@@ -139,13 +193,13 @@ export default function Navbar() {
               <div className="space-y-1">
                 <Link
                   href="/auth/login"
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-rose-600 hover:bg-gray-50"
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-amber-600 hover:bg-gray-50"
                 >
                   เข้าสู่ระบบ
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="block px-3 py-2 text-base font-medium text-rose-600 hover:text-rose-700 hover:bg-gray-50"
+                  className="block px-3 py-2 text-base font-medium text-amber-600 hover:text-amber-700 hover:bg-gray-50"
                 >
                   ลงทะเบียน
                 </Link>

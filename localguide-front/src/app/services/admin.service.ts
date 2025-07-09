@@ -1,17 +1,4 @@
-import axios from "axios";
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-const API_URL = `${BASE_URL}/api/admin`;
-
-// สร้าง axios instance ที่มีการกำหนดค่าเริ่มต้น
-const createAxiosInstance = (token: string) => {
-  return axios.create({
-    baseURL: API_URL,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
+import { authAxios } from "./auth.service";
 
 export interface Guide {
   id: number;
@@ -36,12 +23,19 @@ export interface Guide {
   status: string;
 }
 
+export interface Verification {
+  id: number;
+  guide: Guide;
+  status: string;
+  submittedAt: string;
+  documents: string[];
+}
+
 export const adminService = {
   // ดึงข้อมูลไกด์ทั้งหมด
-  async getAllGuides(token: string): Promise<Guide[]> {
-    const api = createAxiosInstance(token);
+  async getAllGuides(): Promise<Guide[]> {
     try {
-      const { data } = await api.get("/guides");
+      const { data } = await authAxios.get("/admin/guides");
       return data;
     } catch (error) {
       console.error("Error fetching guides:", error);
@@ -49,18 +43,27 @@ export const adminService = {
     }
   },
 
-  // อัพเดทสถานะไกด์
-  async updateGuideStatus(
-    guideId: number,
-    status: string,
-    token: string
-  ): Promise<boolean> {
-    const api = createAxiosInstance(token);
+  // ดึงข้อมูลการยืนยันตัวตนที่รอการอนุมัติ
+  async getPendingVerifications(): Promise<Verification[]> {
     try {
-      await api.put(`/guides/${guideId}/status`, { status });
+      const { data } = await authAxios.get("/admin/verifications");
+      return data;
+    } catch (error) {
+      console.error("Error fetching verifications:", error);
+      return [];
+    }
+  },
+
+  // อนุมัติหรือปฏิเสธการยืนยันตัวตน
+  async updateVerificationStatus(
+    id: number,
+    status: "approved" | "rejected"
+  ): Promise<boolean> {
+    try {
+      await authAxios.put(`/admin/verifications/${id}/status`, { status });
       return true;
     } catch (error) {
-      console.error("Error updating guide status:", error);
+      console.error("Error updating verification status:", error);
       return false;
     }
   },

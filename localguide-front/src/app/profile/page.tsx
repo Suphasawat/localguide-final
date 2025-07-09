@@ -2,6 +2,7 @@
 import { getUser, logout } from "../services/auth.service";
 import { getUserById, editUser } from "../services/user.service";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { MdPerson } from "react-icons/md";
 import { useEffect, useState } from "react";
 
@@ -61,14 +62,14 @@ export default function Profile() {
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] bg-gradient-to-br from-rose-100 via-white to-blue-100">
-        <div className="bg-white/90 p-8 rounded-2xl shadow-xl border border-rose-100 max-w-md w-full text-center">
-          <h1 className="text-2xl font-bold text-rose-700 mb-2">โปรไฟล์</h1>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] bg-gradient-to-br from-amber-100 via-white to-orange-100">
+        <div className="bg-white/90 p-8 rounded-2xl shadow-xl border border-amber-100 max-w-md w-full text-center">
+          <h1 className="text-2xl font-bold text-amber-700 mb-2">โปรไฟล์</h1>
           <p className="text-gray-500 mb-4">
             กรุณาเข้าสู่ระบบเพื่อดูข้อมูลโปรไฟล์
           </p>
           <button
-            className="bg-rose-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-rose-700 transition"
+            className="bg-amber-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-amber-700 transition"
             onClick={() => router.push("/auth/login")}
           >
             ไปหน้าเข้าสู่ระบบ
@@ -80,9 +81,9 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] bg-gradient-to-br from-rose-100 via-white to-blue-100">
-        <div className="bg-white/90 p-8 rounded-2xl shadow-xl border border-rose-100 max-w-md w-full text-center">
-          <h1 className="text-2xl font-bold text-rose-700 mb-2">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] bg-gradient-to-br from-amber-100 via-white to-orange-100">
+        <div className="bg-white/90 p-8 rounded-2xl shadow-xl border border-amber-100 max-w-md w-full text-center">
+          <h1 className="text-2xl font-bold text-amber-700 mb-2">
             กำลังโหลดข้อมูลโปรไฟล์...
           </h1>
         </div>
@@ -92,9 +93,9 @@ export default function Profile() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] bg-gradient-to-br from-rose-100 via-white to-blue-100">
-        <div className="bg-white/90 p-8 rounded-2xl shadow-xl border border-rose-100 max-w-md w-full text-center">
-          <h1 className="text-2xl font-bold text-rose-700 mb-2">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] bg-gradient-to-br from-amber-100 via-white to-orange-100">
+        <div className="bg-white/90 p-8 rounded-2xl shadow-xl border border-amber-100 max-w-md w-full text-center">
+          <h1 className="text-2xl font-bold text-amber-700 mb-2">
             เกิดข้อผิดพลาด
           </h1>
           <p className="text-gray-500 mb-4">{error}</p>
@@ -104,20 +105,22 @@ export default function Profile() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] bg-gradient-to-br from-rose-100 via-white to-blue-100">
-      <div className="bg-white/90 p-8 rounded-2xl shadow-xl border border-rose-100 max-w-md w-full flex flex-col items-center">
-        <div className="bg-rose-100 rounded-full p-4 mb-4">
+    <div className="flex flex-col items-center justify-center min-h-[60vh] bg-gradient-to-br from-amber-100 via-white to-orange-100">
+      <div className="bg-white/90 p-8 rounded-2xl shadow-xl border border-amber-100 max-w-md w-full flex flex-col items-center">
+        <div className="bg-amber-100 rounded-full p-4 mb-4">
           {userDetail && userDetail.Avatar ? (
             <img
               src={userDetail.Avatar}
               alt="avatar"
-              className="w-16 h-16 rounded-full object-cover border border-rose-200 bg-white"
+              className="w-16 h-16 rounded-full object-cover border border-amber-200 bg-white"
             />
           ) : (
-            <MdPerson className="text-rose-600 w-12 h-12" />
+            <MdPerson className="text-amber-600 w-12 h-12" />
           )}
         </div>
-        <h1 className="text-2xl font-bold text-rose-700 mb-2">โปรไฟล์ผู้ใช้</h1>
+        <h1 className="text-2xl font-bold text-amber-700 mb-2">
+          โปรไฟล์ผู้ใช้
+        </h1>
         <div className="text-gray-700 text-lg mb-2">{user.email}</div>
         {editMode && userDetail ? (
           <div className="text-left w-full mt-4">
@@ -206,7 +209,7 @@ export default function Profile() {
             )}
             <div className="flex gap-2 mt-4">
               <button
-                className="bg-rose-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-rose-700 transition"
+                className="bg-amber-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-amber-700 transition"
                 onClick={handleSave}
                 disabled={saveLoading}
                 type="button"
@@ -214,7 +217,7 @@ export default function Profile() {
                 {saveLoading ? "กำลังบันทึก..." : "บันทึก"}
               </button>
               <button
-                className="bg-gray-200 text-rose-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition"
+                className="bg-gray-200 text-amber-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition"
                 onClick={() => {
                   setEditMode(false);
                   setEditForm(userDetail);
@@ -258,7 +261,7 @@ export default function Profile() {
                 {userDetail.Sex ? userDetail.Sex : "-"}
               </div>
               <button
-                className="bg-rose-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-rose-700 transition mt-4"
+                className="bg-amber-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-amber-700 transition mt-4"
                 onClick={() => {
                   setEditMode(true);
                   setSaveError("");
@@ -268,15 +271,25 @@ export default function Profile() {
               >
                 แก้ไขโปรไฟล์
               </button>
+              {user?.role === 1 && (
+                <Link
+                  href="/guide/register"
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition mt-2 inline-block text-center"
+                >
+                  สมัครเป็นไกด์
+                </Link>
+              )}
             </div>
           )
         )}
-        <button
-          className="bg-gray-200 text-rose-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition mt-6"
-          onClick={handleLogout}
-        >
-          ออกจากระบบ
-        </button>
+        <div className="flex flex-col gap-2 mt-6">
+          <button
+            className="bg-gray-200 text-amber-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition"
+            onClick={handleLogout}
+          >
+            ออกจากระบบ
+          </button>
+        </div>
       </div>
     </div>
   );

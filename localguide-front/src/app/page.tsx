@@ -14,9 +14,10 @@ export default function Home() {
     const loadGuides = async () => {
       try {
         const data = await getGuides();
-        setGuides(data?.slice(0, 6)); // Show only first 6 guides
+        setGuides(Array.isArray(data) ? data.slice(0, 6) : []); // Show only first 6 guides
       } catch (error) {
         console.error("Error loading guides:", error);
+        setGuides([]);
       } finally {
         setLoading(false);
       }
@@ -52,7 +53,7 @@ export default function Home() {
           <div className="mt-10">
             <Link
               href="/guides"
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-rose-600 hover:bg-rose-700"
+              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-amber-600 hover:bg-amber-700"
             >
               ค้นหาไกด์ท้องถิ่น
             </Link>
@@ -74,20 +75,21 @@ export default function Home() {
         <div className="mt-12">
           {loading ? (
             <div className="flex justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rose-500"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              {guides?.map((guide) => (
-                <GuideCard key={guide.id} guide={guide} />
-              ))}
+              {Array.isArray(guides) &&
+                guides.map((guide) => (
+                  <GuideCard key={guide.id} guide={guide} />
+                ))}
             </div>
           )}
 
           <div className="mt-12 text-center">
             <Link
               href="/guides"
-              className="inline-flex items-center px-6 py-3 border-2 border-rose-600 text-base font-medium rounded-md text-rose-600 hover:bg-rose-50"
+              className="inline-flex items-center px-6 py-3 border-2 border-amber-600 text-base font-medium rounded-md text-amber-600 hover:bg-amber-50"
             >
               ดูไกด์ทั้งหมด
             </Link>
@@ -106,7 +108,7 @@ export default function Home() {
 
           <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <div className="text-rose-600 mb-4">
+              <div className="text-amber-600 mb-4">
                 <svg
                   className="h-8 w-8"
                   fill="none"
@@ -136,7 +138,7 @@ export default function Home() {
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <div className="text-rose-600 mb-4">
+              <div className="text-amber-600 mb-4">
                 <svg
                   className="h-8 w-8"
                   fill="none"
@@ -161,7 +163,7 @@ export default function Home() {
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <div className="text-rose-600 mb-4">
+              <div className="text-amber-600 mb-4">
                 <svg
                   className="h-8 w-8"
                   fill="none"

@@ -30,16 +30,16 @@ export default function Login() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] bg-gradient-to-br from-rose-100 via-white to-blue-100">
-      <div className="w-full max-w-md bg-white/90 p-8 rounded-2xl shadow-xl border border-rose-100 mt-12 mb-8">
+    <div className="flex flex-col items-center justify-center min-h-[60vh] bg-gradient-to-br from-amber-100 via-white to-orange-100">
+      <div className="w-full max-w-md bg-white/90 p-8 rounded-2xl shadow-xl border border-amber-100 mt-12 mb-8">
         <div className="flex flex-col items-center mb-6">
-          <div className="bg-rose-100 rounded-full p-3 mb-2">
+          <div className="bg-amber-100 rounded-full p-3 mb-2">
             <svg
               width="32"
               height="32"
               fill="none"
               viewBox="0 0 24 24"
-              stroke="#e11d48"
+              stroke="#d97706"
             >
               <path
                 strokeLinecap="round"
@@ -49,12 +49,12 @@ export default function Login() {
               />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-rose-700">เข้าสู่ระบบ</h1>
+          <h1 className="text-2xl font-bold text-amber-700">เข้าสู่ระบบ</h1>
           <p className="text-gray-500 text-sm mt-1">
             หรือ{" "}
             <Link
               href="/auth/register"
-              className="text-rose-600 hover:underline font-medium"
+              className="text-amber-600 hover:underline font-medium"
             >
               สมัครสมาชิกใหม่
             </Link>
@@ -81,7 +81,7 @@ export default function Login() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 sm:text-sm transition"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 sm:text-sm transition"
               placeholder="your@email.com"
             />
           </div>
@@ -101,13 +101,13 @@ export default function Login() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 sm:text-sm transition pr-10"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 sm:text-sm transition pr-10"
                 placeholder="••••••••"
               />
               <button
                 type="button"
                 tabIndex={-1}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-rose-600 focus:outline-none"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-amber-600 focus:outline-none"
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
               >
@@ -163,7 +163,7 @@ export default function Login() {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
-                className="h-4 w-4 text-rose-600 focus:ring-rose-500 border-gray-300 rounded"
+                className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
                 disabled
               />
               <label
@@ -176,7 +176,7 @@ export default function Login() {
             <div className="text-sm">
               <Link
                 href="/auth/forgot-password"
-                className="text-rose-600 hover:underline font-medium"
+                className="text-amber-600 hover:underline font-medium"
               >
                 ลืมรหัสผ่าน?
               </Link>
@@ -185,7 +185,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-rose-600 text-white py-2 rounded-lg font-semibold hover:bg-rose-700 transition shadow disabled:opacity-50 mt-4"
+            className="w-full bg-amber-600 text-white py-2 rounded-lg font-semibold hover:bg-amber-700 transition shadow disabled:opacity-50 mt-4"
           >
             {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
           </button>
