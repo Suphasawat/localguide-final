@@ -126,7 +126,7 @@ func ApproveGuide(c *fiber.Ctx) error {
 				}
 			}
 		}
-		// --- จบส่วนเชื่อมโยงภาษา ---
+		
 
 	}
 
@@ -149,8 +149,8 @@ func GetAllGuides(c *fiber.Ctx) error {
 
 	if err := config.DB.
 		Preload("User").
-		Preload("Languages").
-		Preload("TouristAttractions").
+		Preload("Language").
+		Preload("TouristAttraction").
 		Preload("Certification").
 		Find(&guides).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
