@@ -19,6 +19,8 @@ export default function Profile() {
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
+    console.log("Fetching user details for profile page", user);
+
     if (user?.id) {
       setLoading(true);
       getUserById(user.id)

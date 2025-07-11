@@ -41,11 +41,14 @@ export default function ResetPassword() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8080/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, password }),
-      });
+      const response = await fetch(
+        "http://localhost:8080/api/auth/reset-password",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token, password }),
+        }
+      );
 
       const data = await response.json();
 
@@ -68,7 +71,7 @@ export default function ResetPassword() {
         <h1 className="text-2xl font-bold text-amber-700 text-center mb-6">
           ตั้งรหัสผ่านใหม่
         </h1>
-        
+
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
