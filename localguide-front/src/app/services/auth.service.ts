@@ -3,17 +3,17 @@ import axios from "axios";
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const API_URL = `${BASE_URL}/api`;
 
-interface LoginData {
+export interface LoginData {
   email: string;
   password: string;
 }
 
-interface RegisterData {
+export interface RegisterData {
   email: string;
   password: string;
 }
 
-interface AuthResponse {
+export interface AuthResponse {
   token: string;
   user: {
     id: number;

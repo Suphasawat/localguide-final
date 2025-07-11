@@ -1,6 +1,6 @@
 "use client";
-import { getUser, logout } from "../services/auth.service";
-import { getUserById, editUser } from "../services/user.service";
+import { getUser, logout, getToken } from "../services/auth.service";
+import { getUserById, editUser, User } from "../services/user.service";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { MdPerson } from "react-icons/md";
@@ -9,11 +9,11 @@ import { useEffect, useState } from "react";
 export default function Profile() {
   const user = getUser();
   const router = useRouter();
-  const [userDetail, setUserDetail] = useState<any>(null);
+  const [userDetail, setUserDetail] = useState<User>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [editMode, setEditMode] = useState(false);
-  const [editForm, setEditForm] = useState<any>(null);
+  const [editForm, setEditForm] = useState<any>();
   const [saveLoading, setSaveLoading] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -49,7 +49,7 @@ export default function Profile() {
     setSaveError("");
     setSaveSuccess(false);
     try {
-      const updated = await editUser(user.id, editForm);
+      const updated = await editUser(user.user.id, editForm);
       setUserDetail(updated);
       setEditMode(false);
       setSaveSuccess(true);
@@ -129,14 +129,14 @@ export default function Profile() {
               <input
                 type="text"
                 name="FirstName"
-                value={editForm.FirstName || ""}
+                value={editForm?.FirstName || ""}
                 onChange={handleEditChange}
                 className="border rounded px-2 py-1 ml-2 w-32"
               />
               <input
                 type="text"
                 name="LastName"
-                value={editForm.LastName || ""}
+                value={editForm?.LastName || ""}
                 onChange={handleEditChange}
                 className="border rounded px-2 py-1 ml-2 w-32"
               />
@@ -146,7 +146,7 @@ export default function Profile() {
               <input
                 type="text"
                 name="Nickname"
-                value={editForm.Nickname || ""}
+                value={editForm?.Nickname || ""}
                 onChange={handleEditChange}
                 className="border rounded px-2 py-1 ml-2 w-32"
               />
@@ -156,7 +156,7 @@ export default function Profile() {
               <input
                 type="text"
                 name="Phone"
-                value={editForm.Phone || ""}
+                value={editForm?.Phone || ""}
                 onChange={handleEditChange}
                 className="border rounded px-2 py-1 ml-2 w-32"
               />
@@ -167,7 +167,7 @@ export default function Profile() {
                 type="date"
                 name="BirthDate"
                 value={
-                  editForm.BirthDate ? editForm.BirthDate.slice(0, 10) : ""
+                  editForm?.BirthDate ? editForm.BirthDate.slice(0, 10) : ""
                 }
                 onChange={handleEditChange}
                 className="border rounded px-2 py-1 ml-2 w-40"
@@ -178,7 +178,7 @@ export default function Profile() {
               <input
                 type="text"
                 name="Nationality"
-                value={editForm.Nationality || ""}
+                value={editForm?.Nationality || ""}
                 onChange={handleEditChange}
                 className="border rounded px-2 py-1 ml-2 w-32"
               />
@@ -188,12 +188,12 @@ export default function Profile() {
               <input
                 type="text"
                 name="Sex"
-                value={editForm.Sex || ""}
+                value={editForm?.Sex || ""}
                 onChange={handleEditChange}
                 className="border rounded px-2 py-1 ml-2 w-32"
               />
             </div>
-            {editForm.Avatar && (
+            {editForm?.Avatar && (
               <div className="mb-1">
                 <span className="font-semibold">Avatar:</span>{" "}
                 <img
@@ -271,7 +271,7 @@ export default function Profile() {
               >
                 แก้ไขโปรไฟล์
               </button>
-              {user?.role === 1 && (
+              {user.role === 1 && (
                 <Link
                   href="/guide/register"
                   className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition mt-2 inline-block text-center"

@@ -189,6 +189,19 @@ export default function Login() {
           >
             {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
           </button>
+          <button
+            type="button"
+            onClick={() =>
+              (window.location.href =
+                "http://localhost:8080/api/auth/google/login")
+            }
+            className="w-full bg-white border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50 transition shadow flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
+              {/* Google icon SVG */}
+            </svg>
+            เข้าสู่ระบบด้วย Google
+          </button>
         </form>
       </div>
     </div>

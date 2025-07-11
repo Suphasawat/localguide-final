@@ -40,6 +40,8 @@ func main() {
 	// Auth routes (ไม่ต้องใช้ middleware)
 	api.Post("/register", controllers.Register)
 	api.Post("/login", controllers.Login)
+	api.Post("/auth/forgot-password", controllers.ForgotPassword)
+	api.Post("/auth/reset-password", controllers.ResetPassword)
 	
 	// Guide routes (บางตัวต้องล็อกอิน)
 	api.Get("/guides", controllers.GetGuides)
@@ -56,6 +58,10 @@ func main() {
 	admin.Get("/verifications", controllers.GetPendingVerifications)
 	admin.Put("/verifications/:id/status", controllers.ApproveGuide) 
 	
+	// Google Auth routes
+	api.Get("/auth/google/login", controllers.GoogleLogin)
+	api.Get("/auth/google/callback", controllers.GoogleCallback)
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"

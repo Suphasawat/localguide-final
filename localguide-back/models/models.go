@@ -179,3 +179,11 @@ type Message struct {
 	IsRead     bool       `gorm:"default:false"`
 	SentAt     time.Time  `gorm:"not null"`
 }
+
+type PasswordReset struct {
+	gorm.Model
+	Email     string    `gorm:"not null"`
+	Token     string    `gorm:"unique;not null"`
+	ExpiresAt time.Time `gorm:"not null"`
+	Used      bool      `gorm:"default:false"`
+}

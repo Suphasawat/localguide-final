@@ -20,7 +20,7 @@ export default function Guides() {
     const loadGuides = async () => {
       try {
         const data = await getGuides();
-        setGuides(Array.isArray(data) ? data : []);
+        setGuides(data);
       } catch (error) {
         console.error("Error loading guides:", error);
         setGuides([]);
@@ -36,23 +36,23 @@ export default function Guides() {
     ? guides.filter((guide) => {
         const matchesSearch =
           filters.search === "" ||
-          guide.user.firstName
-            .toLowerCase()
-            .includes(filters.search.toLowerCase()) ||
-          guide.user.lastName
-            .toLowerCase()
-            .includes(filters.search.toLowerCase()) ||
-          guide.province.toLowerCase().includes(filters.search.toLowerCase());
+          guide.User.FirstName.toLowerCase().includes(
+            filters.search.toLowerCase()
+          ) ||
+          guide.User.LastName.toLowerCase().includes(
+            filters.search.toLowerCase()
+          ) ||
+          guide.Province.toLowerCase().includes(filters.search.toLowerCase());
 
         const matchesProvince =
-          filters.province === "" || guide.province === filters.province;
+          filters.province === "" || guide.Province === filters.province;
 
         const matchesPrice =
           (filters.minPrice === "" ||
-            guide.price >= Number(filters.minPrice)) &&
-          (filters.maxPrice === "" || guide.price <= Number(filters.maxPrice));
+            guide.Price >= Number(filters.minPrice)) &&
+          (filters.maxPrice === "" || guide.Price <= Number(filters.maxPrice));
 
-        const matchesRating = guide.rating >= filters.minRating;
+        const matchesRating = guide.Rating >= filters.minRating;
 
         return (
           matchesSearch && matchesProvince && matchesPrice && matchesRating
@@ -162,7 +162,7 @@ export default function Guides() {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredGuides.map((guide) => (
-              <GuideCard key={guide.id} guide={guide} />
+              <GuideCard key={guide.ID} guide={guide} />
             ))}
           </div>
         </div>
