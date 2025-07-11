@@ -139,6 +139,7 @@ func Login(c *fiber.Ctx) error {
 	})
 }
 
+
 // Email validation
 func isValidEmail(email string) bool {
 	regex := regexp.MustCompile(`^[a-zA-Z0-9._%%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)

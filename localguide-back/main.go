@@ -22,7 +22,7 @@ func main() {
 		&models.Notification{},&models.Payment{},&models.Unavailable{},
 		&models.GuidingTransaction{},&models.GuideCertification{},
 		&models.GuideVertification{}, &models.ChatRoom{},
-		&models.Message{},
+		&models.Message{}, &models.PasswordReset{},
 	)	
 
 	app := fiber.New()
