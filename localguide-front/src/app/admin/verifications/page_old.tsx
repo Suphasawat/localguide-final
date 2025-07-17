@@ -112,25 +112,25 @@ export default function AdminVerificationsPage() {
           ) : (
             <div className="divide-y divide-gray-200">
               {verifications.map((verification) => (
-                <div key={verification.ID} className="p-6">
+                <div key={verification.id} className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-12 w-12">
                           <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
                             <span className="text-amber-600 font-medium text-lg">
-                              {verification.User.FirstName.charAt(0)}
-                              {verification.User.LastName.charAt(0)}
+                              {verification.guide.user.firstName.charAt(0)}
+                              {verification.guide.user.lastName.charAt(0)}
                             </span>
                           </div>
                         </div>
                         <div className="ml-4">
                           <h3 className="text-lg font-medium text-gray-900">
-                            {verification.User.FirstName}{" "}
-                            {verification.User.LastName}
+                            {verification.guide.user.firstName}{" "}
+                            {verification.guide.user.lastName}
                           </h3>
                           <p className="text-sm text-gray-500">
-                            {verification.User.Nickname}
+                            {verification.guide.user.nickname}
                           </p>
                         </div>
                       </div>
@@ -141,9 +141,10 @@ export default function AdminVerificationsPage() {
                             ข้อมูลพื้นที่
                           </h4>
                           <p className="text-sm text-gray-600">
-                            {verification.District &&
-                              `${verification.District}, `}
-                            {verification.City}, {verification.Province}
+                            {verification.guide.district &&
+                              `${verification.guide.district}, `}
+                            {verification.guide.city},{" "}
+                            {verification.guide.province}
                           </p>
                         </div>
                         <div>
@@ -151,7 +152,7 @@ export default function AdminVerificationsPage() {
                             อัตราค่าบริการ
                           </h4>
                           <p className="text-sm text-gray-600">
-                            ฿{verification.Price.toLocaleString()}/วัน
+                            ฿{verification.guide.price.toLocaleString()}/วัน
                           </p>
                         </div>
                       </div>
@@ -161,16 +162,16 @@ export default function AdminVerificationsPage() {
                           แนะนำตัว
                         </h4>
                         <p className="text-sm text-gray-600 mt-1">
-                          {verification.Bio}
+                          {verification.guide.bio}
                         </p>
                       </div>
 
                       <div className="mt-4">
                         <h4 className="text-sm font-medium text-gray-900">
-                          คำอธิบาย
+                          ประสบการณ์
                         </h4>
                         <p className="text-sm text-gray-600 mt-1">
-                          {verification.Description}
+                          {verification.guide.experience}
                         </p>
                       </div>
 
@@ -179,31 +180,33 @@ export default function AdminVerificationsPage() {
                           ภาษาที่สื่อสารได้
                         </h4>
                         <div className="flex flex-wrap gap-2 mt-1">
-                          {verification.Language.split(',').map((lang, index) => (
+                          {verification.guide.languages.map((lang) => (
                             <span
-                              key={index}
+                              key={lang.id}
                               className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800"
                             >
-                              {lang.trim()}
+                              {lang.name}
                             </span>
                           ))}
                         </div>
                       </div>
 
-                      {verification.Attraction && (
+                      {verification.guide.touristAttractions.length > 0 && (
                         <div className="mt-4">
                           <h4 className="text-sm font-medium text-gray-900">
                             สถานที่ท่องเที่ยวที่แนะนำ
                           </h4>
                           <div className="flex flex-wrap gap-2 mt-1">
-                            {verification.Attraction.split(',').map((attraction, index) => (
-                              <span
-                                key={index}
-                                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
-                              >
-                                {attraction.trim()}
-                              </span>
-                            ))}
+                            {verification.guide.touristAttractions.map(
+                              (attraction) => (
+                                <span
+                                  key={attraction.id}
+                                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                                >
+                                  {attraction.name}
+                                </span>
+                              )
+                            )}
                           </div>
                         </div>
                       )}
@@ -213,61 +216,41 @@ export default function AdminVerificationsPage() {
                           วันที่สมัคร
                         </h4>
                         <p className="text-sm text-gray-600">
-                          {new Date(verification.CreatedAt).toLocaleDateString(
-                            "th-TH",
-                            {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            }
-                          )}
+                          {new Date(
+                            verification.submittedAt
+                          ).toLocaleDateString("th-TH", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </p>
-                      </div>
-
-                      <div className="mt-4">
-                        <h4 className="text-sm font-medium text-gray-900">
-                          สถานะ
-                        </h4>
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                            verification.Status === "pending"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : verification.Status === "approved"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {verification.Status}
-                        </span>
                       </div>
                     </div>
 
-                    {verification.Status === "pending" && (
-                      <div className="ml-6 flex flex-col gap-2">
-                        <button
-                          onClick={() =>
-                            handleVerificationAction(verification.ID, "approved")
-                          }
-                          disabled={processingId === verification.ID}
-                          className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50 transition"
-                        >
-                          {processingId === verification.ID
-                            ? "กำลังดำเนินการ..."
-                            : "อนุมัติ"}
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleVerificationAction(verification.ID, "rejected")
-                          }
-                          disabled={processingId === verification.ID}
-                          className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 disabled:opacity-50 transition"
-                        >
-                          ปฏิเสธ
-                        </button>
-                      </div>
-                    )}
+                    <div className="ml-6 flex flex-col gap-2">
+                      <button
+                        onClick={() =>
+                          handleVerificationAction(verification.id, "approved")
+                        }
+                        disabled={processingId === verification.id}
+                        className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50 transition"
+                      >
+                        {processingId === verification.id
+                          ? "กำลังดำเนินการ..."
+                          : "อนุมัติ"}
+                      </button>
+                      <button
+                        onClick={() =>
+                          handleVerificationAction(verification.id, "rejected")
+                        }
+                        disabled={processingId === verification.id}
+                        className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 disabled:opacity-50 transition"
+                      >
+                        ปฏิเสธ
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

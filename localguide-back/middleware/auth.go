@@ -36,7 +36,7 @@ func AuthRequired() fiber.Handler {
 		}
 
 		// Parse และ validate JWT token
-		token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.ParseWithClaims(tokenString, jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return config.JWTSecret, nil // config.JWTSecret เป็น []byte อยู่แล้ว
 		})
 
@@ -47,16 +47,26 @@ func AuthRequired() fiber.Handler {
 		}
 
 		// ดึงข้อมูล claims
-		claims, ok := token.Claims.(*Claims)
+		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Invalid token claims",
 			})
 		}
 
+		// ดึง user_id และ role_id จาก claims
+		userIDFloat, userIDExists := claims["user_id"].(float64)
+		roleIDFloat, roleIDExists := claims["role_id"].(float64)
+		
+		if !userIDExists || !roleIDExists {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Missing user or role information in token",
+			})
+		}
+
 		// เก็บข้อมูล user ใน context
-		c.Locals("userID", claims.UserID)
-		c.Locals("roleID", claims.RoleID)
+		c.Locals("userID", uint(userIDFloat))
+		c.Locals("roleID", uint(roleIDFloat))
 
 		return c.Next()
 	}

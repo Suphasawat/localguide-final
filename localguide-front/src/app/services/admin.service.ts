@@ -35,6 +35,38 @@ export interface Guide {
   TouristAttraction: { ID: number; Name: string }[];
 }
 
+export interface Verification {
+  ID: number;
+  UserID: number;
+  GuideID?: number;
+  Status: string;
+  VerificationDate: string;
+  ReviewedBy?: number;
+  ReviewedAt?: string;
+  AdminComments: string;
+  Bio: string;
+  Description: string;
+  Price: number;
+  District: string;
+  City: string;
+  Province: string;
+  Language: string;
+  Attraction: string;
+  CertificationData: string;
+  CreatedAt: string;
+  UpdatedAt: string;
+  User: {
+    ID: number;
+    FirstName: string;
+    LastName: string;
+    Nickname: string;
+    Avatar: string;
+  };
+  Guide?: {
+    ID: number;
+  };
+}
+
 export const adminService = {
   // ดึงข้อมูลไกด์ทั้งหมด
   async getAllGuides(token: string): Promise<Guide[]> {
@@ -61,6 +93,61 @@ export const adminService = {
     } catch (error) {
       console.error("Error updating guide status:", error);
       return false;
+    }
+  },
+
+  // ดึงข้อมูล verifications ทั้งหมด
+  async getVerifications(token: string): Promise<Verification[]> {
+    const api = createAxiosInstance(token);
+    try {
+      const { data } = await api.get("/verifications");
+      return Array.isArray(data.verifications) ? data.verifications : [];
+    } catch (error) {
+      console.error("Error fetching verifications:", error);
+      return [];
+    }
+  },
+
+  // ดึงข้อมูล verifications ที่รอการอนุมัติ
+  async getPendingVerifications(): Promise<Verification[]> {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    const api = createAxiosInstance(token);
+    try {
+      const { data } = await api.get("/verifications");
+      const verifications = Array.isArray(data.verifications)
+        ? data.verifications
+        : [];
+      return verifications.filter(
+        (v: Verification) => v.Status.toLowerCase() === "pending"
+      );
+    } catch (error) {
+      console.error("Error fetching pending verifications:", error);
+      throw error;
+    }
+  },
+
+  // อัพเดทสถานะ verification
+  async updateVerificationStatus(
+    verificationId: number,
+    status: string,
+    token?: string
+  ): Promise<boolean> {
+    const authToken = token || localStorage.getItem("token");
+    if (!authToken) {
+      throw new Error("No authentication token found");
+    }
+
+    const api = createAxiosInstance(authToken);
+    try {
+      await api.put(`/verifications/${verificationId}/status`, { status });
+      return true;
+    } catch (error) {
+      console.error("Error updating verification status:", error);
+      throw error;
     }
   },
 };
