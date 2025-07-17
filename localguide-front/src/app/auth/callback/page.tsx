@@ -9,10 +9,18 @@ export default function AuthCallback() {
   useEffect(() => {
     const token = searchParams.get("token");
     if (token) {
-      // เก็บ token และ redirect
       localStorage.setItem("token", token);
-      router.push("/");
-      router.refresh();
+      fetch("http://localhost:8080/api/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((user) => {
+          localStorage.setItem("user", JSON.stringify(user));
+          router.push("/profile");
+        })
+        .catch(() => {
+          router.push("/auth/login?error=oauth_failed");
+        });
     } else {
       router.push("/auth/login?error=oauth_failed");
     }

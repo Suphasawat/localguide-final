@@ -43,7 +43,6 @@ func GoogleCallback(c *fiber.Ctx) error {
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to exchange token"})
     }
 
-
     // ดึงข้อมูล user จาก Google API
     client := getGoogleOauthConfig().Client(context.Background(), token)
     resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")

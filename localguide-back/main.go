@@ -51,6 +51,7 @@ func main() {
 	// User routes (ต้องเป็นเจ้าของข้อมูลหรือ admin)
 	api.Get("/users/:id", middleware.AuthRequired(), middleware.OwnerOrAdminRequired(), controllers.GetUserByID)
 	api.Put("/users/:id", middleware.AuthRequired(), middleware.OwnerOrAdminRequired(), controllers.EditUser)
+	api.Get("/me", middleware.AuthRequired(), controllers.Me)
 
 	// Admin routes (ต้องเป็น admin เท่านั้น)
 	admin := api.Group("/admin", middleware.AuthRequired(), middleware.AdminRequired())

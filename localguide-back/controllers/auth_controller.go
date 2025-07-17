@@ -139,6 +139,29 @@ func Login(c *fiber.Ctx) error {
 	})
 }
 
+func Me(c *fiber.Ctx) error {
+    userID := c.Locals("userID") // เปลี่ยนจาก "user_id" เป็น "userID"
+    if userID == nil {
+        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+    }
+    
+    var user models.User
+    if err := config.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
+    }
+    
+    var authUser models.AuthUser
+    if err := config.DB.Where("id = ?", user.AuthUserID).First(&authUser).Error; err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "AuthUser not found"})
+    }
+    
+    return c.JSON(fiber.Map{
+        "id":    user.ID,
+        "email": authUser.Email,
+        "role":  user.RoleID,
+    })
+}
+
 
 // Email validation
 func isValidEmail(email string) bool {
