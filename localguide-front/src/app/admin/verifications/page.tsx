@@ -179,14 +179,16 @@ export default function AdminVerificationsPage() {
                           ภาษาที่สื่อสารได้
                         </h4>
                         <div className="flex flex-wrap gap-2 mt-1">
-                          {verification.Language.split(',').map((lang, index) => (
-                            <span
-                              key={index}
-                              className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800"
-                            >
-                              {lang.trim()}
-                            </span>
-                          ))}
+                          {verification.Language.split(",").map(
+                            (lang, index) => (
+                              <span
+                                key={index}
+                                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800"
+                              >
+                                {lang.trim()}
+                              </span>
+                            )
+                          )}
                         </div>
                       </div>
 
@@ -196,14 +198,16 @@ export default function AdminVerificationsPage() {
                             สถานที่ท่องเที่ยวที่แนะนำ
                           </h4>
                           <div className="flex flex-wrap gap-2 mt-1">
-                            {verification.Attraction.split(',').map((attraction, index) => (
-                              <span
-                                key={index}
-                                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
-                              >
-                                {attraction.trim()}
-                              </span>
-                            ))}
+                            {verification.Attraction.split(",").map(
+                              (attraction, index) => (
+                                <span
+                                  key={index}
+                                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                                >
+                                  {attraction.trim()}
+                                </span>
+                              )
+                            )}
                           </div>
                         </div>
                       )}
@@ -248,7 +252,10 @@ export default function AdminVerificationsPage() {
                       <div className="ml-6 flex flex-col gap-2">
                         <button
                           onClick={() =>
-                            handleVerificationAction(verification.ID, "approved")
+                            handleVerificationAction(
+                              verification.ID,
+                              "approved"
+                            )
                           }
                           disabled={processingId === verification.ID}
                           className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50 transition"
@@ -259,7 +266,10 @@ export default function AdminVerificationsPage() {
                         </button>
                         <button
                           onClick={() =>
-                            handleVerificationAction(verification.ID, "rejected")
+                            handleVerificationAction(
+                              verification.ID,
+                              "rejected"
+                            )
                           }
                           disabled={processingId === verification.ID}
                           className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 disabled:opacity-50 transition"

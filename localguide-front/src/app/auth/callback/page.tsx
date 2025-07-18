@@ -1,6 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import axios from "axios";
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -10,12 +11,12 @@ export default function AuthCallback() {
     const token = searchParams.get("token");
     if (token) {
       localStorage.setItem("token", token);
-      fetch("http://localhost:8080/api/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((res) => res.json())
-        .then((user) => {
-          localStorage.setItem("user", JSON.stringify(user));
+      axios
+        .get("http://localhost:8080/api/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => {
+          localStorage.setItem("user", JSON.stringify(res.data));
           router.push("/profile");
         })
         .catch(() => {
