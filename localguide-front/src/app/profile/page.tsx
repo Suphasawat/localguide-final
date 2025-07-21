@@ -49,7 +49,7 @@ export default function Profile() {
     setSaveError("");
     setSaveSuccess(false);
     try {
-      const updated = await editUser(user.user.id, editForm);
+      const updated = await editUser(user.id, editForm);
       setUserDetail(updated);
       setEditMode(false);
       setSaveSuccess(true);
