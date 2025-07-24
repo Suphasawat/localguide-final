@@ -81,13 +81,21 @@ type TouristAttraction struct {
 }
 
 type Booking struct {
-	gorm.Model
-	UserID   uint   `gorm:"not null"` 
-	User     User   `gorm:"foreignKey:UserID"`
-	GuideID  uint   `gorm:"not null"` 
-	Guide    Guide  `gorm:"foreignKey:GuideID"`
-	Description string 
-	Status string `gorm:"not null"` // pending, confirmed, completed, cancelled
+	ID          uint      `json:"ID" gorm:"primaryKey"`
+	UserID      uint      `json:"UserID" gorm:"not null"`
+	GuideID     uint      `json:"GuideID" gorm:"not null"`
+	StartDate   time.Time `json:"StartDate" gorm:"not null"`
+	EndDate     time.Time `json:"EndDate" gorm:"not null"`
+	Days        int       `json:"Days" gorm:"not null"`
+	TotalPrice  float64   `json:"TotalPrice" gorm:"not null"`
+	Status      string    `json:"Status" gorm:"default:'pending'"`
+	Note        string    `json:"Note"`
+	CreatedAt   time.Time `json:"CreatedAt"`
+	UpdatedAt   time.Time `json:"UpdatedAt"`
+	
+	// Associations
+	User  User  `json:"User" gorm:"foreignKey:UserID"`
+	Guide Guide `json:"Guide" gorm:"foreignKey:GuideID"`
 }
 
 type Notification struct {
@@ -100,11 +108,13 @@ type Notification struct {
 
 type Unavailable struct {
 	gorm.Model
-	GuideID uint   `gorm:"not null"`
-	Guide   Guide  `gorm:"foreignKey:GuideID"`
+	GuideID   uint      `gorm:"not null"`
+	Guide     Guide     `gorm:"foreignKey:GuideID"`
+	Date      time.Time `gorm:"not null"` // วันที่ไม่ว่าง
+	Reason    string    // เหตุผลที่ไม่ว่าง
 	StartTime time.Time `gorm:"not null"`
 	EndTime   time.Time `gorm:"not null"`
-	Available bool `gorm:"not null"` // true = available, false = not available
+	Available bool      `gorm:"not null"` // true = available, false = not available
 }
 
 type Payment struct {

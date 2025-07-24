@@ -37,7 +37,7 @@ func GoogleCallback(c *fiber.Ctx) error {
         return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "No code provided"})
     }
 
-    // แลกเปลี่ยน code เป็น token
+    // แลกเปลี่ยน code เป็น access token
     token, err := getGoogleOauthConfig().Exchange(context.Background(), code)
     if err != nil {
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to exchange token"})

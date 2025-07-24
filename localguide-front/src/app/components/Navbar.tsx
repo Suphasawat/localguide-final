@@ -25,7 +25,11 @@ export default function Navbar() {
 
     if (!isLoggedIn) return baseLinks;
 
-    const userLinks = [...baseLinks, { href: "/profile", label: "โปรไฟล์" }];
+    const userLinks = [
+      ...baseLinks,
+      { href: "/my-bookings", label: "การจองของฉัน" },
+      { href: "/profile", label: "โปรไฟล์" },
+    ];
 
     // Role 2 = Guide
     if (user?.role === 2) {

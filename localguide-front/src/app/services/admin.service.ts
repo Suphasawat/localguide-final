@@ -1,14 +1,16 @@
 import axios from "axios";
+import { getCookie } from "cookies-next";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const API_URL = `${BASE_URL}/api/admin`;
 
 // สร้าง axios instance ที่มีการกำหนดค่าเริ่มต้น
-const createAxiosInstance = (token: string) => {
+const createAxiosInstance = (token?: string) => {
+  const authToken = token || getCookie("token");
   return axios.create({
     baseURL: API_URL,
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${authToken}`,
     },
   });
 };
@@ -69,8 +71,8 @@ export interface Verification {
 
 export const adminService = {
   // ดึงข้อมูลไกด์ทั้งหมด
-  async getAllGuides(token: string): Promise<Guide[]> {
-    const api = createAxiosInstance(token);
+  async getAllGuides(): Promise<Guide[]> {
+    const api = createAxiosInstance();
     try {
       const { data } = await api.get("/guides");
       return Array.isArray(data.guides) ? data.guides : [];
@@ -97,8 +99,8 @@ export const adminService = {
   },
 
   // ดึงข้อมูล verifications ทั้งหมด
-  async getVerifications(token: string): Promise<Verification[]> {
-    const api = createAxiosInstance(token);
+  async getVerifications(): Promise<Verification[]> {
+    const api = createAxiosInstance();
     try {
       const { data } = await api.get("/verifications");
       return Array.isArray(data.verifications) ? data.verifications : [];
@@ -110,12 +112,7 @@ export const adminService = {
 
   // ดึงข้อมูล verifications ที่รอการอนุมัติ
   async getPendingVerifications(): Promise<Verification[]> {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const api = createAxiosInstance(token);
+    const api = createAxiosInstance();
     try {
       const { data } = await api.get("/verifications");
       const verifications = Array.isArray(data.verifications)
@@ -136,7 +133,7 @@ export const adminService = {
     status: string,
     token?: string
   ): Promise<boolean> {
-    const authToken = token || localStorage.getItem("token");
+    const authToken = token || (getCookie("token") as string);
     if (!authToken) {
       throw new Error("No authentication token found");
     }

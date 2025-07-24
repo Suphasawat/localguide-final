@@ -37,7 +37,7 @@ func AuthRequired() fiber.Handler {
 
 		// Parse และ validate JWT token
 		token, err := jwt.ParseWithClaims(tokenString, jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
-			return config.JWTSecret, nil // config.JWTSecret เป็น []byte อยู่แล้ว
+			return config.JWTSecret, nil 
 		})
 
 		if err != nil || !token.Valid {

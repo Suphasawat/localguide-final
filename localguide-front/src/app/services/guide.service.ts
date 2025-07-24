@@ -15,15 +15,15 @@ export interface Guide {
   };
   Bio: string;
   Description: string;
-  Certification: { ID: number; ImagePath: string; Description: string }[];
-  Available: boolean;
   Language: { ID: number; Name: string }[];
   Price: number;
   Rating: number;
+  Available: boolean;
   District: string;
   City: string;
   Province: string;
   TouristAttraction: { ID: number; Name: string }[];
+  Certification?: { ID: number; ImagePath: string; Description: string }[];
 }
 
 export const getGuides = async (): Promise<Guide[]> => {
@@ -39,7 +39,7 @@ export const getGuides = async (): Promise<Guide[]> => {
 export const getGuideById = async (id: number): Promise<Guide | null> => {
   try {
     const response = await axios.get(`${API_URL}/guides/${id}`);
-    return response.data.guide;
+    return response.data;
   } catch (error) {
     console.error("Error fetching guide by ID:", error);
     return null;

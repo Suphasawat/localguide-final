@@ -22,7 +22,7 @@ func main() {
 		&models.Notification{},&models.Payment{},&models.Unavailable{},
 		&models.GuidingTransaction{},&models.GuideCertification{},
 		&models.GuideVertification{}, &models.ChatRoom{},
-		&models.Message{}, &models.PasswordReset{},
+		&models.Message{},
 	)	
 
 	app := fiber.New()
@@ -52,6 +52,15 @@ func main() {
 	api.Get("/users/:id", middleware.AuthRequired(), middleware.OwnerOrAdminRequired(), controllers.GetUserByID)
 	api.Put("/users/:id", middleware.AuthRequired(), middleware.OwnerOrAdminRequired(), controllers.EditUser)
 	api.Get("/me", middleware.AuthRequired(), controllers.Me)
+
+	// Booking routes (ต้องล็อกอิน)
+	api.Post("/bookings", middleware.AuthRequired(), controllers.CreateBooking)
+	api.Get("/bookings/my", middleware.AuthRequired(), controllers.GetUserBookings)
+	api.Put("/bookings/:id/cancel", middleware.AuthRequired(), controllers.CancelBooking)
+	
+	// Guide detail routes
+	api.Get("/guides/:id/unavailable", controllers.GetGuideUnavailableDates)
+	api.Get("/guides/:id/reviews", controllers.GetGuideReviews)
 
 	// Admin routes (ต้องเป็น admin เท่านั้น)
 	admin := api.Group("/admin", middleware.AuthRequired(), middleware.AdminRequired())

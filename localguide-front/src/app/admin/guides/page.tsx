@@ -6,7 +6,7 @@ import {
   Guide,
   Verification,
 } from "../../services/admin.service";
-import { getUser } from "../../services/auth.service";
+import { getUser, getToken } from "../../services/auth.service";
 import { useRouter } from "next/navigation";
 
 export default function AdminGuidesPage() {
@@ -30,8 +30,7 @@ export default function AdminGuidesPage() {
   const loadGuides = async () => {
     try {
       setLoading(true);
-      const token =
-        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const token = getToken();
       if (!token) {
         setError("กรุณาเข้าสู่ระบบใหม่");
         setGuides([]);
@@ -39,8 +38,8 @@ export default function AdminGuidesPage() {
         return;
       }
       const [guidesData, verificationsData] = await Promise.all([
-        adminService.getAllGuides(token),
-        adminService.getVerifications(token),
+        adminService.getAllGuides(),
+        adminService.getVerifications(),
       ]);
       setGuides(Array.isArray(guidesData) ? guidesData : []);
       setVerifications(
