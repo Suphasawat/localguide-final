@@ -30,18 +30,17 @@ type User struct {
 
 type Guide struct {
 	gorm.Model
-	UserID   uint   `gorm:"not null"`
-	User     User   `gorm:"foreignKey:UserID"`	
-	Bio      string  
-	Description string `gorm:"not null"` 
-	Certification []GuideCertification `gorm:"foreignKey:GuideID"`
-	Available bool // true = available, false = not available
-	Language []Language `gorm:"many2many:guide_languages"`
-	Price  float64 `gorm:"not null"` 
-	Rating float64 // เก็บค่าเฉลี่ยของ ratings จาก reviews
-	District string `gorm:"not null"` 
-	City string `gorm:"not null"` 
-	Province string `gorm:"not null"` 
+	UserID            uint                `gorm:"not null"`
+	User              User                `gorm:"foreignKey:UserID"`	
+	Bio               string  
+	Description       string              `gorm:"not null"` 
+	Certification     []GuideCertification `gorm:"foreignKey:GuideID"`
+	Available         bool                // true = available, false = not available
+	Language          []Language          `gorm:"many2many:guide_languages"`
+	Price             float64             `gorm:"not null"` 
+	Rating            float64             // เก็บค่าเฉลี่ยของ ratings จาก reviews
+	ProvinceID        uint                `gorm:"not null"` // เพิ่ม ProvinceID
+	ProvinceRef       Province            `gorm:"foreignKey:ProvinceID"` // เปลี่ยนชื่อเพื่อไม่ซ้ำกับ Province string
 	TouristAttraction []TouristAttraction `gorm:"many2many:guide_tourist_attractions"` 
 }
 
@@ -49,8 +48,7 @@ type GuideCertification struct {
 	ID uint `gorm:"primaryKey"`
 	GuideID uint `gorm:"not null"`
 	Guide Guide `gorm:"foreignKey:GuideID"`
-	ImagePath string `gorm:"not null"` // path to the certification image
-	Description string `gorm:"not null"` // description of the certification
+	CertificationNumber string `gorm:"not null"`
 }
 
 type Language struct {
@@ -75,9 +73,18 @@ type Review struct {
 }
 
 type TouristAttraction struct {
-	ID uint `gorm:"primaryKey"`
-	Name	 string `gorm:"not null"`
-	Guides []Guide `gorm:"many2many:guide_tourist_attractions"`
+	ID          uint     `gorm:"primaryKey"`
+	Name        string   `gorm:"not null"`
+	Description string   
+	ProvinceID  uint     `gorm:"not null"`
+	Province    Province `gorm:"foreignKey:ProvinceID"`
+	District    string   
+	City        string   
+	Category    string   `gorm:"not null"` // ประเภท เช่น "วัด", "น้ำตก", "ชายหาด"
+	Rating      float64  
+	ImageURL    string   
+	Guides      []Guide  `gorm:"many2many:guide_tourist_attractions"`
+	TripRequests []TripRequest `gorm:"many2many:trip_request_attractions"`
 }
 
 type Booking struct {
@@ -100,10 +107,13 @@ type Booking struct {
 
 type Notification struct {
 	gorm.Model
-	UserID uint   `gorm:"not null"`
-	User   User   `gorm:"foreignKey:UserID"`
+	UserID  uint   `gorm:"not null"`
+	User    User   `gorm:"foreignKey:UserID"`
+	Type    string `gorm:"not null;default:'info'"` // เพิ่ม Type field
+	Title   string `gorm:"not null"`               // เพิ่ม Title field
 	Message string `gorm:"not null"`
-	IsRead bool `gorm:"not null"`
+	Data    string `gorm:"type:json"`              // เพิ่ม Data field สำหรับข้อมูลเสริม
+	IsRead  bool   `gorm:"default:false"`
 }
 
 type Unavailable struct {
@@ -166,29 +176,6 @@ type GuidingTransaction struct {
 	Status string `gorm:"not null"` // pending, completed, cancelled
 }
 
-type ChatRoom struct {
-	gorm.Model
-	UserID   uint        `gorm:"not null"` // ID ของผู้ใช้ที่เข้าร่วมห้องแชท
-	User     User        `gorm:"foreignKey:UserID"`
-	GuideID  uint        `gorm:"not null"` // ID ของไกด์ที่เข้าร่วมห้องแชท
-	Guide    Guide       `gorm:"foreignKey:GuideID"`
-}
-
-type Message struct {
-	gorm.Model
-	ChatRoomID uint     `gorm:"not null"`
-	ChatRoom   ChatRoom `gorm:"foreignKey:ChatRoomID"`
-
-	SenderUserID  *uint // ถ้าคนส่งเป็น User
-	SenderGuideID *uint // ถ้าคนส่งเป็น Guide
-
-	Content    string     // ข้อความ text (อาจว่างถ้าเป็นไฟล์ล้วน)
-	ImageURL   *string    // ลิงก์ของรูปที่แนบ (เช่น PNG, JPG)
-	FileURL    *string    // ลิงก์ของไฟล์แนบอื่น (PDF, DOCX ฯลฯ)
-	FileType   *string    // "image", "pdf", "video", etc. (optional)
-	IsRead     bool       `gorm:"default:false"`
-	SentAt     time.Time  `gorm:"not null"`
-}
 
 type PasswordReset struct {
 	gorm.Model
@@ -196,4 +183,97 @@ type PasswordReset struct {
 	Token     string    `gorm:"unique;not null"`
 	ExpiresAt time.Time `gorm:"not null"`
 	Used      bool      `gorm:"default:false"`
+}
+
+type Province struct {
+	ID                 uint                `gorm:"primaryKey"`
+	Name               string              `gorm:"not null;unique"`
+	Region             string              `gorm:"not null"`
+	TouristAttractions []TouristAttraction `gorm:"foreignKey:ProvinceID"`
+	Guides            []Guide             `gorm:"foreignKey:ProvinceID"`
+	TripRequests      []TripRequest       `gorm:"foreignKey:ProvinceID"`
+}
+
+// TripRequest - คำขอทริปจาก user
+type TripRequest struct {
+	gorm.Model
+	UserID           uint      `gorm:"not null"`
+	User             User      `gorm:"foreignKey:UserID"`
+	ProvinceID       uint      `gorm:"not null"`
+	Province         Province  `gorm:"foreignKey:ProvinceID"`
+	MinPrice         float64   `gorm:"not null"`
+	MaxPrice         float64   `gorm:"not null"`
+	StartDate        time.Time `gorm:"not null"`
+	EndDate          time.Time `gorm:"not null"`
+	Days             int       `gorm:"not null"`
+	MinRating        float64   `gorm:"default:0"`
+	GroupSize        int       `gorm:"not null;default:1"`
+	Requirements     string    // ความต้องการพิเศษ
+	Status           string    `gorm:"default:'searching'"` // searching, matched, negotiating, confirmed, cancelled
+	TouristAttractions []TouristAttraction `gorm:"many2many:trip_request_attractions"`
+	TripProposals    []TripProposal `gorm:"foreignKey:TripRequestID"`
+	ChatMessages     []ChatMessage `gorm:"foreignKey:TripRequestID"`
+}
+
+// TripProposal - ข้อเสนอจากไกด์
+type TripProposal struct {
+	gorm.Model
+	TripRequestID    uint        `gorm:"not null"`
+	TripRequest      TripRequest `gorm:"foreignKey:TripRequestID"`
+	GuideID          uint        `gorm:"not null"`
+	Guide            Guide       `gorm:"foreignKey:GuideID"`
+	Title            string      `gorm:"not null"` // ชื่อแพ็กเกจ
+	Description      string      `gorm:"not null"` // รายละเอียดการท่องเที่ยว
+	Itinerary        string      `gorm:"type:json"` // กำหนดการเที่ยวแต่ละวัน (JSON format)
+	IncludedServices string      `gorm:"type:json"` // บริการที่รวม (JSON array)
+	ExcludedServices string      `gorm:"type:json"` // บริการที่ไม่รวม (JSON array)
+	TotalPrice       float64     `gorm:"not null"`
+	PriceBreakdown   string      `gorm:"type:json"` // รายละเอียดราคา (JSON format)
+	ValidUntil       time.Time   `gorm:"not null"`
+	Status           string      `gorm:"default:'pending'"` // pending, accepted, rejected, negotiating, expired
+	Negotiations     []Negotiation `gorm:"foreignKey:TripProposalID"`
+	FinalQuotation   *FinalQuotation `gorm:"foreignKey:TripProposalID"`
+}
+
+// Negotiation - การเจรจาต่อรอง
+type Negotiation struct {
+	gorm.Model
+	TripProposalID   uint         `gorm:"not null"`
+	TripProposal     TripProposal `gorm:"foreignKey:TripProposalID"`
+	SenderID         uint         `gorm:"not null"`
+	SenderType       string       `gorm:"not null"` // "user" หรือ "guide"
+	MessageType      string       `gorm:"not null"` // "message", "price_change", "itinerary_change", "counter_offer"
+	Message          string       
+	ProposedChanges  string       `gorm:"type:json"` // การเปลี่ยนแปลงที่เสนอ (JSON format)
+	NewPrice         *float64     // ราคาใหม่ที่เสนอ
+	NewItinerary     string       `gorm:"type:json"` // กำหนดการใหม่ที่เสนอ (JSON format)
+	IsRead           bool         `gorm:"default:false"`
+}
+
+// ChatMessage - ระบบแชทสำหรับ trip request
+type ChatMessage struct {
+	gorm.Model
+	TripRequestID    uint        `gorm:"not null"`
+	TripRequest      TripRequest `gorm:"foreignKey:TripRequestID"`
+	SenderID         uint        `gorm:"not null"`
+	SenderType       string      `gorm:"not null"` // "user" หรือ "guide"
+	Message          string      `gorm:"not null"`
+	MessageType      string      `gorm:"default:'text'"` // text, image, file, proposal
+	AttachmentURL    string      
+	IsRead           bool        `gorm:"default:false"`
+}
+
+// FinalQuotation - ใบเสนอราคาสุดท้าย
+type FinalQuotation struct {
+	gorm.Model
+	TripProposalID   uint         `gorm:"not null"`
+	TripProposal     TripProposal `gorm:"foreignKey:TripProposalID"`
+	QuotationNumber  string       `gorm:"unique;not null"`
+	TotalAmount      float64      `gorm:"not null"`
+	PriceBreakdown   string       `gorm:"type:json"` // รายละเอียดราคา (JSON format)
+	Terms            string       `gorm:"type:json"` // เงื่อนไข (JSON array)
+	ValidUntil       time.Time    `gorm:"not null"`
+	Status           string       `gorm:"default:'pending'"` // pending, accepted, rejected, expired
+	PaymentDeadline  time.Time    `gorm:"not null"`
+	AcceptedAt       *time.Time   // วันที่ user ตอบรับ
 }

@@ -50,9 +50,6 @@ func ApproveGuide(c *fiber.Ctx) error {
 			Bio:         verification.Bio,
 			Description: verification.Description,
 			Price:       verification.Price,
-			District:    verification.District,
-			City:        verification.City,
-			Province:    verification.Province,
 			Available:   true, // ตั้งค่าเป็น available
 			Rating:      0,    // เริ่มต้นที่ 0
 		}
@@ -74,15 +71,13 @@ func ApproveGuide(c *fiber.Ctx) error {
 
 		// --- เพิ่มส่วนนี้เพื่อสร้าง GuideCertification ---
 		var certs []struct {
-			ImagePath   string `json:"ImagePath"`
-			Description string `json:"Description"`
+			CertificationNumber string `json:"CertificationNumber"`
 		}
 		if err := json.Unmarshal([]byte(verification.CertificationData), &certs); err == nil {
 			for _, cert := range certs {
 				guideCert := models.GuideCertification{
 					GuideID:     newGuide.ID,
-					ImagePath:   cert.ImagePath,
-					Description: cert.Description,
+					CertificationNumber: cert.CertificationNumber,
 				}
 				if err := tx.Create(&guideCert).Error; err != nil {
 					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
