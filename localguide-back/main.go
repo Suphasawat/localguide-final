@@ -33,6 +33,7 @@ func main() {
 	migrations.SeedRoles(config.DB)
 	migrations.SeedLanguages(config.DB)
 	migrations.SeedProvinces(config.DB)
+	migrations.SeedUsers(config.DB)                   
 	migrations.SeedTouristAttractions(config.DB)
 	migrations.SeedGuides(config.DB) // เรียกหลังสุดเพราะต้องมี User ก่อน
 
