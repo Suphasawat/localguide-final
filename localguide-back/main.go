@@ -76,6 +76,26 @@ func main() {
 	api.Get("/auth/google/login", controllers.GoogleLogin)
 	api.Get("/auth/google/callback", controllers.GoogleCallback)
 
+	// Trip Request routes
+    api.Post("/trip-requests", middleware.AuthRequired(), controllers.CreateTripRequest)
+    api.Get("/trip-requests/:id", middleware.AuthRequired(), controllers.GetTripRequestsByID)
+    api.Get("/trip-requests/:id/matching-guides", middleware.AuthRequired(), controllers.GetMatchingGuides)
+    api.Get("/trip-requests/:id/proposals", middleware.AuthRequired(), controllers.GetTripProposals)
+
+    // Trip Proposal routes
+    api.Post("/trip-proposals", middleware.AuthRequired(), controllers.CreateTripProposal)
+    api.Put("/trip-proposals/:id/accept", middleware.AuthRequired(), controllers.AcceptTripProposal)
+    
+    // Negotiation routes
+    api.Post("/trip-proposals/:id/negotiations", middleware.AuthRequired(), controllers.CreateNegotiation)
+    api.Get("/trip-proposals/:id/negotiations", middleware.AuthRequired(), controllers.GetNegotiations)
+
+    // Final Quotation routes
+    api.Post("/trip-proposals/:id/quotation", middleware.AuthRequired(), controllers.CreateFinalQuotation)
+    api.Get("/quotations/:id", middleware.AuthRequired(), controllers.GetFinalQuotation)
+    api.Put("/quotations/:id/accept", middleware.AuthRequired(), controllers.AcceptQuotation)
+
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
