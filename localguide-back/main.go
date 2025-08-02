@@ -18,13 +18,25 @@ func main() {
 	config.Init()
 	
 	config.DB.AutoMigrate(
-		&models.AuthUser{}, &models.User{}, &models.Province{}, &models.Guide{},
-		&models.Language{}, &models.Role{}, &models.TouristAttraction{},
-		&models.GuideCertification{}, &models.GuideVertification{}, 
+		&models.AuthUser{}, 
+        &models.User{}, 
+        &models.Province{}, 
+        &models.Guide{},
+		&models.Language{}, 
+        &models.Role{}, 
+        &models.TouristAttraction{},
+		&models.GuideCertification{}, 
+        &models.GuideVertification{}, 
 		&models.PasswordReset{}, 
-		&models.TripRequire{}, &models.TripOffer{}, &models.TripBooking{}, 
-		&models.TripPayment{}, &models.TripReview{}, &models.TripReport{}, 
-		&models.GuidePerformance{}, &models.TripNotification{}, &models.PaymentRelease{},
+		&models.TripRequire{}, 
+        &models.TripOffer{}, 
+        &models.TripBooking{}, 
+		&models.TripPayment{}, 
+        &models.TripReview{}, 
+        &models.TripReport{}, 
+		&models.GuidePerformance{}, 
+        &models.TripNotification{}, 
+        &models.PaymentRelease{},
 	)
 
 	// Seed data
@@ -74,7 +86,7 @@ func main() {
     // 2. TripOffer routes (Guide เสนอรายละเอียด)
     api.Post("/trip-offers", middleware.AuthRequired(), controllers.CreateTripOffer)
     api.Get("/trip-requires/:id/offers", middleware.AuthRequired(), controllers.GetTripOffers) // ดู offers ของ require นี้
-    api.Get("/trip-offers/:id", middleware.AuthRequired(), controllers.GetTripOffer)
+    api.Get("/trip-offers/:id", middleware.AuthRequired(), controllers.GetTripOfferByID)
     api.Put("/trip-offers/:id", middleware.AuthRequired(), controllers.UpdateTripOffer) // สำหรับแก้ไข/เจรจา
     api.Delete("/trip-offers/:id", middleware.AuthRequired(), controllers.WithdrawTripOffer)
     
@@ -87,27 +99,27 @@ func main() {
     api.Get("/trip-bookings/:id", middleware.AuthRequired(), controllers.GetTripBooking)
     api.Put("/trip-bookings/:id/cancel", middleware.AuthRequired(), controllers.CancelTripBooking)
     
-    // 5. Payment routes
-    api.Post("/trip-bookings/:id/payment", middleware.AuthRequired(), controllers.CreateTripPayment)
-    api.Get("/trip-payments/:id", middleware.AuthRequired(), controllers.GetTripPayment)
+    // // 5. Payment routes
+    // api.Post("/trip-bookings/:id/payment", middleware.AuthRequired(), controllers.CreateTripPayment)
+    // api.Get("/trip-payments/:id", middleware.AuthRequired(), controllers.GetTripPayment)
     
-    // 6. Trip status management
-    api.Put("/trip-bookings/:id/confirm-start", middleware.AuthRequired(), controllers.ConfirmTripStart) // User ยืนยันไกด์มา
-    api.Put("/trip-bookings/:id/confirm-complete", middleware.AuthRequired(), controllers.ConfirmTripComplete) // User ยืนยันเสร็จ
-    api.Put("/trip-bookings/:id/no-show", middleware.AuthRequired(), controllers.ReportNoShow) // รีพอร์ต user ไม่มา
+    // // 6. Trip status management
+    // api.Put("/trip-bookings/:id/confirm-start", middleware.AuthRequired(), controllers.ConfirmTripStart) // User ยืนยันไกด์มา
+    // api.Put("/trip-bookings/:id/confirm-complete", middleware.AuthRequired(), controllers.ConfirmTripComplete) // User ยืนยันเสร็จ
+    // api.Put("/trip-bookings/:id/no-show", middleware.AuthRequired(), controllers.ReportNoShow) // รีพอร์ต user ไม่มา
     
-    // 7. Review system
-    api.Post("/trip-bookings/:id/review", middleware.AuthRequired(), controllers.CreateTripReview)
-    api.Get("/trip-reviews/:id", middleware.AuthRequired(), controllers.GetTripReview)
-    api.Put("/trip-reviews/:id/respond", middleware.AuthRequired(), controllers.RespondToReview) // Guide ตอบ review
+    // // 7. Review system
+    // api.Post("/trip-bookings/:id/review", middleware.AuthRequired(), controllers.CreateTripReview)
+    // api.Get("/trip-reviews/:id", middleware.AuthRequired(), controllers.GetTripReview)
+    // api.Put("/trip-reviews/:id/respond", middleware.AuthRequired(), controllers.RespondToReview) // Guide ตอบ review
     
-    // 8. Report system
-    api.Post("/trip-reports", middleware.AuthRequired(), controllers.CreateTripReport)
-    api.Get("/trip-reports", middleware.AuthRequired(), controllers.GetTripReports)
+    // // 8. Report system
+    // api.Post("/trip-reports", middleware.AuthRequired(), controllers.CreateTripReport)
+    // api.Get("/trip-reports", middleware.AuthRequired(), controllers.GetTripReports)
     
-    // 9. Notification system
-    api.Get("/notifications", middleware.AuthRequired(), controllers.GetNotifications)
-    api.Put("/notifications/:id/read", middleware.AuthRequired(), controllers.MarkNotificationRead)
+    // // 9. Notification system
+    // api.Get("/notifications", middleware.AuthRequired(), controllers.GetNotifications)
+    // api.Put("/notifications/:id/read", middleware.AuthRequired(), controllers.MarkNotificationRead)
 
     // User profile routes
     api.Post("/guides", middleware.AuthRequired(), controllers.CreateGuide)
@@ -120,10 +132,11 @@ func main() {
     admin.Get("/guides", controllers.GetAllGuides)
     admin.Get("/verifications", controllers.GetPendingVerifications)
     admin.Put("/verifications/:id/status", controllers.ApproveGuide)
-    admin.Get("/trip-reports", controllers.GetAllTripReports)
-    admin.Put("/trip-reports/:id", controllers.HandleTripReport)
-    admin.Get("/payments", controllers.GetAllPayments)
-    admin.Put("/payments/:id/release", controllers.ManualReleasePayment)
+    // admin.Get("/trip-reports", controllers.GetAllTripReports)
+    // admin.Put("/trip-reports/:id", controllers.HandleTripReport)
+    // admin.Get("/payments", controllers.GetAllPayments)
+    // admin.Put("/payments/:id/release", controllers.ManualReleasePayment)
+    
     
     // Google Auth routes
     api.Get("/auth/google/login", controllers.GoogleLogin)

@@ -30,9 +30,15 @@ func GetProvinces(c *fiber.Ctx) error {
 
 func GetProvinceAttractions(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
-	if err != nil || id <= 0 {
+	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid province ID",
+		})
+	}
+
+	if id <= 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Province ID must be greater than 0",
 		})
 	}
 

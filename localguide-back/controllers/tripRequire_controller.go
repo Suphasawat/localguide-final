@@ -133,3 +133,23 @@ func DeleteTripRequire(c *fiber.Ctx) error {
 		"tripID": tripID,
 	})
 }
+
+func BrowseTripRequires(c *fiber.Ctx) error {
+	var tripRequires []models.TripRequire
+	if err := config.DB.Find(&tripRequires).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to retrieve trip requirements",
+			"details": err.Error(),
+		})
+	}
+
+	if len(tripRequires) == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "No trip requirements found",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"tripRequires": tripRequires,
+	})
+}

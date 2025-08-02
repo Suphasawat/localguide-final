@@ -198,7 +198,6 @@ type TripBooking struct {
 	User             User        `gorm:"foreignKey:UserID"`
 	GuideID          uint        `gorm:"not null"`
 	Guide            Guide       `gorm:"foreignKey:GuideID"`
-	BookingNumber    string      `gorm:"unique;not null"`
 	StartDate        time.Time   `gorm:"not null"`
 	EndDate          time.Time   `gorm:"not null"`
 	TotalAmount      float64     `gorm:"not null"`
