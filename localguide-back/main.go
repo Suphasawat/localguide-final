@@ -19,23 +19,21 @@ func main() {
 	
 	config.DB.AutoMigrate(
 		&models.AuthUser{}, &models.User{}, &models.Province{}, &models.Guide{},
-		&models.Language{}, &models.Role{}, 
-		&models.Review{}, &models.TouristAttraction{}, &models.Booking{},
-		&models.Notification{}, &models.Unavailable{}, &models.Payment{},
-		&models.GuidingTransaction{}, &models.GuideCertification{},
-		&models.GuideVertification{}, 
-		&models.PasswordReset{}, &models.TripRequest{},
-		&models.TripProposal{}, &models.Negotiation{},
-		&models.ChatMessage{}, &models.FinalQuotation{},
+		&models.Language{}, &models.Role{}, &models.TouristAttraction{},
+		&models.GuideCertification{}, &models.GuideVertification{}, 
+		&models.PasswordReset{}, 
+		&models.TripRequire{}, &models.TripOffer{}, &models.TripBooking{}, 
+		&models.TripPayment{}, &models.TripReview{}, &models.TripReport{}, 
+		&models.GuidePerformance{}, &models.TripNotification{}, &models.PaymentRelease{},
 	)
 
 	// Seed data
 	migrations.SeedRoles(config.DB)
 	migrations.SeedLanguages(config.DB)
 	migrations.SeedProvinces(config.DB)
-	migrations.SeedUsers(config.DB)                   
 	migrations.SeedTouristAttractions(config.DB)
-	migrations.SeedGuides(config.DB) // เรียกหลังสุดเพราะต้องมี User ก่อน
+	migrations.SeedUsers(config.DB)                   
+	migrations.SeedGuides(config.DB)
 
 	app := fiber.New()
 	
@@ -49,51 +47,87 @@ func main() {
 	// API routes group
 	api := app.Group("/api")
 	
-	// Auth routes (ไม่ต้องใช้ middleware)
-	api.Post("/register", controllers.Register)
-	api.Post("/login", controllers.Login)
-	api.Post("/auth/forgot-password", controllers.ForgotPassword)
-	api.Post("/auth/reset-password", controllers.ResetPassword)
-	
-	// Guide routes (บางตัวต้องล็อกอิน)
-	api.Get("/guides", controllers.GetGuides)
-	api.Get("/guides/:id", controllers.GetGuideByID)
-	api.Post("/guides", middleware.AuthRequired(), controllers.CreateGuide) // ต้องล็อกอิน
-	
-	// User routes (ต้องเป็นเจ้าของข้อมูลหรือ admin)
-	api.Get("/users/:id", middleware.AuthRequired(), middleware.OwnerOrAdminRequired(), controllers.GetUserByID)
-	api.Put("/users/:id", middleware.AuthRequired(), middleware.OwnerOrAdminRequired(), controllers.EditUser)
-	api.Get("/me", middleware.AuthRequired(), controllers.Me)
-
-
-	// Admin routes (ต้องเป็น admin เท่านั้น)
-	admin := api.Group("/admin", middleware.AuthRequired(), middleware.AdminRequired())
-	admin.Get("/guides", controllers.GetAllGuides)
-	admin.Get("/verifications", controllers.GetPendingVerifications)
-	admin.Put("/verifications/:id/status", controllers.ApproveGuide) 
-	
-	// Google Auth routes
-	api.Get("/auth/google/login", controllers.GoogleLogin)
-	api.Get("/auth/google/callback", controllers.GoogleCallback)
-
-	// Trip Request routes
-    api.Post("/trip-requests", middleware.AuthRequired(), controllers.CreateTripRequest)
-    api.Get("/trip-requests/:id", middleware.AuthRequired(), controllers.GetTripRequestsByID)
-    api.Get("/trip-requests/:id/matching-guides", middleware.AuthRequired(), controllers.GetMatchingGuides)
-    api.Get("/trip-requests/:id/proposals", middleware.AuthRequired(), controllers.GetTripProposals)
-
-    // Trip Proposal routes
-    api.Post("/trip-proposals", middleware.AuthRequired(), controllers.CreateTripProposal)
-    api.Put("/trip-proposals/:id/accept", middleware.AuthRequired(), controllers.AcceptTripProposal)
+	// Auth routes
+    api.Post("/register", controllers.Register)
+    api.Post("/login", controllers.Login)
+    api.Post("/auth/forgot-password", controllers.ForgotPassword)
+    api.Post("/auth/reset-password", controllers.ResetPassword)
     
-    // Negotiation routes
-    api.Post("/trip-proposals/:id/negotiations", middleware.AuthRequired(), controllers.CreateNegotiation)
-    api.Get("/trip-proposals/:id/negotiations", middleware.AuthRequired(), controllers.GetNegotiations)
+    // Public routes
+    api.Get("/provinces", controllers.GetProvinces)
+    api.Get("/provinces/:id/attractions", controllers.GetProvinceAttractions)
+    api.Get("/guides", controllers.GetGuides)
+    api.Get("/guides/:id", controllers.GetGuideByID)
+    
+    // === TRIP SYSTEM ROUTES ===
+    
+    // 1. TripRequire routes (User โพสต์ความต้องการ)
+    api.Post("/trip-requires", middleware.AuthRequired(), controllers.CreateTripRequire)
+    api.Get("/trip-requires", middleware.AuthRequired(), controllers.GetTripRequires) // ดู requires ของตัวเอง
+    api.Get("/trip-requires/:id", middleware.AuthRequired(), controllers.GetTripRequiresByTripID)
+    api.Put("/trip-requires/:id", middleware.AuthRequired(), controllers.UpdateTripRequire)
+    api.Delete("/trip-requires/:id", middleware.AuthRequired(), controllers.DeleteTripRequire)
+    
+    // Browse trip requires (สำหรับ Guide ดู)
+    api.Get("/browse/trip-requires", middleware.AuthRequired(), controllers.BrowseTripRequires)
+    
+    // 2. TripOffer routes (Guide เสนอรายละเอียด)
+    api.Post("/trip-offers", middleware.AuthRequired(), controllers.CreateTripOffer)
+    api.Get("/trip-requires/:id/offers", middleware.AuthRequired(), controllers.GetTripOffers) // ดู offers ของ require นี้
+    api.Get("/trip-offers/:id", middleware.AuthRequired(), controllers.GetTripOffer)
+    api.Put("/trip-offers/:id", middleware.AuthRequired(), controllers.UpdateTripOffer) // สำหรับแก้ไข/เจรจา
+    api.Delete("/trip-offers/:id", middleware.AuthRequired(), controllers.WithdrawTripOffer)
+    
+    // 3. Accept/Reject offers (User เลือก offer)
+    api.Put("/trip-offers/:id/accept", middleware.AuthRequired(), controllers.AcceptTripOffer)
+    api.Put("/trip-offers/:id/reject", middleware.AuthRequired(), controllers.RejectTripOffer)
+    
+    // 4. TripBooking routes (หลัง accept offer)
+    api.Get("/trip-bookings", middleware.AuthRequired(), controllers.GetTripBookings)
+    api.Get("/trip-bookings/:id", middleware.AuthRequired(), controllers.GetTripBooking)
+    api.Put("/trip-bookings/:id/cancel", middleware.AuthRequired(), controllers.CancelTripBooking)
+    
+    // 5. Payment routes
+    api.Post("/trip-bookings/:id/payment", middleware.AuthRequired(), controllers.CreateTripPayment)
+    api.Get("/trip-payments/:id", middleware.AuthRequired(), controllers.GetTripPayment)
+    
+    // 6. Trip status management
+    api.Put("/trip-bookings/:id/confirm-start", middleware.AuthRequired(), controllers.ConfirmTripStart) // User ยืนยันไกด์มา
+    api.Put("/trip-bookings/:id/confirm-complete", middleware.AuthRequired(), controllers.ConfirmTripComplete) // User ยืนยันเสร็จ
+    api.Put("/trip-bookings/:id/no-show", middleware.AuthRequired(), controllers.ReportNoShow) // รีพอร์ต user ไม่มา
+    
+    // 7. Review system
+    api.Post("/trip-bookings/:id/review", middleware.AuthRequired(), controllers.CreateTripReview)
+    api.Get("/trip-reviews/:id", middleware.AuthRequired(), controllers.GetTripReview)
+    api.Put("/trip-reviews/:id/respond", middleware.AuthRequired(), controllers.RespondToReview) // Guide ตอบ review
+    
+    // 8. Report system
+    api.Post("/trip-reports", middleware.AuthRequired(), controllers.CreateTripReport)
+    api.Get("/trip-reports", middleware.AuthRequired(), controllers.GetTripReports)
+    
+    // 9. Notification system
+    api.Get("/notifications", middleware.AuthRequired(), controllers.GetNotifications)
+    api.Put("/notifications/:id/read", middleware.AuthRequired(), controllers.MarkNotificationRead)
 
-    // Final Quotation routes
-    api.Post("/trip-proposals/:id/quotation", middleware.AuthRequired(), controllers.CreateFinalQuotation)
-    api.Get("/quotations/:id", middleware.AuthRequired(), controllers.GetFinalQuotation)
-    api.Put("/quotations/:id/accept", middleware.AuthRequired(), controllers.AcceptQuotation)
+    // User profile routes
+    api.Post("/guides", middleware.AuthRequired(), controllers.CreateGuide)
+    api.Get("/users/:id", middleware.AuthRequired(), middleware.OwnerOrAdminRequired(), controllers.GetUserByID)
+    api.Put("/users/:id", middleware.AuthRequired(), middleware.OwnerOrAdminRequired(), controllers.EditUser)
+    api.Get("/me", middleware.AuthRequired(), controllers.Me)
+
+    // Admin routes
+    admin := api.Group("/admin", middleware.AuthRequired(), middleware.AdminRequired())
+    admin.Get("/guides", controllers.GetAllGuides)
+    admin.Get("/verifications", controllers.GetPendingVerifications)
+    admin.Put("/verifications/:id/status", controllers.ApproveGuide)
+    admin.Get("/trip-reports", controllers.GetAllTripReports)
+    admin.Put("/trip-reports/:id", controllers.HandleTripReport)
+    admin.Get("/payments", controllers.GetAllPayments)
+    admin.Put("/payments/:id/release", controllers.ManualReleasePayment)
+    
+    // Google Auth routes
+    api.Get("/auth/google/login", controllers.GoogleLogin)
+    api.Get("/auth/google/callback", controllers.GoogleCallback)
 
 
 	port := os.Getenv("PORT")
