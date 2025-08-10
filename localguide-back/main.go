@@ -7,7 +7,6 @@ import (
 	"localguide-back/config"
 	"localguide-back/controllers"
 	"localguide-back/middleware"
-	"localguide-back/migrations"
 	"localguide-back/models"
 
 	"github.com/gofiber/fiber/v2"
@@ -17,19 +16,21 @@ import (
 func main() {
 	config.Init()
 	
-	config.DB.AutoMigrate(
+	if err := config.DB.AutoMigrate(
 		&models.AuthUser{}, 
+        &models.Role{}, 
         &models.User{}, 
         &models.Province{}, 
         &models.Guide{},
 		&models.Language{}, 
-        &models.Role{}, 
         &models.TouristAttraction{},
 		&models.GuideCertification{}, 
         &models.GuideVertification{}, 
 		&models.PasswordReset{}, 
 		&models.TripRequire{}, 
         &models.TripOffer{}, 
+        &models.TripOfferQuotation{}, 
+        &models.TripOfferNegotiation{},
         &models.TripBooking{}, 
 		&models.TripPayment{}, 
         &models.TripReview{}, 
@@ -37,15 +38,19 @@ func main() {
 		&models.GuidePerformance{}, 
         &models.TripNotification{}, 
         &models.PaymentRelease{},
-	)
+	); err != nil {
+		log.Printf("Migration error: %v", err)
+	} else {
+		log.Println("All tables migrated successfully")
+	}
 
 	// Seed data
-	migrations.SeedRoles(config.DB)
-	migrations.SeedLanguages(config.DB)
-	migrations.SeedProvinces(config.DB)
-	migrations.SeedTouristAttractions(config.DB)
-	migrations.SeedUsers(config.DB)                   
-	migrations.SeedGuides(config.DB)
+	// migrations.SeedRoles(config.DB)
+	// migrations.SeedLanguages(config.DB)
+	// migrations.SeedProvinces(config.DB)
+	// migrations.SeedTouristAttractions(config.DB)
+	// migrations.SeedUsers(config.DB)                   
+	// migrations.SeedGuides(config.DB)
 
 	app := fiber.New()
 	
@@ -90,36 +95,25 @@ func main() {
     api.Put("/trip-offers/:id", middleware.AuthRequired(), controllers.UpdateTripOffer) // สำหรับแก้ไข/เจรจา
     api.Delete("/trip-offers/:id", middleware.AuthRequired(), controllers.WithdrawTripOffer)
     
-    // 3. Accept/Reject offers (User เลือก offer)
+    // 3. Accept offer (User เลือก offer 1 คน - คนที่เหลือ reject อัตโนมัติ)
     api.Put("/trip-offers/:id/accept", middleware.AuthRequired(), controllers.AcceptTripOffer)
-    api.Put("/trip-offers/:id/reject", middleware.AuthRequired(), controllers.RejectTripOffer)
     
-    // 4. TripBooking routes (หลัง accept offer)
-    api.Get("/trip-bookings", middleware.AuthRequired(), controllers.GetTripBookings)
-    api.Get("/trip-bookings/:id", middleware.AuthRequired(), controllers.GetTripBooking)
-    api.Put("/trip-bookings/:id/cancel", middleware.AuthRequired(), controllers.CancelTripBooking)
+    // 4. Payment (User จ่ายเงิน 100%)
+    api.Post("/trip-bookings/:id/payment", middleware.AuthRequired(), controllers.CreateTripPayment)
+    api.Post("/trip-bookings/:id/payment/confirm", middleware.AuthRequired(), controllers.ConfirmTripPayment)
+    api.Get("/trip-bookings/:id/payment", middleware.AuthRequired(), controllers.GetTripPayment)
     
-    // // 5. Payment routes
-    // api.Post("/trip-bookings/:id/payment", middleware.AuthRequired(), controllers.CreateTripPayment)
-    // api.Get("/trip-payments/:id", middleware.AuthRequired(), controllers.GetTripPayment)
+    // Stripe webhook (ไม่ต้องใช้ auth เพราะมาจาก Stripe server)
+    api.Post("/stripe/webhook", controllers.StripeWebhook)
     
-    // // 6. Trip status management
-    // api.Put("/trip-bookings/:id/confirm-start", middleware.AuthRequired(), controllers.ConfirmTripStart) // User ยืนยันไกด์มา
-    // api.Put("/trip-bookings/:id/confirm-complete", middleware.AuthRequired(), controllers.ConfirmTripComplete) // User ยืนยันเสร็จ
-    // api.Put("/trip-bookings/:id/no-show", middleware.AuthRequired(), controllers.ReportNoShow) // รีพอร์ต user ไม่มา
+    // 5. Trip booking management
+    api.Get("/trip-bookings", middleware.AuthRequired(), controllers.GetTripBookings) // ดู bookings ของตัวเอง
+    api.Get("/trip-bookings/:id", middleware.AuthRequired(), controllers.GetTripBookingByID)
     
-    // // 7. Review system
-    // api.Post("/trip-bookings/:id/review", middleware.AuthRequired(), controllers.CreateTripReview)
-    // api.Get("/trip-reviews/:id", middleware.AuthRequired(), controllers.GetTripReview)
-    // api.Put("/trip-reviews/:id/respond", middleware.AuthRequired(), controllers.RespondToReview) // Guide ตอบ review
-    
-    // // 8. Report system
-    // api.Post("/trip-reports", middleware.AuthRequired(), controllers.CreateTripReport)
-    // api.Get("/trip-reports", middleware.AuthRequired(), controllers.GetTripReports)
-    
-    // // 9. Notification system
-    // api.Get("/notifications", middleware.AuthRequired(), controllers.GetNotifications)
-    // api.Put("/notifications/:id/read", middleware.AuthRequired(), controllers.MarkNotificationRead)
+    // 6. Trip status management
+    api.Put("/trip-bookings/:id/confirm-guide-arrival", middleware.AuthRequired(), controllers.ConfirmGuideArrival) // User ยืนยันไกด์มา -> ไกด์ได้เงิน 50%
+    api.Put("/trip-bookings/:id/confirm-trip-complete", middleware.AuthRequired(), controllers.ConfirmTripComplete) // User ยืนยันทริปเสร็จ -> ไกด์ได้เงินเต็ม
+    api.Put("/trip-bookings/:id/report-user-no-show", middleware.AuthRequired(), controllers.ReportUserNoShow) // Guide รีพอร์ต user ไม่มา -> ไกด์ได้ 50% + คืนเงินส่วนที่เหลือให้ user
 
     // User profile routes
     api.Post("/guides", middleware.AuthRequired(), controllers.CreateGuide)
@@ -132,10 +126,10 @@ func main() {
     admin.Get("/guides", controllers.GetAllGuides)
     admin.Get("/verifications", controllers.GetPendingVerifications)
     admin.Put("/verifications/:id/status", controllers.ApproveGuide)
-    // admin.Get("/trip-reports", controllers.GetAllTripReports)
-    // admin.Put("/trip-reports/:id", controllers.HandleTripReport)
-    // admin.Get("/payments", controllers.GetAllPayments)
-    // admin.Put("/payments/:id/release", controllers.ManualReleasePayment)
+    admin.Get("/trip-reports", controllers.GetAllTripReports)
+    admin.Put("/trip-reports/:id", controllers.HandleTripReport)
+    admin.Get("/payments", controllers.GetAllPayments)
+    admin.Put("/payments/:id/release", controllers.ManualReleasePayment)
     
     
     // Google Auth routes

@@ -8,38 +8,44 @@ import (
 
 type AuthUser struct {
 	gorm.Model 
-	Email    string `gorm:"unique;not null" json:"email"`
+	Email    string `gorm:"uniqueIndex;not null" json:"email"`
 	Password string `gorm:"not null" json:"password"`
 }
 
 type User struct {
 	gorm.Model
-	AuthUserID uint   `gorm:"not null"` 
-	FirstName string `gorm:"not null;default:''"` 
-	LastName  string `gorm:"not null;default:''"` 
-	Nickname  string 
-	BirthDate *time.Time // ใช้ pointer เพื่อให้เป็น nullable
-	RoleID   uint   `gorm:"not null;default:1"` 
+	AuthUserID  uint   `gorm:"not null"` 
+	AuthUser    AuthUser `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:AuthUserID"`
+	FirstName   string `gorm:"not null;default:''"` 
+	LastName    string `gorm:"not null;default:''"` 
+	Nickname    string 
+	BirthDate   *time.Time 
+	RoleID      uint   `gorm:"not null;default:1"` 
+	Role        Role   `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:RoleID"`
 	Nationality string `gorm:"not null;default:''"` 
-	Phone     string `gorm:"not null;default:''"` 
-	Sex 	 string `gorm:"not null;default:''"` 
-	Avatar     string 
+	Phone       string `gorm:"not null;default:''"` 
+	Sex         string `gorm:"not null;default:''"` 
+	Avatar      string 
 }
 
 type Guide struct {
 	gorm.Model
 	UserID            uint                `gorm:"not null"`
+	User              User                `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:UserID"`
 	Bio               string  
 	Description       string              `gorm:"not null"` 
 	Available         bool                
 	Price             float64             `gorm:"not null"` 
 	Rating            float64             
 	ProvinceID        uint                `gorm:"not null"` // เพิ่ม ProvinceID
+	Language          []Language          `gorm:"many2many:guide_languages"`
+	TouristAttraction []TouristAttraction `gorm:"many2many:guide_attractions"`
 }
 
 type GuideCertification struct {
 	gorm.Model
 	GuideID            uint   `gorm:"not null"`
+	Guide              Guide  `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:GuideID"`
 	CertificationNumber string `gorm:"not null"`
 }
 
@@ -58,6 +64,7 @@ type TouristAttraction struct {
 	Name        string   `gorm:"not null"`
 	Description string   
 	ProvinceID  uint     `gorm:"not null"`
+	Province    Province `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:ProvinceID"`
 	District    string   
 	City        string   
 	Category    string   `gorm:"not null"` // ประเภท เช่น "วัด", "น้ำตก", "ชายหาด"
@@ -74,7 +81,9 @@ type Province struct {
 type GuideVertification struct {
 	gorm.Model
 	UserID            uint      `gorm:"not null"` // ID of the user applying
+	User 			User      `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:UserID"`
 	GuideID           *uint     // Pointer to allow null, will be set on approval
+	Guide             *Guide    `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:GuideID"`
 	Status            string    `gorm:"not null;default:'pending'"` // pending, approved, rejected
 	VerificationDate  time.Time `gorm:"not null"`
 	ReviewedBy        *uint     // Admin UserID
@@ -106,7 +115,9 @@ type PasswordReset struct {
 type TripRequire struct {
 	gorm.Model
 	UserID           uint      `gorm:"not null"`
+	User 		   User      `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:UserID"`
 	ProvinceID       uint      `gorm:"not null"`
+	Province         Province  `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:ProvinceID"`
 	Title            string    `gorm:"not null"` // ชื่อโพสต์ เช่น "หาไกด์เที่ยวเชียงใหม่ 3 วัน 2 คืน"
 	Description      string    `gorm:"not null"` // รายละเอียดความต้องการ
 	MinPrice         float64   `gorm:"not null"`
@@ -126,7 +137,9 @@ type TripRequire struct {
 type TripOffer struct {
 	gorm.Model
 	TripRequireID    uint        `gorm:"not null"`
+	TripRequire      TripRequire `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:TripRequireID"`
 	GuideID          uint        `gorm:"not null"`
+	Guide            Guide       `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:GuideID"`
 	
 	// ข้อมูลหลักของ offer
 	Title            string      `gorm:"not null"` // ชื่อแพ็กเกจที่เสนอ
@@ -148,6 +161,7 @@ type TripOffer struct {
 type TripOfferQuotation struct {
 	gorm.Model
 	TripOfferID      uint        `gorm:"not null"`
+	TripOffer        TripOffer   `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:TripOfferID"`
 	Version          int         `gorm:"default:1"`  // เวอร์ชันของใบเสนอราคา
 	TotalPrice       float64     `gorm:"not null"`   // ราคารวมที่เสนอ
 	PriceBreakdown   string      `gorm:"type:text"` // รายละเอียดราคา
@@ -166,9 +180,10 @@ type TripOfferQuotation struct {
 type TripOfferNegotiation struct {
 	gorm.Model
 	TripOfferID      uint        `gorm:"not null"`
+	TripOffer        TripOffer   `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:TripOfferID"`
 	SequenceNumber   int         `gorm:"not null"`  // ลำดับของการเจรจา (1, 2, 3, ...)
-	FromUserType     string      `gorm:"not null"`  // guide, user
 	FromUserID       uint        `gorm:"not null"`  // ID ของผู้ส่งข้อความ
+	FromUser         User        `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:FromUserID"`
 	Message          string      `gorm:"type:text;not null"` // ข้อความเจรจา
 	ProposedChanges  string      `gorm:"type:text"` // การเปลี่ยนแปลงที่เสนอ
 	Status           string      `gorm:"default:'pending'"` // pending, acknowledged, accepted, rejected
@@ -183,8 +198,11 @@ type TripOfferNegotiation struct {
 type TripBooking struct {
 	gorm.Model
 	TripOfferID      uint        `gorm:"not null"`
+	TripOffer        TripOffer   `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:TripOfferID"`
 	UserID           uint        `gorm:"not null"`
+	User             User        `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:UserID"`
 	GuideID          uint        `gorm:"not null"`
+	Guide            Guide       `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:GuideID"`
 	StartDate        time.Time   `gorm:"not null"`
 	TotalAmount      float64     `gorm:"not null"`
 	Status           string      `gorm:"default:'pending_payment'"` // pending_payment, paid, trip_started, trip_completed, cancelled, no_show
@@ -202,6 +220,7 @@ type TripBooking struct {
 type TripPayment struct {
 	gorm.Model
 	TripBookingID    uint         `gorm:"not null"`
+	TripBooking      TripBooking  `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:TripBookingID"`
 	PaymentNumber    string       `gorm:"unique;not null"`
 	TotalAmount      float64      `gorm:"not null"` // จำนวนเงินที่ user จ่ายทั้งหมด (100%)
 	FirstPayment     float64      `gorm:"not null"` // จำนวนเงินที่จ่ายให้ไกด์ครั้งแรก (50% เมื่อเริ่มทริป)
@@ -227,8 +246,11 @@ type TripPayment struct {
 type TripReview struct {
 	gorm.Model
 	TripBookingID    uint         `gorm:"not null"`
+	TripBooking      TripBooking  `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:TripBookingID"`
 	UserID           uint         `gorm:"not null"`
+	User             User         `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:UserID"`
 	GuideID          uint         `gorm:"not null"`
+	Guide            Guide        `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:GuideID"`
 	Rating           float64      `gorm:"not null"` // 1-5 stars
 	Comment          string       `gorm:"type:text"`
 	ServiceRating    float64      `gorm:"not null"` // คะแนนการบริการ
@@ -247,8 +269,11 @@ type TripReview struct {
 type TripReport struct {
 	gorm.Model
 	TripBookingID    uint         `gorm:"not null"`
+	TripBooking      TripBooking  `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:TripBookingID"`
 	ReporterID       uint         `gorm:"not null"` // ผู้รายงาน (user หรือ guide)
+	Reporter         User         `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:ReporterID"`
 	ReportedUserID   uint         `gorm:"not null"` // ผู้ถูกรายงาน
+	ReportedUser     User         `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:ReportedUserID"`
 	ReportType       string       `gorm:"not null"` // guide_no_show, user_no_show, inappropriate_behavior, safety_issue, payment_issue, other
 	Title            string       `gorm:"not null"`
 	Description      string       `gorm:"type:text;not null"`
@@ -266,6 +291,7 @@ type TripReport struct {
 type GuidePerformance struct {
 	gorm.Model
 	GuideID              uint    `gorm:"not null;unique"`
+	Guide                Guide   `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:GuideID"`
 	TotalTrips           int     `gorm:"default:0"`
 	CompletedTrips       int     `gorm:"default:0"`
 	CancelledTrips       int     `gorm:"default:0"`
@@ -290,10 +316,12 @@ type GuidePerformance struct {
 type PaymentRelease struct {
 	gorm.Model
 	TripPaymentID    uint         `gorm:"not null"`
+	TripPayment      TripPayment  `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:TripPaymentID"`
 	ReleaseType      string       `gorm:"not null"` // first_payment, second_payment, refund
 	Amount           float64      `gorm:"not null"` // จำนวนเงินที่จ่าย/คืน
 	RecipientType    string       `gorm:"not null"` // guide, user
 	RecipientID      uint         `gorm:"not null"` // ID ของผู้รับเงิน
+	Recipient        User         `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:RecipientID"`
 	Reason           string       `gorm:"not null"` // trip_started, trip_completed, user_no_show
 	ScheduledAt      time.Time    `gorm:"not null"` // วันที่กำหนดจ่าย
 	ProcessedAt      *time.Time   // วันที่จ่ายจริง
@@ -306,7 +334,9 @@ type PaymentRelease struct {
 type TripNotification struct {
 	gorm.Model
 	UserID         uint        `gorm:"not null"`
+	User           User        `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:UserID"`
 	TripBookingID  *uint       // อ้างอิงถึง trip booking (optional)
+	TripBooking    *TripBooking `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:TripBookingID"`
 	Type           string      `gorm:"not null"` // offer_received, offer_accepted, payment_confirmed, trip_started, trip_completed, first_payment_released, second_payment_released, user_no_show, refund_processed
 	Title          string      `gorm:"not null"`
 	Message        string      `gorm:"not null"`
