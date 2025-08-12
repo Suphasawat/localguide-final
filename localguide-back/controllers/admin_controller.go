@@ -5,13 +5,14 @@ import (
 	"localguide-back/config"
 	"localguide-back/models"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func ApproveGuide(c *fiber.Ctx) error {
 	var req struct {
-		Status string `json:"status"` // approved, rejected
+		Status string `json:"status"` // approved, rejected 
 	}
 
 	// รับค่า verification ID จาก URL
@@ -173,5 +174,165 @@ func GetPendingVerifications(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"verifications": verifications,
+	})
+}
+
+// GetAllTripReports returns all trip reports for admin
+func GetAllTripReports(c *fiber.Ctx) error {
+	var reports []models.TripReport
+
+	if err := config.DB.
+		Preload("TripBooking").
+		Preload("Reporter").
+		Preload("ReportedUser").
+		Find(&reports).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to retrieve trip reports",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"reports": reports,
+	})
+}
+
+// HandleTripReport allows admin to handle trip reports
+func HandleTripReport(c *fiber.Ctx) error {
+	reportID := c.Params("id")
+	
+	var req struct {
+		Status      string `json:"status"`      // investigating, resolved, dismissed
+		AdminNotes  string `json:"admin_notes"`
+		Actions     string `json:"actions"`     // JSON string of actions taken
+	}
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
+	}
+
+	var report models.TripReport
+	if err := config.DB.First(&report, reportID).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Trip report not found",
+		})
+	}
+
+	// Update report status and admin notes
+	updates := map[string]interface{}{
+		"status":      req.Status,
+		"admin_notes": req.AdminNotes,
+		"actions":     req.Actions,
+	}
+
+	if req.Status == "resolved" {
+		now := time.Now()
+		updates["resolved_at"] = &now
+	}
+
+	if err := config.DB.Model(&report).Updates(updates).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to update trip report",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Trip report updated successfully",
+		"report":  report,
+	})
+}
+
+// GetAllPayments returns all payments for admin
+func GetAllPayments(c *fiber.Ctx) error {
+	var payments []models.TripPayment
+
+	if err := config.DB.
+		Preload("TripBooking").
+		Preload("TripBooking.User").
+		Preload("TripBooking.Guide").
+		Find(&payments).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to retrieve payments",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"payments": payments,
+	})
+}
+
+// ManualReleasePayment allows admin to manually release payments
+func ManualReleasePayment(c *fiber.Ctx) error {
+	paymentID := c.Params("id")
+	
+	var req struct {
+		ReleaseType   string  `json:"release_type"` // first_payment, second_payment, refund
+		Amount        float64 `json:"amount"`
+		RecipientType string  `json:"recipient_type"` // guide, user
+		RecipientID   uint    `json:"recipient_id"`
+		Reason        string  `json:"reason"`
+	}
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
+	}
+
+	var payment models.TripPayment
+	if err := config.DB.First(&payment, paymentID).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Payment not found",
+		})
+	}
+
+	// Create payment release record
+	now := time.Now()
+	release := models.PaymentRelease{
+		TripPaymentID: payment.ID,
+		ReleaseType:   req.ReleaseType,
+		Amount:        req.Amount,
+		RecipientType: req.RecipientType,
+		RecipientID:   req.RecipientID,
+		Reason:        req.Reason,
+		ScheduledAt:   now,
+		ProcessedAt:   &now,
+		Status:        "processed",
+		Notes:         "Manual release by admin",
+	}
+
+	if err := config.DB.Create(&release).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to create payment release",
+		})
+	}
+
+	// Update payment status based on release type
+	var newStatus string
+	switch req.ReleaseType {
+	case "first_payment":
+		newStatus = "first_released"
+		payment.FirstReleasedAt = &now
+	case "second_payment":
+		newStatus = "fully_released"
+		payment.SecondReleasedAt = &now
+	case "refund":
+		newStatus = "refunded"
+		payment.RefundedAt = &now
+		payment.RefundAmount = req.Amount
+	}
+
+	payment.Status = newStatus
+	if err := config.DB.Save(&payment).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to update payment status",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Payment released successfully",
+		"release": release,
+		"payment": payment,
 	})
 }

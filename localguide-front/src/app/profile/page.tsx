@@ -254,7 +254,8 @@ export default function Profile() {
                       name="FirstName"
                       value={editForm?.FirstName || ""}
                       onChange={handleEditChange}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200 text-black"
+                      style={{ color: "#000" }}
                       placeholder="กรอกชื่อ"
                     />
                   </div>
@@ -268,7 +269,8 @@ export default function Profile() {
                       name="LastName"
                       value={editForm?.LastName || ""}
                       onChange={handleEditChange}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200 text-black"
+                      style={{ color: "#000" }}
                       placeholder="กรอกนามสกุล"
                     />
                   </div>
@@ -282,7 +284,8 @@ export default function Profile() {
                       name="Nickname"
                       value={editForm?.Nickname || ""}
                       onChange={handleEditChange}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200 text-black"
+                      style={{ color: "#000" }}
                       placeholder="กรอกชื่อเล่น"
                     />
                   </div>
@@ -296,7 +299,8 @@ export default function Profile() {
                       name="Phone"
                       value={editForm?.Phone || ""}
                       onChange={handleEditChange}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200 text-black"
+                      style={{ color: "#000" }}
                       placeholder="กรอกเบอร์โทรศัพท์"
                     />
                   </div>
@@ -314,7 +318,8 @@ export default function Profile() {
                           : ""
                       }
                       onChange={handleEditChange}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200 text-black"
+                      style={{ color: "#000" }}
                     />
                   </div>
 
@@ -327,7 +332,8 @@ export default function Profile() {
                       name="Nationality"
                       value={editForm?.Nationality || ""}
                       onChange={handleEditChange}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200 text-black"
+                      style={{ color: "#000" }}
                       placeholder="กรอกสัญชาติ"
                     />
                   </div>
@@ -345,7 +351,8 @@ export default function Profile() {
                           Sex: e.target.value,
                         }))
                       }
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200 text-black"
+                      style={{ color: "#000" }}
                     >
                       <option value="">เลือกเพศ</option>
                       <option value="ชาย">ชาย</option>

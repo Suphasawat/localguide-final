@@ -2,6 +2,7 @@ package migrations
 
 import (
 	"localguide-back/models"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -39,42 +40,67 @@ func SeedUsers(db *gorm.DB) error {
 		}
 	}
 
+	// สร้าง sample birth dates
+	birthDate1 := time.Date(1990, 5, 15, 0, 0, 0, 0, time.UTC)
+	birthDate2 := time.Date(1985, 8, 20, 0, 0, 0, 0, time.UTC)
+	birthDate3 := time.Date(1992, 12, 10, 0, 0, 0, 0, time.UTC)
+
 	// สร้าง User profiles
 	users := []models.User{
 		{
-			AuthUserID: 1,
-			FirstName:  "John",
-			LastName:   "Doe",
-			Phone:      "0812345678",
-			RoleID:     1, // user role
+			AuthUserID:  1,
+			FirstName:   "John",
+			LastName:    "Doe",
+			Nickname:    "Johnny",
+			BirthDate:   &birthDate1,
+			Phone:       "0812345678",
+			RoleID:      1, // user role
+			Nationality: "American",
+			Sex:         "Male",
 		},
 		{
-			AuthUserID: 2,
-			FirstName:  "สมชาย",
-			LastName:   "ใจดี",
-			Phone:      "0823456789",
-			RoleID:     2, // guide role
+			AuthUserID:  2,
+			FirstName:   "สมชาย",
+			LastName:    "ใจดี",
+			Nickname:    "ชาย",
+			BirthDate:   &birthDate2,
+			Phone:       "0823456789",
+			RoleID:      2, // guide role
+			Nationality: "Thai",
+			Sex:         "Male",
 		},
 		{
-			AuthUserID: 3,
-			FirstName:  "สมหญิง",
-			LastName:   "รักเที่ยว",
-			Phone:      "0834567890",
-			RoleID:     2, // guide role
+			AuthUserID:  3,
+			FirstName:   "สมหญิง",
+			LastName:    "รักเที่ยว",
+			Nickname:    "หญิง",
+			BirthDate:   &birthDate3,
+			Phone:       "0834567890",
+			RoleID:      2, // guide role
+			Nationality: "Thai",
+			Sex:         "Female",
 		},
 		{
-			AuthUserID: 4,
-			FirstName:  "สมปอง",
-			LastName:   "ท่องเที่ยว",
-			Phone:      "0845678900",
-			RoleID:     2, // guide role
+			AuthUserID:  4,
+			FirstName:   "สมปอง",
+			LastName:    "ท่องเที่ยว",
+			Nickname:    "ปอง",
+			BirthDate:   nil, // ไม่ระบุวันเกิด
+			Phone:       "0845678900",
+			RoleID:      2, // guide role
+			Nationality: "Thai",
+			Sex:         "Male",
 		},
 		{
-			AuthUserID: 5,
-			FirstName:  "Admin",
-			LastName:   "System",
-			Phone:      "0845678901",
-			RoleID:     3, // admin role
+			AuthUserID:  5,
+			FirstName:   "Admin",
+			LastName:    "System",
+			Nickname:    "Admin",
+			BirthDate:   nil, // ไม่ระบุวันเกิด
+			Phone:       "0845678901",
+			RoleID:      3, // admin role
+			Nationality: "Thai",
+			Sex:         "Other",
 		},
 	}
 

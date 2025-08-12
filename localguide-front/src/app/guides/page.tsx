@@ -135,7 +135,8 @@ export default function Guides() {
                   onChange={(e) =>
                     setFilters((prev) => ({ ...prev, search: e.target.value }))
                   }
-                  className="pl-10 block w-full rounded-xl border-2 border-gray-200 bg-white/70 backdrop-blur-sm shadow-sm focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200 py-3"
+                  className="pl-10 block w-full rounded-xl border-2 border-gray-200 bg-white/70 backdrop-blur-sm shadow-sm focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200 py-3 text-black"
+                  style={{ color: "#000" }}
                   placeholder="ชื่อไกด์ หรือ จังหวัด"
                 />
               </div>
@@ -154,7 +155,8 @@ export default function Guides() {
                       province: e.target.value,
                     }))
                   }
-                  className="appearance-none block w-full rounded-xl border-2 border-gray-200 bg-white/70 backdrop-blur-sm shadow-sm focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200 py-3 px-4 pr-10"
+                  className="appearance-none block w-full rounded-xl border-2 border-gray-200 bg-white/70 backdrop-blur-sm shadow-sm focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200 py-3 px-4 pr-10 text-black"
+                  style={{ color: "#000" }}
                 >
                   <option value="">ทุกจังหวัด</option>
                   {PROVINCES.map((province) => (
@@ -197,7 +199,8 @@ export default function Guides() {
                         minPrice: e.target.value,
                       }))
                     }
-                    className="pl-8 block w-full rounded-xl border-2 border-gray-200 bg-white/70 backdrop-blur-sm shadow-sm focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200 py-3"
+                    className="pl-8 block w-full rounded-xl border-2 border-gray-200 bg-white/70 backdrop-blur-sm shadow-sm focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200 py-3 text-black"
+                    style={{ color: "#000" }}
                     placeholder="ต่ำสุด"
                   />
                 </div>
@@ -217,7 +220,8 @@ export default function Guides() {
                         maxPrice: e.target.value,
                       }))
                     }
-                    className="pl-8 block w-full rounded-xl border-2 border-gray-200 bg-white/70 backdrop-blur-sm shadow-sm focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200 py-3"
+                    className="pl-8 block w-full rounded-xl border-2 border-gray-200 bg-white/70 backdrop-blur-sm shadow-sm focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200 py-3 text-black"
+                    style={{ color: "#000" }}
                     placeholder="สูงสุด"
                   />
                 </div>
@@ -237,7 +241,8 @@ export default function Guides() {
                       minRating: Number(e.target.value),
                     }))
                   }
-                  className="appearance-none block w-full rounded-xl border-2 border-gray-200 bg-white/70 backdrop-blur-sm shadow-sm focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200 py-3 px-4 pr-10"
+                  className="appearance-none block w-full rounded-xl border-2 border-gray-200 bg-white/70 backdrop-blur-sm shadow-sm focus:border-amber-400 focus:ring-4 focus:ring-amber-200 transition-all duration-200 py-3 px-4 pr-10 text-black"
+                  style={{ color: "#000" }}
                 >
                   <option value={0}>ทุกคะแนน</option>
                   <option value={3}>⭐ 3+ ดาว</option>

@@ -147,7 +147,7 @@ export default function GuideRegister() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-black mb-2">
                 แนะนำตัว *
               </label>
               <textarea
@@ -156,13 +156,14 @@ export default function GuideRegister() {
                 onChange={handleChange}
                 required
                 rows={4}
-                className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition"
+                className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition text-black"
+                style={{ color: "#000" }}
                 placeholder="เล่าเกี่ยวกับตัวคุณ ความชอบ และสิ่งที่ทำให้คุณเป็นไกด์ที่ดี"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-black mb-2">
                 ประสบการณ์ *
               </label>
               <textarea
@@ -171,14 +172,15 @@ export default function GuideRegister() {
                 onChange={handleChange}
                 required
                 rows={4}
-                className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition"
+                className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition text-black"
+                style={{ color: "#000" }}
                 placeholder="ประสบการณ์การเป็นไกด์ หรือความรู้เกี่ยวกับพื้นที่"
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-black mb-2">
                   จังหวัด *
                 </label>
                 <select
@@ -186,7 +188,8 @@ export default function GuideRegister() {
                   value={form.province}
                   onChange={handleChange}
                   required
-                  className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition"
+                  className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition text-black"
+                  style={{ color: "#000" }}
                 >
                   <option value="">เลือกจังหวัด</option>
                   {PROVINCES.map((province) => (
@@ -198,7 +201,7 @@ export default function GuideRegister() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-black mb-2">
                   อำเภอ/เขต *
                 </label>
                 <input
@@ -207,13 +210,14 @@ export default function GuideRegister() {
                   value={form.city}
                   onChange={handleChange}
                   required
-                  className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition"
+                  className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition text-black"
+                  style={{ color: "#000" }}
                   placeholder="อำเภอ/เขต"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-black mb-2">
                   ตำบล/แขวง
                 </label>
                 <input
@@ -221,14 +225,15 @@ export default function GuideRegister() {
                   name="district"
                   value={form.district}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition"
+                  className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition text-black"
+                  style={{ color: "#000" }}
                   placeholder="ตำบล/แขวง"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-black mb-2">
                 อัตราค่าบริการ (บาท/วัน) *
               </label>
               <input
@@ -238,13 +243,14 @@ export default function GuideRegister() {
                 onChange={handleChange}
                 required
                 min="100"
-                className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition"
+                className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition text-black"
+                style={{ color: "#000" }}
                 placeholder="เช่น 1500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-black mb-2">
                 ภาษาที่สามารถสื่อสารได้ *
               </label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -256,14 +262,14 @@ export default function GuideRegister() {
                       onChange={() => handleLanguageChange(language)}
                       className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded mr-2"
                     />
-                    <span className="text-sm">{language}</span>
+                    <span className="text-sm text-black">{language}</span>
                   </label>
                 ))}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-black mb-2">
                 สถานที่ท่องเที่ยวที่แนะนำ
               </label>
               {form.touristAttractions.map((attraction, index) => (
@@ -274,7 +280,8 @@ export default function GuideRegister() {
                     onChange={(e) =>
                       handleAttractionChange(index, e.target.value)
                     }
-                    className="flex-1 border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition"
+                    className="flex-1 border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition text-black"
+                    style={{ color: "#000" }}
                     placeholder="ชื่อสถานที่ท่องเที่ยว"
                   />
                   <button

@@ -21,12 +21,14 @@ export default function Navbar() {
     const baseLinks = [
       { href: "/", label: "หน้าหลัก" },
       { href: "/guides", label: "ค้นหาไกด์" },
+      { href: "/trip-requires", label: "หาไกด์ท้องถิ่น" },
     ];
 
     if (!isLoggedIn) return baseLinks;
 
     const userLinks = [
       ...baseLinks,
+      { href: "/my-trip-requires", label: "โพสต์ของฉัน" },
       { href: "/my-bookings", label: "การจองของฉัน" },
       { href: "/profile", label: "โปรไฟล์" },
     ];

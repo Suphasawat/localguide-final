@@ -2,17 +2,25 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FaCalendarAlt, FaMapMarkerAlt, FaUser, FaClock } from "react-icons/fa";
+import {
+  FaCalendarAlt,
+  FaMapMarkerAlt,
+  FaUser,
+  FaClock,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaExclamationTriangle,
+} from "react-icons/fa";
 import { MdAttachMoney, MdCancel } from "react-icons/md";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 import { getUser } from "../services/auth.service";
-import { bookingService, Booking } from "../services/booking.service";
+import { tripService, TripBooking } from "../services/trip.service";
 
 dayjs.locale("th");
 
 export default function MyBookingsPage() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<TripBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [cancellingId, setCancellingId] = useState<number | null>(null);
@@ -31,7 +39,7 @@ export default function MyBookingsPage() {
   const loadBookings = async () => {
     try {
       setLoading(true);
-      const data = await bookingService.getUserBookings();
+      const data = await tripService.getTripBookings();
       setBookings(data);
     } catch (err: any) {
       setError(err.message || "เกิดข้อผิดพลาดในการโหลดข้อมูล");
@@ -40,33 +48,96 @@ export default function MyBookingsPage() {
     }
   };
 
-  const handleCancelBooking = async (bookingId: number) => {
-    if (!confirm("คุณแน่ใจหรือไม่ที่จะยกเลิกการจองนี้?")) {
+  const handleConfirmGuideArrival = async (bookingId: number) => {
+    if (
+      !confirm(
+        "คุณแน่ใจหรือไม่ที่จะยืนยันว่าไกด์มาแล้ว? เงิน 50% จะถูกจ่ายให้ไกด์ทันที"
+      )
+    ) {
       return;
     }
 
-    setCancellingId(bookingId);
     try {
-      await bookingService.cancelBooking(bookingId);
+      await tripService.confirmGuideArrival(bookingId);
       await loadBookings(); // รีเฟรชข้อมูล
-      alert("ยกเลิกการจองสำเร็จ");
+      alert("ยืนยันไกด์มาแล้วสำเร็จ เงิน 50% ได้จ่ายให้ไกด์แล้ว");
     } catch (err: any) {
-      alert(err.message || "เกิดข้อผิดพลาดในการยกเลิกการจอง");
-    } finally {
-      setCancellingId(null);
+      alert(err.message || "เกิดข้อผิดพลาดในการยืนยัน");
+    }
+  };
+
+  const handleConfirmTripComplete = async (bookingId: number) => {
+    if (
+      !confirm(
+        "คุณแน่ใจหรือไม่ที่จะยืนยันว่าทริปเสร็จสิ้นแล้ว? เงินส่วนที่เหลือจะถูกจ่ายให้ไกด์ทันที"
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await tripService.confirmTripComplete(bookingId);
+      await loadBookings(); // รีเฟรชข้อมูล
+      alert("ยืนยันทริปเสร็จสิ้นแล้ว เงินส่วนที่เหลือได้จ่ายให้ไกด์แล้ว");
+    } catch (err: any) {
+      alert(err.message || "เกิดข้อผิดพลาดในการยืนยัน");
+    }
+  };
+
+  const handleConfirmNoShow = async (bookingId: number) => {
+    if (
+      !confirm(
+        "คุณยืนยันว่าคุณไม่ได้ไปทริปนี้จริงหรือ? เงิน 50% จะถูกจ่ายให้ไกด์ และคืนเงิน 50% ให้คุณ"
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await tripService.confirmUserNoShow(bookingId);
+      await loadBookings(); // รีเฟรชข้อมูล
+      alert("ยืนยันว่าไม่ได้ไปแล้ว เงิน 50% จ่ายให้ไกด์ และคืนเงิน 50% ให้คุณ");
+    } catch (err: any) {
+      alert(err.message || "เกิดข้อผิดพลาดในการยืนยัน");
+    }
+  };
+
+  const handleDisputeNoShow = async (bookingId: number) => {
+    const reason = prompt("เหตุผลที่คัดค้าน:");
+    const description = prompt("รายละเอียดเพิ่มเติม:");
+
+    if (!reason || !description) {
+      alert("กรุณาใส่เหตุผลและรายละเอียด");
+      return;
+    }
+
+    try {
+      await tripService.disputeNoShowReport(bookingId, { reason, description });
+      await loadBookings(); // รีเฟรชข้อมูล
+      alert("ส่งคำคัดค้านแล้ว รอ admin ตัดสิน");
+    } catch (err: any) {
+      alert(err.message || "เกิดข้อผิดพลาดในการคัดค้าน");
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case "pending":
+      case "pending_payment":
         return "bg-yellow-100 text-yellow-800";
-      case "confirmed":
+      case "paid":
         return "bg-blue-100 text-blue-800";
-      case "completed":
+      case "trip_started":
+        return "bg-purple-100 text-purple-800";
+      case "trip_completed":
         return "bg-green-100 text-green-800";
       case "cancelled":
         return "bg-red-100 text-red-800";
+      case "no_show_reported":
+        return "bg-orange-100 text-orange-800";
+      case "no_show_disputed":
+        return "bg-indigo-100 text-indigo-800";
+      case "no_show_confirmed":
+        return "bg-gray-100 text-gray-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -74,26 +145,42 @@ export default function MyBookingsPage() {
 
   const getStatusText = (status: string) => {
     switch (status.toLowerCase()) {
-      case "pending":
-        return "รอการยืนยัน";
-      case "confirmed":
-        return "ยืนยันแล้ว";
-      case "completed":
+      case "pending_payment":
+        return "รอชำระเงิน";
+      case "paid":
+        return "ชำระเงินแล้ว";
+      case "trip_started":
+        return "เริ่มทริปแล้ว";
+      case "trip_completed":
         return "เสร็จสิ้น";
       case "cancelled":
         return "ยกเลิกแล้ว";
+      case "no_show_reported":
+        return "ไกด์รีพอร์ตไม่มา";
+      case "no_show_disputed":
+        return "คัดค้านการรีพอร์ต";
+      case "no_show_confirmed":
+        return "ยืนยันไม่ได้ไป";
       default:
         return status;
     }
   };
 
-  const canCancelBooking = (booking: Booking) => {
-    const bookingDate = booking.StartDate || booking.BookingDate;
-    return (
-      booking.Status.toLowerCase() === "pending" &&
-      bookingDate &&
-      dayjs(bookingDate).isAfter(dayjs(), "day")
-    );
+  const getPaymentStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "paid":
+        return "bg-green-100 text-green-800";
+      case "first_released":
+        return "bg-blue-100 text-blue-800";
+      case "fully_released":
+        return "bg-purple-100 text-purple-800";
+      case "partially_refunded":
+        return "bg-orange-100 text-orange-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
   };
 
   if (loading) {
@@ -169,11 +256,7 @@ export default function MyBookingsPage() {
                           {booking.Guide.User.FirstName}{" "}
                           {booking.Guide.User.LastName}
                         </h3>
-                        {booking.Guide.User.Nickname && (
-                          <p className="text-sm text-gray-500">
-                            ({booking.Guide.User.Nickname})
-                          </p>
-                        )}
+                        <p className="text-sm text-gray-500">ไกด์ท้องถิ่น</p>
                       </div>
                     </div>
 
@@ -186,18 +269,20 @@ export default function MyBookingsPage() {
                         {getStatusText(booking.Status)}
                       </span>
 
-                      {canCancelBooking(booking) && (
-                        <button
-                          onClick={() => handleCancelBooking(booking.ID)}
-                          disabled={cancellingId === booking.ID}
-                          className="flex items-center px-3 py-1 text-sm text-red-600 hover:text-red-700 disabled:opacity-50"
-                        >
-                          <MdCancel className="mr-1" />
-                          {cancellingId === booking.ID
-                            ? "กำลังยกเลิก..."
-                            : "ยกเลิก"}
-                        </button>
-                      )}
+                      <span
+                        className={`inline-flex px-2 py-1 rounded text-xs font-medium ${getPaymentStatusColor(
+                          booking.PaymentStatus
+                        )}`}
+                      >
+                        {booking.PaymentStatus === "pending" && "รอชำระ"}
+                        {booking.PaymentStatus === "paid" && "ชำระแล้ว"}
+                        {booking.PaymentStatus === "first_released" &&
+                          "จ่าย 50%"}
+                        {booking.PaymentStatus === "fully_released" &&
+                          "จ่ายครบ"}
+                        {booking.PaymentStatus === "partially_refunded" &&
+                          "คืนบางส่วน"}
+                      </span>
                     </div>
                   </div>
 
@@ -207,38 +292,12 @@ export default function MyBookingsPage() {
                     <div className="flex items-center space-x-3">
                       <FaCalendarAlt className="text-blue-500 flex-shrink-0" />
                       <div>
-                        <p className="text-sm text-gray-500">ช่วงวันที่</p>
+                        <p className="text-sm text-gray-500">วันที่เที่ยว</p>
                         <p className="font-medium text-gray-900">
-                          {booking.EndDate &&
-                          booking.StartDate &&
-                          booking.StartDate !== booking.EndDate ? (
-                            <>
-                              {dayjs(booking.StartDate).format("DD/MM/YYYY")} -{" "}
-                              {dayjs(booking.EndDate).format("DD/MM/YYYY")}
-                              <span className="text-sm text-gray-600 block">
-                                (
-                                {booking.Days ||
-                                  Math.max(
-                                    1,
-                                    Math.ceil(
-                                      (new Date(booking.EndDate).getTime() -
-                                        new Date(booking.StartDate).getTime()) /
-                                        (1000 * 60 * 60 * 24)
-                                    ) + 1
-                                  )}{" "}
-                                วัน)
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              {dayjs(
-                                booking.StartDate || booking.BookingDate
-                              ).format("dddd, DD MMMM YYYY")}
-                              <span className="text-sm text-gray-600 block">
-                                (1 วัน)
-                              </span>
-                            </>
-                          )}
+                          {dayjs(booking.StartDate).format("DD/MM/YYYY")}
+                          <span className="text-sm text-gray-600 block">
+                            จาก trip offer: {booking.TripOffer.Title}
+                          </span>
                         </p>
                       </div>
                     </div>
@@ -249,33 +308,7 @@ export default function MyBookingsPage() {
                       <div>
                         <p className="text-sm text-gray-500">ราคารวม</p>
                         <p className="font-medium text-gray-900">
-                          {(() => {
-                            const days =
-                              booking.Days ||
-                              (booking.EndDate && booking.StartDate
-                                ? Math.max(
-                                    1,
-                                    Math.ceil(
-                                      (new Date(booking.EndDate).getTime() -
-                                        new Date(booking.StartDate).getTime()) /
-                                        (1000 * 60 * 60 * 24)
-                                    ) + 1
-                                  )
-                                : 1);
-                            const totalPrice =
-                              booking.TotalPrice || days * booking.Guide.Price;
-                            return (
-                              <>
-                                ฿{totalPrice.toLocaleString()}
-                                {days > 1 && (
-                                  <span className="text-sm text-gray-600 block">
-                                    (฿{booking.Guide.Price.toLocaleString()}/วัน
-                                    × {days} วัน)
-                                  </span>
-                                )}
-                              </>
-                            );
-                          })()}
+                          ฿{booking.TotalAmount.toLocaleString()}
                         </p>
                       </div>
                     </div>
@@ -308,23 +341,91 @@ export default function MyBookingsPage() {
                   </div>
 
                   {/* หมายเหตุ */}
-                  {booking.Note && (
+                  {booking.Notes && (
                     <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                       <p className="text-sm text-gray-500 mb-1">หมายเหตุ</p>
-                      <p className="text-gray-700">{booking.Note}</p>
+                      <p className="text-gray-700">{booking.Notes}</p>
+                    </div>
+                  )}
+
+                  {/* Special Requests */}
+                  {booking.SpecialRequests && (
+                    <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-gray-500 mb-1">
+                        ความต้องการพิเศษ
+                      </p>
+                      <p className="text-gray-700">{booking.SpecialRequests}</p>
                     </div>
                   )}
 
                   {/* Actions */}
                   <div className="mt-6 flex justify-end space-x-4">
+                    {/* Payment Button */}
+                    {booking.Status === "pending_payment" && (
+                      <button
+                        onClick={() =>
+                          router.push(`/trip-bookings/${booking.ID}/payment`)
+                        }
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                      >
+                        ชำระเงิน
+                      </button>
+                    )}
+
+                    {/* Confirm Guide Arrival */}
+                    {booking.Status === "paid" && (
+                      <button
+                        onClick={() => handleConfirmGuideArrival(booking.ID)}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center"
+                      >
+                        <FaCheckCircle className="mr-2" />
+                        ยืนยันไกด์มาแล้ว
+                      </button>
+                    )}
+
+                    {/* Confirm Trip Complete */}
+                    {booking.Status === "trip_started" && (
+                      <button
+                        onClick={() => handleConfirmTripComplete(booking.ID)}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center"
+                      >
+                        <FaCheckCircle className="mr-2" />
+                        ยืนยันทริปเสร็จ
+                      </button>
+                    )}
+
+                    {/* No Show Actions */}
+                    {booking.Status === "paid" && (
+                      <button
+                        onClick={() => handleConfirmNoShow(booking.ID)}
+                        className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center"
+                      >
+                        <FaTimesCircle className="mr-2" />
+                        ฉันไม่ได้ไป
+                      </button>
+                    )}
+
+                    {/* Dispute No Show Report */}
+                    {booking.Status === "no_show_reported" && (
+                      <button
+                        onClick={() => handleDisputeNoShow(booking.ID)}
+                        className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 flex items-center"
+                      >
+                        <FaExclamationTriangle className="mr-2" />
+                        คัดค้านการรีพอร์ต
+                      </button>
+                    )}
+
                     <button
-                      onClick={() => router.push(`/guides/${booking.GuideID}`)}
+                      onClick={() =>
+                        router.push(`/trip-bookings/${booking.ID}`)
+                      }
                       className="px-4 py-2 text-amber-600 border border-amber-600 rounded-lg hover:bg-amber-50"
                     >
-                      ดูรายละเอียดไกด์
+                      ดูรายละเอียด
                     </button>
 
-                    {booking.Status.toLowerCase() === "completed" && (
+                    {booking.Status === "trip_completed" && (
                       <button
                         onClick={() =>
                           router.push(`/guides/${booking.GuideID}?review=true`)

@@ -85,7 +85,8 @@ export default function Login() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 sm:text-sm transition"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 sm:text-sm transition text-black"
+              style={{ color: "#000" }}
               placeholder="your@email.com"
             />
           </div>
@@ -105,7 +106,8 @@ export default function Login() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 sm:text-sm transition pr-10"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 sm:text-sm transition pr-10 text-black"
+                style={{ color: "#000" }}
                 placeholder="••••••••"
               />
               <button
@@ -167,7 +169,8 @@ export default function Login() {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
-                className="h-4 w-4 text-rose-600 focus:ring-rose-500 border-gray-300 rounded"
+                className="h-4 w-4 focus:ring-rose-500 border-gray-300 rounded text-black"
+                style={{ color: "#000" }}
                 disabled
               />
               <label

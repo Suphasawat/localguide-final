@@ -16,7 +16,7 @@ func SeedGuides(db *gorm.DB) error {
             Available:   true,
             Price:       2500.0,
             Rating:      4.8,
-            ProvinceID:  1,
+            ProvinceID:  1, // กรุงเทพมหานคร
         },
         {
             UserID:      3,
@@ -25,7 +25,7 @@ func SeedGuides(db *gorm.DB) error {
             Available:   true,
             Price:       2000.0,
             Rating:      4.5,
-            ProvinceID:  2,
+            ProvinceID:  2, // เชียงใหม่
         },
         {
             UserID:      4,
@@ -34,15 +34,15 @@ func SeedGuides(db *gorm.DB) error {
             Available:   true,
             Price:       3000.0,
             Rating:      4.7,
-            ProvinceID:  3,
+            ProvinceID:  3, // ภูเก็ต
         },
     }
 
     // ข้อมูลภาษาที่แต่ละไกด์พูดได้
     guideLanguages := map[uint][]uint{
-        2: {1, 2, 3}, // Guide ID 2 พูดได้: ไทย, English, 中文
-        3: {1, 2, 4}, // Guide ID 3 พูดได้: ไทย, English, 日本語
-        4: {1, 2, 5}, // Guide ID 4 พูดได้: ไทย, English, 한국어
+        2: {1, 2, 3}, // Guide ID 2 พูดได้: Thai, English, Chinese
+        3: {1, 2, 4}, // Guide ID 3 พูดได้: Thai, English, Japanese
+        4: {1, 2, 5}, // Guide ID 4 พูดได้: Thai, English, Korean
     }
 
     // ข้อมูลสถานที่ท่องเที่ยวที่แต่ละไกด์ให้บริการ
@@ -57,6 +57,13 @@ func SeedGuides(db *gorm.DB) error {
         var user models.User
         if err := db.First(&user, guide.UserID).Error; err != nil {
             // ถ้าไม่มี User ให้ข้าม
+            continue
+        }
+
+        // ตรวจสอบว่า ProvinceID มีอยู่จริง
+        var province models.Province
+        if err := db.First(&province, guide.ProvinceID).Error; err != nil {
+            // ถ้าไม่มี Province ให้ข้าม
             continue
         }
 

@@ -18,7 +18,11 @@ import { MdAttachMoney, MdLocationOn } from "react-icons/md";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 import { getUser } from "../../services/auth.service";
-import { bookingService, Review, UnavailableDate } from "../../services/booking.service";
+import {
+  bookingService,
+  Review,
+  UnavailableDate,
+} from "../../services/booking.service";
 
 dayjs.locale("th");
 
@@ -77,7 +81,9 @@ export default function GuideDetailPage() {
 
       // เรียก API ดึงข้อมูลไกด์
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/guides/${guideId}`
+        `${
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+        }/api/guides/${guideId}`
       );
       if (!response.ok) {
         throw new Error("Guide not found");
@@ -166,7 +172,8 @@ export default function GuideDetailPage() {
   };
 
   const handleDateSelect = (date: dayjs.Dayjs) => {
-    if (isDatePast(date) || isDateUnavailable(date.format("YYYY-MM-DD"))) return;
+    if (isDatePast(date) || isDateUnavailable(date.format("YYYY-MM-DD")))
+      return;
     setSelectedDate(date.format("YYYY-MM-DD"));
   };
 
@@ -195,7 +202,9 @@ export default function GuideDetailPage() {
         note: bookingData.note,
       });
 
-      alert(`จองสำเร็จ! จำนวน ${totalDays} วัน ราคารวม ฿${totalPrice.toLocaleString()}`);
+      alert(
+        `จองสำเร็จ! จำนวน ${totalDays} วัน ราคารวม ฿${totalPrice.toLocaleString()}`
+      );
       setShowBookingModal(false);
       setBookingData({ startDate: "", endDate: "", note: "" });
       setTotalDays(0);
@@ -219,7 +228,9 @@ export default function GuideDetailPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 text-lg mb-4">{error || "ไม่พบข้อมูลไกด์"}</p>
+          <p className="text-red-600 text-lg mb-4">
+            {error || "ไม่พบข้อมูลไกด์"}
+          </p>
           <button
             onClick={() => router.push("/guides")}
             className="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700"
@@ -288,7 +299,10 @@ export default function GuideDetailPage() {
                     <div className="flex items-center justify-center text-2xl font-bold text-amber-600">
                       <MdAttachMoney className="mr-1" />
                       {guide.Price.toLocaleString()}
-                      <span className="text-sm font-normal text-gray-500 ml-1">
+                      <span
+                        className="text-sm font-normal text-black ml-1"
+                        style={{ color: "#666" }}
+                      >
                         /วัน
                       </span>
                     </div>
@@ -302,9 +316,14 @@ export default function GuideDetailPage() {
                 <div className="mb-6">
                   <div className="flex items-center mb-2">
                     <MdLocationOn className="text-red-500 mr-2" />
-                    <h3 className="text-lg font-semibold">พื้นที่ให้บริการ</h3>
+                    <h3 className="text-lg font-semibold text-black">
+                      พื้นที่ให้บริการ
+                    </h3>
                   </div>
-                  <p className="text-gray-700">
+                  <p
+                    className="text-black leading-relaxed"
+                    style={{ color: "#333" }}
+                  >
                     {guide.District && `${guide.District}, `}
                     {guide.City}, {guide.Province}
                   </p>
@@ -314,16 +333,28 @@ export default function GuideDetailPage() {
                 <div className="mb-6">
                   <div className="flex items-center mb-2">
                     <FaUser className="text-blue-500 mr-2" />
-                    <h3 className="text-lg font-semibold">เกี่ยวกับไกด์</h3>
+                    <h3 className="text-lg font-semibold text-black">
+                      เกี่ยวกับไกด์
+                    </h3>
                   </div>
-                  <p className="text-gray-700 leading-relaxed">{guide.Bio}</p>
+                  <p
+                    className="text-black leading-relaxed"
+                    style={{ color: "#333" }}
+                  >
+                    {guide.Bio}
+                  </p>
                 </div>
 
                 {/* Description/Experience */}
                 {guide.Description && (
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-2">ประสบการณ์</h3>
-                    <p className="text-gray-700 leading-relaxed">
+                    <h3 className="text-lg font-semibold mb-2 text-black">
+                      ประสบการณ์
+                    </h3>
+                    <p
+                      className="text-black leading-relaxed"
+                      style={{ color: "#333" }}
+                    >
                       {guide.Description}
                     </p>
                   </div>
@@ -333,7 +364,9 @@ export default function GuideDetailPage() {
                 <div className="mb-6">
                   <div className="flex items-center mb-2">
                     <FaLanguage className="text-green-500 mr-2" />
-                    <h3 className="text-lg font-semibold">ภาษาที่ใช้ได้</h3>
+                    <h3 className="text-lg font-semibold text-black">
+                      ภาษาที่ใช้ได้
+                    </h3>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {guide.Language.map((lang) => (
@@ -352,7 +385,7 @@ export default function GuideDetailPage() {
                   <div className="mb-6">
                     <div className="flex items-center mb-2">
                       <FaMapPin className="text-purple-500 mr-2" />
-                      <h3 className="text-lg font-semibold">
+                      <h3 className="text-lg font-semibold text-black">
                         สถานที่ท่องเที่ยวแนะนำ
                       </h3>
                     </div>
@@ -406,7 +439,7 @@ export default function GuideDetailPage() {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center">
                 <FaCalendarAlt className="text-indigo-500 mr-2" />
-                <h2 className="text-xl font-bold">เลือกวันที่จอง</h2>
+                <h2 className="text-xl font-bold text-black">เลือกวันที่จอง</h2>
               </div>
 
               <div className="flex items-center space-x-4">
@@ -446,7 +479,9 @@ export default function GuideDetailPage() {
               {calendarDays.map((date, index) => {
                 const isCurrentMonth = date.month() === currentMonth.month();
                 const isPast = isDatePast(date);
-                const isUnavailable = isDateUnavailable(date.format("YYYY-MM-DD")); // แก้ไขตรงนี้
+                const isUnavailable = isDateUnavailable(
+                  date.format("YYYY-MM-DD")
+                ); // แก้ไขตรงนี้
                 const isSelected = selectedDate === date.format("YYYY-MM-DD");
 
                 return (
@@ -462,7 +497,11 @@ export default function GuideDetailPage() {
                           ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                           : "hover:bg-gray-100"
                       }
-                      ${isSelected ? "bg-amber-500 text-white hover:bg-amber-600" : ""}
+                      ${
+                        isSelected
+                          ? "bg-amber-500 text-white hover:bg-amber-600"
+                          : ""
+                      }
                     `}
                   >
                     {date.date()}
@@ -475,11 +514,11 @@ export default function GuideDetailPage() {
               <div className="flex space-x-4 text-sm">
                 <div className="flex items-center">
                   <div className="w-4 h-4 bg-gray-100 rounded mr-2"></div>
-                  <span>ไม่ว่าง</span>
+                  <span className="text-black">ไม่ว่าง</span>
                 </div>
                 <div className="flex items-center">
                   <div className="w-4 h-4 bg-amber-500 rounded mr-2"></div>
-                  <span>เลือกแล้ว</span>
+                  <span className="text-black">เลือกแล้ว</span>
                 </div>
               </div>
 
@@ -497,7 +536,9 @@ export default function GuideDetailPage() {
 
         {/* Reviews */}
         <div className="bg-white rounded-xl shadow-lg p-8">
-          <h2 className="text-xl font-bold mb-6">รีวิวจากนักท่องเที่ยว</h2>
+          <h2 className="text-xl font-bold mb-6 text-black">
+            รีวิวจากนักท่องเที่ยว
+          </h2>
 
           {reviews.length === 0 ? (
             <p className="text-gray-500 text-center py-8">ยังไม่มีรีวิว</p>
@@ -524,13 +565,18 @@ export default function GuideDetailPage() {
                             }`}
                           />
                         ))}
-                        <span className="ml-2 text-sm text-gray-500">
+                        <span
+                          className="ml-2 text-sm text-black"
+                          style={{ color: "#666" }}
+                        >
                           {dayjs(review.CreatedAt).format("DD MMMM YYYY")}
                         </span>
                       </div>
                     </div>
                   </div>
-                  <p className="text-gray-700">{review.Comment}</p>
+                  <p className="text-black" style={{ color: "#333" }}>
+                    {review.Comment}
+                  </p>
                 </div>
               ))}
             </div>
@@ -584,7 +630,7 @@ export default function GuideDetailPage() {
               <div className="space-y-6">
                 {/* เลือกวันที่เริ่มต้น */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-black mb-2">
                     วันที่เริ่มต้น
                   </label>
                   <input
@@ -597,13 +643,14 @@ export default function GuideDetailPage() {
                       }))
                     }
                     min={dayjs().format("YYYY-MM-DD")}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-200 transition-all duration-200"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-200 transition-all duration-200 text-black"
+                    style={{ color: "#000" }}
                   />
                 </div>
 
                 {/* เลือกวันที่สิ้นสุด */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-black mb-2">
                     วันที่สิ้นสุด
                   </label>
                   <input
@@ -616,7 +663,8 @@ export default function GuideDetailPage() {
                       }))
                     }
                     min={bookingData.startDate || dayjs().format("YYYY-MM-DD")}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-200 transition-all duration-200"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-200 transition-all duration-200 text-black"
+                    style={{ color: "#000" }}
                   />
                 </div>
 
@@ -662,7 +710,7 @@ export default function GuideDetailPage() {
 
                 {/* หมายเหตุ */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-black mb-2">
                     หมายเหตุ (ไม่บังคับ)
                   </label>
                   <textarea
@@ -674,7 +722,8 @@ export default function GuideDetailPage() {
                       }))
                     }
                     rows={3}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-200 transition-all duration-200 resize-none"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-200 transition-all duration-200 resize-none text-black"
+                    style={{ color: "#000" }}
                     placeholder="ข้อมูลเพิ่มเติมสำหรับไกด์..."
                   />
                 </div>

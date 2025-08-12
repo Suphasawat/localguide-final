@@ -82,7 +82,8 @@ const Register = () => {
               value={form.email}
               onChange={handleChange}
               required
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-rose-200 focus:border-rose-400 transition"
+              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-rose-200 focus:border-rose-400 transition text-black"
+              style={{ color: "#000" }}
               autoComplete="email"
             />
           </div>
@@ -97,7 +98,8 @@ const Register = () => {
               onChange={handleChange}
               required
               minLength={8}
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-rose-200 focus:border-rose-400 transition pr-10"
+              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-rose-200 focus:border-rose-400 transition pr-10 text-black"
+              style={{ color: "#000" }}
               autoComplete="new-password"
             />
             <button
@@ -163,7 +165,8 @@ const Register = () => {
               onChange={handleChange}
               required
               minLength={8}
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-rose-200 focus:border-rose-400 transition pr-10"
+              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-rose-200 focus:border-rose-400 transition pr-10 text-black"
+              style={{ color: "#000" }}
               autoComplete="new-password"
             />
             <button

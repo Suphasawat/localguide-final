@@ -55,7 +55,16 @@ func GetProvinceAttractions(c *fiber.Ctx) error {
 		})
 	}
 
-	if len(province.TouristAttractions) == 0 {
+	// Get tourist attractions for this province
+	var attractions []models.TouristAttraction
+	if err := config.DB.Where("province_id = ?", province.ID).Find(&attractions).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to retrieve attractions",
+			"details": err.Error(),
+		})
+	}
+
+	if len(attractions) == 0 {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "No attractions found for this province",
 		})
@@ -63,6 +72,6 @@ func GetProvinceAttractions(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"province":    province.Name,
-		"attractions": province.TouristAttractions,
+		"attractions": attractions,
 	})
 }

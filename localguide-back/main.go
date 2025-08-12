@@ -7,6 +7,7 @@ import (
 	"localguide-back/config"
 	"localguide-back/controllers"
 	"localguide-back/middleware"
+	"localguide-back/migrations"
 	"localguide-back/models"
 
 	"github.com/gofiber/fiber/v2"
@@ -45,12 +46,12 @@ func main() {
 	}
 
 	// Seed data
-	// migrations.SeedRoles(config.DB)
-	// migrations.SeedLanguages(config.DB)
-	// migrations.SeedProvinces(config.DB)
-	// migrations.SeedTouristAttractions(config.DB)
-	// migrations.SeedUsers(config.DB)                   
-	// migrations.SeedGuides(config.DB)
+	migrations.SeedRoles(config.DB)
+	migrations.SeedLanguages(config.DB)
+	migrations.SeedProvinces(config.DB)
+	migrations.SeedTouristAttractions(config.DB)
+	migrations.SeedUsers(config.DB)                   
+	migrations.SeedGuides(config.DB)
 
 	app := fiber.New()
 	
