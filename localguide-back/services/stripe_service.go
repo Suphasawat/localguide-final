@@ -23,11 +23,12 @@ func (s *StripeService) CreatePaymentIntent(booking *models.TripBooking, userEma
 	params := &stripe.PaymentIntentParams{
 		Amount:   stripe.Int64(amountInCents),
 		Currency: stripe.String("thb"), // Thai Baht
-		Customer: stripe.String(userEmail),
+		// ลบ Customer field ออก เพราะไม่จำเป็นสำหรับการชำระเงินครั้งเดียว
 		Metadata: map[string]string{
 			"booking_id": fmt.Sprintf("%d", booking.ID),
 			"guide_id":   fmt.Sprintf("%d", booking.GuideID),
 			"user_id":    fmt.Sprintf("%d", booking.UserID),
+			"user_email": userEmail,
 		},
 		Description: stripe.String(fmt.Sprintf("Payment for trip booking #%d", booking.ID)),
 	}

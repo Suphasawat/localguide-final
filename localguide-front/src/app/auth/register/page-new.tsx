@@ -49,14 +49,14 @@ export default function RegisterPage() {
     }
 
     try {
-      const { confirmPassword: _, ...registerData } = formData;
+      const { confirmPassword, ...registerData } = formData;
       const success = await register(registerData);
       if (success) {
         router.push("/auth/login?message=registration-success");
       } else {
         setError("เกิดข้อผิดพลาดในการสมัครสมาชิก");
       }
-    } catch (err) {
+    } catch (error) {
       setError("เกิดข้อผิดพลาดในการสมัครสมาชิก");
     } finally {
       setLoading(false);
