@@ -31,9 +31,9 @@ export default function DashboardPage() {
       setLoading(true);
 
       // Load trip requires for users
-      if (user?.role?.name !== "guide") {
+      if (user?.role === 1) {
         const tripRequiresResponse = await tripRequireAPI.getOwn();
-        setTripRequires(tripRequiresResponse.data?.trip_requires || []);
+        setTripRequires(tripRequiresResponse.data?.tripRequires || []);
       }
 
       // Load bookings for everyone
@@ -58,10 +58,10 @@ export default function DashboardPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
-          สวัสดี, {user.first_name} {user.last_name}
+          สวัสดี, {user.FirstName} {user.LastName}
         </h1>
         <p className="text-gray-600 mt-2">
-          {user.role?.name === "guide"
+          {user.role === 2
             ? "แดชบอร์ดสำหรับไกด์"
             : "แดชบอร์ดสำหรับนักท่องเที่ยว"}
         </p>
@@ -69,7 +69,7 @@ export default function DashboardPage() {
 
       {/* Quick Actions */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {user.role?.name === "guide" ? (
+        {user.role === 2 ? (
           <>
             <Link
               href="/guide/trip-requires"
@@ -104,6 +104,13 @@ export default function DashboardPage() {
               <h3 className="text-lg font-semibold mb-2">ความต้องการของฉัน</h3>
               <p className="text-sm opacity-90">จัดการโพสต์</p>
             </Link>
+            <Link
+              href="/become-guide"
+              className="bg-orange-600 hover:bg-orange-700 text-white p-6 rounded-lg text-center"
+            >
+              <h3 className="text-lg font-semibold mb-2">สมัครเป็นไกด์</h3>
+              <p className="text-sm opacity-90">เริ่มต้นใหม่</p>
+            </Link>
           </>
         )}
 
@@ -126,7 +133,7 @@ export default function DashboardPage() {
 
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Recent Trip Requires (for regular users) */}
-        {user.role?.name !== "guide" && (
+        {user.role !== 2 && (
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">ความต้องการเที่ยวล่าสุด</h2>
@@ -138,33 +145,33 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            {tripRequires.length > 0 ? (
+            {tripRequires?.length > 0 ? (
               <div className="space-y-4">
                 {tripRequires.slice(0, 3).map((tripRequire) => (
                   <div
-                    key={tripRequire.id}
+                    key={tripRequire.ID}
                     className="border border-gray-200 rounded-lg p-4"
                   >
                     <h3 className="font-semibold text-gray-900">
-                      {tripRequire.title}
+                      {tripRequire.Title}
                     </h3>
                     <p className="text-sm text-gray-600 mt-1">
-                      {tripRequire.description}
+                      {tripRequire.Description}
                     </p>
                     <div className="flex justify-between items-center mt-2">
                       <span
                         className={`px-2 py-1 rounded-full text-xs ${
-                          tripRequire.status === "open"
+                          tripRequire.Status === "open"
                             ? "bg-green-100 text-green-800"
-                            : tripRequire.status === "in_review"
+                            : tripRequire.Status === "in_review"
                             ? "bg-yellow-100 text-yellow-800"
                             : "bg-gray-100 text-gray-800"
                         }`}
                       >
-                        {tripRequire.status}
+                        {tripRequire.Status}
                       </span>
                       <span className="text-sm text-gray-500">
-                        {tripRequire.offers_count || 0} ข้อเสนอ
+                        {tripRequire.OffersCount || 0} ข้อเสนอ
                       </span>
                     </div>
                   </div>
@@ -201,33 +208,31 @@ export default function DashboardPage() {
             <div className="space-y-4">
               {bookings.slice(0, 3).map((booking) => (
                 <div
-                  key={booking.id}
+                  key={booking.ID}
                   className="border border-gray-200 rounded-lg p-4"
                 >
                   <h3 className="font-semibold text-gray-900">
-                    {booking.trip_title || `Booking #${booking.id}`}
+                    {booking.TripTitle || `Booking #${booking.ID}`}
                   </h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    {user.role?.name === "guide"
-                      ? booking.user_name
-                      : booking.guide_name}
+                    {user.role === 2 ? booking.UserName : booking.GuideName}
                   </p>
                   <div className="flex justify-between items-center mt-2">
                     <span
                       className={`px-2 py-1 rounded-full text-xs ${
-                        booking.status === "paid"
+                        booking.Status === "paid"
                           ? "bg-green-100 text-green-800"
-                          : booking.status === "pending_payment"
+                          : booking.Status === "pending_payment"
                           ? "bg-yellow-100 text-yellow-800"
-                          : booking.status === "trip_completed"
+                          : booking.Status === "trip_completed"
                           ? "bg-blue-100 text-blue-800"
                           : "bg-gray-100 text-gray-800"
                       }`}
                     >
-                      {booking.status}
+                      {booking.Status}
                     </span>
                     <span className="text-sm text-gray-500">
-                      ฿{booking.total_amount?.toLocaleString()}
+                      ฿{booking.TotalAmount?.toLocaleString()}
                     </span>
                   </div>
                 </div>

@@ -1,9 +1,9 @@
 package controllers
 
 import (
+	"fmt"
 	"localguide-back/config"
 	"localguide-back/models"
-	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -64,13 +64,12 @@ func CreateGuide(c *fiber.Ctx) error {
 
     var req struct {
         Bio                 string   `json:"bio"`
-        Experience          string   `json:"experience"`
-        District            string   `json:"district"`
-        City                string   `json:"city"`
-        Province            string   `json:"province"`
+        Description         string   `json:"description"`
+        ProvinceID          uint     `json:"provinceId"`
         Price               float64  `json:"price"`
-        Languages           []string `json:"languages"`
-        TouristAttractions  []string `json:"touristAttractions"`
+        LanguageIDs         []uint   `json:"languageIds"`
+        AttractionIDs       []uint   `json:"attractionIds"`
+        CertificationNumber string   `json:"certificationNumber"`
     }
 
     if err := c.BodyParser(&req); err != nil {
@@ -80,10 +79,10 @@ func CreateGuide(c *fiber.Ctx) error {
     }
 
     // ตรวจสอบข้อมูลที่จำเป็น
-    if req.Bio == "" || req.Experience == "" || req.Price <= 0 || 
-       req.City == "" || req.Province == "" || len(req.Languages) == 0 {
+    if req.Bio == "" || req.Description == "" || req.Price <= 0 || 
+       req.ProvinceID == 0 || len(req.LanguageIDs) == 0 || req.CertificationNumber == "" {
         return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "error": "Missing required fields",
+            "error": "Missing required fields (bio, description, price, provinceId, languageIds, certificationNumber)",
         })
     }
 
@@ -112,13 +111,10 @@ func CreateGuide(c *fiber.Ctx) error {
     verification := models.GuideVertification{
         UserID:              userID.(uint),
         Bio:                 req.Bio,
-        Description:         req.Experience, // ใช้ experience เป็น description
+        Description:         req.Description,
         Price:               req.Price,
-        District:            req.District,
-        City:                req.City,
-        Province:            req.Province,
-        Language:            strings.Join(req.Languages, ","), // แปลง array เป็น string
-        CertificationData:   "", // ตั้งค่าเริ่มต้นเป็นค่าว่าง
+        ProvinceID:          req.ProvinceID,
+        CertificationData:   req.CertificationNumber,
         Status:              "pending",
         VerificationDate:    time.Now(),
         GuideID:             nil,
@@ -126,9 +122,36 @@ func CreateGuide(c *fiber.Ctx) error {
 
     // บันทึกข้อมูลคำขอสมัครเป็นไกด์
     if err := tx.Create(&verification).Error; err != nil {
+        fmt.Printf("Error creating verification: %v\n", err)
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
             "error": "Failed to create guide application",
         })
+    }
+
+    // หา languages ตาม ID และเชื่อมโยงกับ verification
+    for _, languageID := range req.LanguageIDs {
+        var language models.Language
+        if err := tx.Where("id = ?", languageID).First(&language).Error; err == nil {
+            // เชื่อมโยง verification กับ language
+            if err := tx.Model(&verification).Association("Language").Append(&language); err != nil {
+                fmt.Printf("Error associating language: %v\n", err)
+            }
+        } else {
+            fmt.Printf("Language with ID %d not found\n", languageID)
+        }
+    }
+
+    // หา attractions ตาม ID และเชื่อมโยงกับ verification
+    for _, attractionID := range req.AttractionIDs {
+        var attraction models.TouristAttraction
+        if err := tx.Where("id = ?", attractionID).First(&attraction).Error; err == nil {
+            // เชื่อมโยงกับ verification กับ attraction
+            if err := tx.Model(&verification).Association("Attraction").Append(&attraction); err != nil {
+                fmt.Printf("Error associating attraction: %v\n", err)
+            }
+        } else {
+            fmt.Printf("Attraction with ID %d not found\n", attractionID)
+        }
     }
 
     if err := tx.Commit().Error; err != nil {

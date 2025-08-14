@@ -2,6 +2,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { authAPI } from "../../lib/api";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -41,23 +42,14 @@ export default function ResetPassword() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        "http://localhost:8080/api/auth/reset-password",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token, password }),
-        }
-      );
+      // Use the API helper with proper field mapping
+      await authAPI.resetPassword({
+        Token: token,
+        Password: password,
+      });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setMessage("รีเซ็ตรหัสผ่านสำเร็จ กำลังนำไปหน้าเข้าสู่ระบบ...");
-        setTimeout(() => router.push("/auth/login"), 2000);
-      } else {
-        setError(data.error || "เกิดข้อผิดพลาด");
-      }
+      setMessage("รีเซ็ตรหัสผ่านสำเร็จ กำลังนำไปหน้าเข้าสู่ระบบ...");
+      setTimeout(() => router.push("/auth/login"), 2000);
     } catch (error) {
       setError("เกิดข้อผิดพลาด กรุณาลองใหม่");
     } finally {

@@ -35,21 +35,19 @@ export default function RegisterPage() {
     }
 
     // Validate required fields
-    if (
-      !formData.email ||
-      !formData.password ||
-      !formData.first_name ||
-      !formData.last_name ||
-      !formData.phone ||
-      !formData.sex
-    ) {
-      setError("กรุณากรอกข้อมูลให้ครบถ้วน");
+    if (!formData.email || !formData.password) {
+      setError("กรุณากรอกอีเมลและรหัสผ่าน");
       setLoading(false);
       return;
     }
 
     try {
-      const { confirmPassword: _, ...registerData } = formData;
+      // Map form data to backend expected format (only email and password required)
+      const registerData = {
+        email: formData.email,
+        password: formData.password,
+      };
+
       const success = await register(registerData);
       if (success) {
         router.push("/auth/login?message=registration-success");

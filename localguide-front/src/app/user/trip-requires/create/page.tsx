@@ -43,14 +43,7 @@ export default function CreateTripRequirePage() {
   const loadProvinces = async () => {
     try {
       const response = await provinceAPI.getAll();
-      const arr = Array.isArray(response.data)
-        ? response.data
-        : Array.isArray(response.data?.provinces)
-        ? response.data.provinces
-        : [];
-      setProvinces(arr);
-      console.log("Provinces loaded11:", response.data);
-      console.log("Provinces loaded:", arr);
+      setProvinces(response.data.provinces || []);
     } catch (error) {
       console.error("Failed to load provinces:", error);
       setProvinces([]); // ป้องกัน map error
@@ -91,7 +84,23 @@ export default function CreateTripRequirePage() {
     }
 
     try {
-      const response = await tripRequireAPI.create(formData);
+      // Map form data to backend expected format
+      const tripRequireData = {
+        province_id: formData.province_id,
+        title: formData.title,
+        description: formData.description,
+        min_price: formData.min_price,
+        max_price: formData.max_price,
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+        days: formData.days,
+        min_rating: formData.min_rating,
+        group_size: formData.group_size,
+        requirements: formData.requirements,
+        expires_at: formData.expires_at,
+      };
+
+      const response = await tripRequireAPI.create(tripRequireData);
       if (response.data) {
         router.push("/user/trip-requires");
       }
@@ -186,10 +195,6 @@ export default function CreateTripRequirePage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               จังหวัด *
             </label>
-
-            <div>
-              <pre>{JSON.stringify(formData, null, 2)}</pre>
-            </div>
 
             <select
               name="province_id"

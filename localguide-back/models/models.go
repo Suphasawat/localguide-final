@@ -96,14 +96,12 @@ type GuideVertification struct {
 	Bio               string
 	Description       string
 	Price             float64
-	District          string
-	City              string
-	Province          string
-	Language       string `gorm:"type:json"`
-	Attraction     string `gorm:"type:json"`
-	CertificationData string `gorm:"type:json"`
+	ProvinceID        uint
+	Province         Province `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:ProvinceID"`
+	Language         []Language `gorm:"many2many:guide_verification_languages"`
+	Attraction       []TouristAttraction `gorm:"many2many:guide_verification_attractions"`
+	CertificationData string
 }
-
 type PasswordReset struct {
 	gorm.Model
 	Email     string    `gorm:"not null"`

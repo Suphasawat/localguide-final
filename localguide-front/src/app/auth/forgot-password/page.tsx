@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { authAPI } from "../../lib/api";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -13,17 +14,9 @@ export default function ForgotPassword() {
     setMessage("");
 
     try {
-      const response = await fetch(
-        "http://localhost:8080/api/auth/forgot-password",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        }
-      );
-
-      const data = await response.json();
-      setMessage(data.message || "อีเมลรีเซ็ตรหัสผ่านถูกส่งแล้ว");
+      // Use the API helper with proper field mapping
+      await authAPI.forgotPassword({ Email: email });
+      setMessage("อีเมลรีเซ็ตรหัสผ่านถูกส่งแล้ว");
     } catch (error) {
       setMessage("เกิดข้อผิดพลาด กรุณาลองใหม่");
     } finally {

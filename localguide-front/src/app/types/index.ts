@@ -1,32 +1,24 @@
 // Auth Types
 export interface User {
-  ID: number;
-  Email: string;
-  FirstName: string;
-  LastName: string;
-  Phone: string;
-  Nationality: string;
-  Sex: string;
+  id: number;
+  email: string;
+  role: number;
+  FirstName?: string;
+  LastName?: string;
+  Phone?: string;
+  Nationality?: string;
+  Sex?: string;
   Avatar?: string;
-  Role: {
-    ID: number;
-    Name: string;
-  };
 }
 
 export interface LoginData {
-  Email: string;
-  Password: string;
+  email: string;
+  password: string;
 }
 
 export interface RegisterData {
-  Email: string;
-  Password: string;
-  FirstName: string;
-  LastName: string;
-  Phone: string;
-  Nationality: string;
-  Sex: string;
+  email: string;
+  password: string;
 }
 
 // Province Types
@@ -242,4 +234,41 @@ export interface PaginatedResponse<T> {
   Total: number;
   Page?: number;
   Limit?: number;
+}
+
+export interface GuideVerification {
+  ID: number;
+  Status: string;
+  VerificationDate: string;
+  Bio: string;
+  Description: string;
+  Price: number;
+  ProvinceID: number;
+  Province: {
+    ID: number;
+    Name: string;
+    Region: string;
+  };
+  User: {
+    FirstName: string;
+    LastName: string;
+    Email: string;
+  };
+}
+
+export interface TripReport {
+  ID: number;
+  ReportType: string;
+  Title: string;
+  Description: string;
+  Severity: string;
+  Status: string;
+  Reporter: {
+    FirstName: string;
+    LastName: string;
+  };
+  ReportedUser: {
+    FirstName: string;
+    LastName: string;
+  };
 }

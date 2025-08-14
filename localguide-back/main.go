@@ -74,6 +74,8 @@ func main() {
     // Public routes
     api.Get("/provinces", controllers.GetProvinces)
     api.Get("/provinces/:id/attractions", controllers.GetProvinceAttractions)
+    api.Get("/languages", controllers.GetLanguages)
+    api.Get("/attractions", controllers.GetTouristAttractions)
     api.Get("/guides", controllers.GetGuides)
     api.Get("/guides/:id", controllers.GetGuideByID)
     

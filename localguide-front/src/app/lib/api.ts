@@ -1,60 +1,89 @@
-import axios from 'axios';
+import axios from "axios";
+import Cookies from "js-cookie";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
 // Create axios instance
 export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
-// Add request interceptor to include token
+// Add request interceptor to include token from cookie
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = Cookies.get("token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
+// Add response interceptor to handle 401 errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expired or invalid
+      Cookies.remove("token");
+      if (typeof window !== "undefined") {
+        window.location.href = "/auth/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Auth API
 export const authAPI = {
-  register: (data: any) => api.post('/register', data),
-  login: (data: any) => api.post('/login', data),
-  forgotPassword: (data: any) => api.post('/auth/forgot-password', data),
-  resetPassword: (data: any) => api.post('/auth/reset-password', data),
-  me: () => api.get('/me'),
+  register: (data: any) => api.post("/register", data),
+  login: (data: any) => api.post("/login", data),
+  forgotPassword: (data: any) => api.post("/auth/forgot-password", data),
+  resetPassword: (data: any) => api.post("/auth/reset-password", data),
+  me: () => api.get("/me"),
 };
 
 // Province API
 export const provinceAPI = {
-  getAll: () => api.get('/provinces'),
+  getAll: () => api.get("/provinces"),
   getAttractions: (id: number) => api.get(`/provinces/${id}/attractions`),
+};
+
+// Language API
+export const languageAPI = {
+  getAll: () => api.get("/languages"),
+};
+
+// Tourist Attraction API
+export const attractionAPI = {
+  getAll: (provinceId?: number) =>
+    api.get(`/attractions${provinceId ? `?province_id=${provinceId}` : ""}`),
 };
 
 // Guide API
 export const guideAPI = {
-  getAll: () => api.get('/guides'),
+  getAll: () => api.get("/guides"),
   getById: (id: number) => api.get(`/guides/${id}`),
-  create: (data: any) => api.post('/guides', data),
+  create: (data: any) => api.post("/guides", data),
 };
 
 // TripRequire API
 export const tripRequireAPI = {
-  create: (data: any) => api.post('/trip-requires', data),
-  getOwn: () => api.get('/trip-requires'),
+  create: (data: any) => api.post("/trip-requires", data),
+  getOwn: () => api.get("/trip-requires"),
   getById: (id: number) => api.get(`/trip-requires/${id}`),
   update: (id: number, data: any) => api.put(`/trip-requires/${id}`, data),
   delete: (id: number) => api.delete(`/trip-requires/${id}`),
-  browse: () => api.get('/browse/trip-requires'),
+  browse: () => api.get("/browse/trip-requires"),
 };
 
 // TripOffer API
 export const tripOfferAPI = {
-  create: (data: any) => api.post('/trip-offers', data),
-  getByRequire: (requireId: number) => api.get(`/trip-requires/${requireId}/offers`),
+  create: (data: any) => api.post("/trip-offers", data),
+  getByRequire: (requireId: number) =>
+    api.get(`/trip-requires/${requireId}/offers`),
   getById: (id: number) => api.get(`/trip-offers/${id}`),
   update: (id: number, data: any) => api.put(`/trip-offers/${id}`, data),
   delete: (id: number) => api.delete(`/trip-offers/${id}`),
@@ -63,14 +92,18 @@ export const tripOfferAPI = {
 
 // TripBooking API
 export const tripBookingAPI = {
-  getAll: () => api.get('/trip-bookings'),
+  getAll: () => api.get("/trip-bookings"),
   getById: (id: number) => api.get(`/trip-bookings/${id}`),
   createPayment: (id: number) => api.post(`/trip-bookings/${id}/payment`),
-  confirmPayment: (id: number, data: any) => api.post(`/trip-bookings/${id}/payment/confirm`, data),
+  confirmPayment: (id: number, data: any) =>
+    api.post(`/trip-bookings/${id}/payment/confirm`, data),
   getPayment: (id: number) => api.get(`/trip-bookings/${id}/payment`),
-  confirmGuideArrival: (id: number) => api.put(`/trip-bookings/${id}/confirm-guide-arrival`),
-  confirmTripComplete: (id: number) => api.put(`/trip-bookings/${id}/confirm-trip-complete`),
-  reportUserNoShow: (id: number, data: any) => api.put(`/trip-bookings/${id}/report-user-no-show`, data),
+  confirmGuideArrival: (id: number) =>
+    api.put(`/trip-bookings/${id}/confirm-guide-arrival`),
+  confirmTripComplete: (id: number) =>
+    api.put(`/trip-bookings/${id}/confirm-trip-complete`),
+  reportUserNoShow: (id: number, data: any) =>
+    api.put(`/trip-bookings/${id}/report-user-no-show`, data),
 };
 
 // User API
