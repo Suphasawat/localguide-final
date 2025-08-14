@@ -41,7 +41,7 @@ export default function BrowseTripsPage() {
       return;
     }
 
-    if (user?.Role?.Name !== "guide") {
+    if (user?.role !== 2) {
       router.push("/dashboard");
       return;
     }

@@ -81,7 +81,7 @@ export default function DashboardPage() {
               <p className="text-sm opacity-90">หาโอกาสงานใหม่</p>
             </Link>
             <Link
-              href="/guide/offers"
+              href="/guide/my-offers"
               className="bg-blue-600 hover:bg-blue-700 text-white p-6 rounded-lg text-center"
             >
               <h3 className="text-lg font-semibold mb-2">ข้อเสนอของฉัน</h3>

@@ -51,7 +51,7 @@ func CreateTripOffer(c *fiber.Ctx) error {
 		})
 	}
 
-	if tripRequire.Status != "open" {
+	if tripRequire.Status != "open" && tripRequire.Status != "in_review" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Trip requirement is no longer accepting offers",
 		})

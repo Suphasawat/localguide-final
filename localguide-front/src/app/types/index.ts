@@ -176,6 +176,9 @@ export interface TripBooking {
   GuideName?: string;
   Payment?: TripPayment;
   PaymentReleases?: PaymentRelease[];
+  TripOffer?: TripOffer;
+  User?: User;
+  Guide?: Guide;
 }
 
 export interface TripPayment {

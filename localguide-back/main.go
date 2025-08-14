@@ -84,7 +84,7 @@ func main() {
     // 1. TripRequire routes (User โพสต์ความต้องการ)
     api.Post("/trip-requires", middleware.AuthRequired(), controllers.CreateTripRequire)
     api.Get("/trip-requires", middleware.AuthRequired(), controllers.GetTripRequires) // ดู requires ของตัวเอง
-    api.Get("/trip-requires/:id", middleware.AuthRequired(), controllers.GetTripRequiresByTripID)
+    api.Get("/trip-requires/:id", middleware.AuthRequired(), controllers.GetTripRequireByID)
     api.Put("/trip-requires/:id", middleware.AuthRequired(), controllers.UpdateTripRequire)
     api.Delete("/trip-requires/:id", middleware.AuthRequired(), controllers.DeleteTripRequire)
     
@@ -119,6 +119,8 @@ func main() {
     api.Put("/trip-bookings/:id/report-user-no-show", middleware.AuthRequired(), controllers.ReportUserNoShow) // Guide รีพอร์ต user ไม่มา -> ไกด์ได้ 50% + คืนเงินส่วนที่เหลือให้ user
 
     // User profile routes
+    api.Get("/users/profile", middleware.AuthRequired(), controllers.GetUserProfile)
+    api.Put("/users/profile", middleware.AuthRequired(), controllers.UpdateUserProfile)
     api.Post("/guides", middleware.AuthRequired(), controllers.CreateGuide)
     api.Get("/users/:id", middleware.AuthRequired(), middleware.OwnerOrAdminRequired(), controllers.GetUserByID)
     api.Put("/users/:id", middleware.AuthRequired(), middleware.OwnerOrAdminRequired(), controllers.EditUser)

@@ -108,6 +108,8 @@ export const tripBookingAPI = {
 
 // User API
 export const userAPI = {
+  getProfile: () => api.get("/users/profile"),
+  updateProfile: (data: any) => api.put("/users/profile", data),
   getById: (id: number) => api.get(`/users/${id}`),
   update: (id: number, data: any) => api.put(`/users/${id}`, data),
 };
