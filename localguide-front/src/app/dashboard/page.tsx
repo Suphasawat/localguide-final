@@ -171,7 +171,7 @@ export default function DashboardPage() {
                         {tripRequire.Status}
                       </span>
                       <span className="text-sm text-gray-500">
-                        {tripRequire.OffersCount || 0} ข้อเสนอ
+                        {tripRequire.total_offers || 0} ข้อเสนอ
                       </span>
                     </div>
                   </div>

@@ -117,6 +117,7 @@ func main() {
     api.Put("/trip-bookings/:id/confirm-guide-arrival", middleware.AuthRequired(), controllers.ConfirmGuideArrival) // User ยืนยันไกด์มา -> ไกด์ได้เงิน 50%
     api.Put("/trip-bookings/:id/confirm-trip-complete", middleware.AuthRequired(), controllers.ConfirmTripComplete) // User ยืนยันทริปเสร็จ -> ไกด์ได้เงินเต็ม
     api.Put("/trip-bookings/:id/report-user-no-show", middleware.AuthRequired(), controllers.ReportUserNoShow) // Guide รีพอร์ต user ไม่มา -> ไกด์ได้ 50% + คืนเงินส่วนที่เหลือให้ user
+    api.Put("/trip-bookings/:id/confirm-user-no-show", middleware.AuthRequired(), controllers.ConfirmUserNoShow) // User ยืนยันตัวเองไม่มา -> ไกด์ได้ 50% + คืนเงิน 50%
 
     // User profile routes
     api.Get("/users/profile", middleware.AuthRequired(), controllers.GetUserProfile)

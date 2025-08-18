@@ -51,7 +51,7 @@ func CreateTripOffer(c *fiber.Ctx) error {
 		})
 	}
 
-	if tripRequire.Status != "open" && tripRequire.Status != "in_review" {
+	if tripRequire.Status == "assigned" || tripRequire.Status == "completed" || tripRequire.Status == "cancelled" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Trip requirement is no longer accepting offers",
 		})
@@ -139,10 +139,17 @@ func GetTripOffers(c *fiber.Ctx) error {
 	if tripRequireID <= 0 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Require ID must be greater than 0"})
 	}
+    
     var offers []models.TripOffer
-    if err := config.DB.Where("trip_require_id = ?", tripRequireID).Find(&offers).Error; err != nil {
+    if err := config.DB.
+        Preload("Guide.User").
+        Preload("TripOfferQuotation").
+        Where("trip_require_id = ?", tripRequireID).
+        Order("created_at DESC").
+        Find(&offers).Error; err != nil {
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get offers"})
     }
+    
     return c.Status(fiber.StatusOK).JSON(fiber.Map{"offers": offers})
 }
 

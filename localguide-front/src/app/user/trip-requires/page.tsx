@@ -3,39 +3,39 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { TripRequire } from "../../types";
 import { tripRequireAPI } from "../../lib/api";
 import Link from "next/link";
 
-// interface TripRequire {
-//   ID: number;
-//   Title: string;
-//   Description: string;
-//   MinPrice: number;
-//   MaxPrice: number;
-//   StartDate: string;
-//   EndDate: string;
-//   Days: number;
-//   GroupSize: number;
-//   Status: string;
-//   PostedAt: string;
-//   ExpiresAt?: string;
-//   Province: {
-//     ID: number;
-//     Name: string;
-//   };
-//   TripOffer?: Array<{
-//     ID: number;
-//     Status: string;
-//   }>;
-// }
+// Interface สำหรับ response จาก API
+interface TripRequireResponse {
+  ID: number;
+  UserID: number;
+  ProvinceID: number;
+  Title: string;
+  Description: string;
+  MinPrice: number;
+  MaxPrice: number;
+  StartDate: string;
+  EndDate: string;
+  Days: number;
+  MinRating: number;
+  GroupSize: number;
+  Requirements?: string;
+  Status: string;
+  PostedAt: string;
+  ExpiresAt?: string;
+  total_offers: number;
+  province_name: string;
+}
 
 export default function MyTripRequiresPage() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
-  const [tripRequires, setTripRequires] = useState<TripRequire[]>([]);
+  const [tripRequires, setTripRequires] = useState<TripRequireResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -68,12 +68,18 @@ export default function MyTripRequiresPage() {
       return;
     }
 
+    setDeleteLoading(id);
     try {
       await tripRequireAPI.delete(id);
+      setSuccessMessage("ลบความต้องการทริปเรียบร้อยแล้ว");
+      setTimeout(() => setSuccessMessage(""), 3000);
       loadTripRequires(); // Reload data
     } catch (error) {
       console.error("Failed to delete trip require:", error);
-      alert("ไม่สามารถลบได้");
+      setError("ไม่สามารถลบได้ กรุณาลองใหม่อีกครั้ง");
+      setTimeout(() => setError(""), 3000);
+    } finally {
+      setDeleteLoading(null);
     }
   };
 
@@ -113,8 +119,11 @@ export default function MyTripRequiresPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">กำลังโหลด...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="mt-4 text-lg text-gray-600">กำลังโหลดข้อมูล...</div>
+        </div>
       </div>
     );
   }
@@ -130,6 +139,21 @@ export default function MyTripRequiresPage() {
             <p className="mt-2 text-gray-600">
               จัดการความต้องการทริปและดูข้อเสนอที่ได้รับ
             </p>
+            {tripRequires.length > 0 && (
+              <div className="mt-2 flex space-x-4 text-sm text-gray-500">
+                <span>📝 ทั้งหมด {tripRequires.length} รายการ</span>
+                <span>
+                  💼 เปิดรับ{" "}
+                  {tripRequires.filter((t) => t.Status === "open").length}{" "}
+                  รายการ
+                </span>
+                <span>
+                  📩 รวมข้อเสนอ{" "}
+                  {tripRequires.reduce((sum, t) => sum + t.total_offers, 0)}{" "}
+                  รายการ
+                </span>
+              </div>
+            )}
           </div>
           <Link
             href="/user/trip-requires/create"
@@ -145,11 +169,21 @@ export default function MyTripRequiresPage() {
           </div>
         )}
 
+        {successMessage && (
+          <div className="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+            {successMessage}
+          </div>
+        )}
+
         {tripRequires.length === 0 ? (
           <div className="text-center py-12">
             <div className="max-w-md mx-auto">
+              <div className="text-6xl mb-4">🏝️</div>
               <p className="text-gray-500 text-lg mb-4">
                 คุณยังไม่มีความต้องการทริป
+              </p>
+              <p className="text-gray-400 text-sm mb-6">
+                เริ่มต้นโพสต์ความต้องการทริปแรกของคุณเพื่อให้ไกด์ท้องถิ่นมาเสนอข้อเสนอ
               </p>
               <Link
                 href="/user/trip-requires/create"
@@ -164,15 +198,15 @@ export default function MyTripRequiresPage() {
             {tripRequires.map((trip) => (
               <div
                 key={trip.ID}
-                className="bg-white rounded-lg shadow-md overflow-hidden"
+                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
               >
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
                       {trip.Title}
                     </h3>
                     <span
-                      className={`px-2 py-1 text-xs rounded-full ${getStatusColor(
+                      className={`px-2 py-1 text-xs rounded-full whitespace-nowrap ml-2 ${getStatusColor(
                         trip.Status
                       )}`}
                     >
@@ -185,7 +219,7 @@ export default function MyTripRequiresPage() {
                   </p>
 
                   <div className="space-y-2 text-sm text-gray-500">
-                    <div>📍 {trip.Province?.Name}</div>
+                    <div>📍 {trip.province_name || "ไม่ระบุจังหวัด"}</div>
                     <div>👥 {trip.GroupSize} คน</div>
                     <div>📅 {trip.Days} วัน</div>
                     <div>
@@ -206,9 +240,9 @@ export default function MyTripRequiresPage() {
                         {new Date(trip.ExpiresAt).toLocaleDateString("th-TH")}
                       </div>
                     )}
-                    {trip.TripOffer && trip.TripOffer.length > 0 && (
+                    {trip.total_offers > 0 && (
                       <div className="text-blue-600 font-medium">
-                        📥 มีข้อเสนอ {trip.TripOffer.length} รายการ
+                        📥 มีข้อเสนอ {trip.total_offers} รายการ
                       </div>
                     )}
                   </div>
@@ -222,12 +256,12 @@ export default function MyTripRequiresPage() {
                         ดูรายละเอียด
                       </Link>
 
-                      {trip.TripOffer && trip.TripOffer.length > 0 && (
+                      {trip.total_offers > 0 && (
                         <Link
                           href={`/user/trip-requires/${trip.ID}/offers`}
                           className="flex-1 bg-green-600 text-white text-center py-2 px-4 rounded-md hover:bg-green-700 transition-colors"
                         >
-                          ดูข้อเสนอ ({trip.TripOffer.length})
+                          ดูข้อเสนอ ({trip.total_offers})
                         </Link>
                       )}
                     </div>
@@ -242,9 +276,10 @@ export default function MyTripRequiresPage() {
                         </Link>
                         <button
                           onClick={() => handleDelete(trip.ID)}
-                          className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors"
+                          disabled={deleteLoading === trip.ID}
+                          className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          ลบ
+                          {deleteLoading === trip.ID ? "กำลังลบ..." : "ลบ"}
                         </button>
                       </div>
                     )}

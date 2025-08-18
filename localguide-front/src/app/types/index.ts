@@ -80,7 +80,8 @@ export interface TripRequire {
   ExpiresAt?: string;
   Province?: Province;
   User?: User;
-  OffersCount?: number;
+  total_offers?: number;
+  province_name?: string;
 }
 
 export interface CreateTripRequireData {
@@ -117,6 +118,7 @@ export interface TripOffer {
   Guide?: Guide;
   TripRequire?: TripRequire;
   Quotation?: TripOfferQuotation;
+  TripOfferQuotation?: TripOfferQuotation[];
 }
 
 export interface TripOfferQuotation {
@@ -153,14 +155,41 @@ export interface CreateTripOfferData {
 
 // TripBooking Types
 export interface TripBooking {
-  ID: number;
-  TripOfferID: number;
-  UserID: number;
-  GuideID: number;
-  StartDate: string;
-  TotalAmount: number;
-  Status: string;
-  PaymentStatus: string;
+  // Backend properties (snake_case)
+  id: number;
+  trip_offer_id: number;
+  user_id: number;
+  guide_id: number;
+  start_date: string;
+  total_amount: number;
+  status: string;
+  payment_status: string;
+  trip_started_at?: string;
+  trip_completed_at?: string;
+  cancelled_at?: string;
+  no_show_at?: string;
+  cancellation_reason?: string;
+  special_requests?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+
+  // Flattened properties from backend response
+  province_name?: string;
+  trip_title?: string;
+  trip_require_title?: string;
+  user_name?: string;
+  guide_name?: string;
+
+  // Legacy/Alternative properties (PascalCase) for backward compatibility
+  ID: number; // Make this required as fallback
+  TripOfferID?: number;
+  UserID?: number;
+  GuideID?: number;
+  StartDate: string; // Make this required as fallback
+  TotalAmount: number; // Make this required as fallback
+  Status?: string;
+  PaymentStatus?: string;
   TripStartedAt?: string;
   TripCompletedAt?: string;
   CancelledAt?: string;
@@ -168,12 +197,14 @@ export interface TripBooking {
   CancellationReason?: string;
   SpecialRequests?: string;
   Notes?: string;
-  CreatedAt: string;
-  UpdatedAt: string;
+  CreatedAt?: string;
+  UpdatedAt?: string;
   ProvinceName?: string;
   TripTitle?: string;
   UserName?: string;
   GuideName?: string;
+
+  // Related objects (might not be populated in list responses)
   Payment?: TripPayment;
   PaymentReleases?: PaymentRelease[];
   TripOffer?: TripOffer;
