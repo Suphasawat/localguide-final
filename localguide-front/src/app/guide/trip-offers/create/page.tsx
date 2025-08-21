@@ -45,9 +45,6 @@ export default function CreateTripOfferPage() {
     notes: "",
   });
 
-  // console.log("TripRequire ID:", tripRequireId);
-  // console.log("TripRequire Data:", tripRequire);
-
   useEffect(() => {
     if (!isAuthenticated) {
       router.push("/auth/login");
@@ -95,19 +92,6 @@ export default function CreateTripOfferPage() {
     setError("");
 
     try {
-      // Validate price range
-      if (
-        tripRequire &&
-        (formData.totalPrice < tripRequire.MinPrice ||
-          formData.totalPrice > tripRequire.MaxPrice)
-      ) {
-        setError(
-          `ราคาที่เสนอต้องอยู่ระหว่าง ${tripRequire.MinPrice} - ${tripRequire.MaxPrice} บาท`
-        );
-        setSubmitting(false);
-        return;
-      }
-
       // Calculate valid days from validUntil date
       const validUntilDate = new Date(formData.validUntil);
       const today = new Date();
@@ -121,13 +105,23 @@ export default function CreateTripOfferPage() {
         trip_require_id: Number(tripRequireId),
         title: formData.title,
         description: formData.description,
-        itinerary: formData.itinerary ? JSON.stringify(formData.itinerary) : '""',
-        included_services: formData.includedServices ? JSON.stringify(formData.includedServices) : '""',
-        excluded_services: formData.excludedServices ? JSON.stringify(formData.excludedServices) : '""',
+        itinerary: formData.itinerary
+          ? JSON.stringify(formData.itinerary)
+          : '""',
+        included_services: formData.includedServices
+          ? JSON.stringify(formData.includedServices)
+          : '""',
+        excluded_services: formData.excludedServices
+          ? JSON.stringify(formData.excludedServices)
+          : '""',
         total_price: formData.totalPrice,
-        price_breakdown: formData.priceBreakdown ? JSON.stringify(formData.priceBreakdown) : '""',
+        price_breakdown: formData.priceBreakdown
+          ? JSON.stringify(formData.priceBreakdown)
+          : '""',
         terms: formData.terms ? JSON.stringify(formData.terms) : '""',
-        payment_terms: formData.paymentTerms ? JSON.stringify(formData.paymentTerms) : '""',
+        payment_terms: formData.paymentTerms
+          ? JSON.stringify(formData.paymentTerms)
+          : '""',
         offer_notes: formData.notes || "",
         valid_days: validDays,
       };
@@ -144,12 +138,7 @@ export default function CreateTripOfferPage() {
 
         if (apiError.response?.data?.error) {
           const errorMessage = apiError.response.data.error;
-          if (errorMessage.includes("Price is outside the requested range")) {
-            const range = apiError.response.data.requested_range;
-            setError(
-              `ราคาที่เสนอต้องอยู่ระหว่าง ${range.min} - ${range.max} บาท`
-            );
-          } else if (errorMessage.includes("already made an offer")) {
+          if (errorMessage.includes("already made an offer")) {
             setError("คุณได้เสนอข้อเสนอสำหรับทริปนี้แล้ว");
           } else if (errorMessage.includes("Only guides can create offers")) {
             setError("เฉพาะไกด์เท่านั้นที่สามารถสร้างข้อเสนอได้");
@@ -333,24 +322,8 @@ export default function CreateTripOfferPage() {
                 value={formData.totalPrice}
                 onChange={handleChange}
                 required
-                min={tripRequire?.MinPrice || 0}
-                max={tripRequire?.MaxPrice || undefined}
-                className={`w-full px-3 py-2 border ${
-                  tripRequire &&
-                  (formData.totalPrice < tripRequire.MinPrice ||
-                    formData.totalPrice > tripRequire.MaxPrice)
-                    ? "border-red-500"
-                    : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              {tripRequire &&
-                (formData.totalPrice < tripRequire.MinPrice ||
-                  formData.totalPrice > tripRequire.MaxPrice) && (
-                  <p className="text-sm text-red-600 mt-1">
-                    ราคาต้องอยู่ระหว่าง {tripRequire.MinPrice} -{" "}
-                    {tripRequire.MaxPrice} บาท
-                  </p>
-                )}
             </div>
 
             <div>

@@ -5,42 +5,12 @@ import { useAuth } from "../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { tripBookingAPI } from "../lib/api";
 import Link from "next/link";
-
-interface TripBooking {
-  ID: number;
-  StartDate: string;
-  TotalAmount: number;
-  Status: string;
-  PaymentStatus: string;
-  TripStartedAt?: string;
-  TripCompletedAt?: string;
-  User: {
-    ID: number;
-    FirstName: string;
-    LastName: string;
-  };
-  Guide: {
-    ID: number;
-    User: {
-      FirstName: string;
-      LastName: string;
-    };
-  };
-  TripOffer: {
-    Title: string;
-    TripRequire: {
-      Title: string;
-      Province: {
-        Name: string;
-      };
-    };
-  };
-}
+import type { TripBooking as TripBookingType } from "../types";
 
 export default function TripBookingsPage() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
-  const [bookings, setBookings] = useState<TripBooking[]>([]);
+  const [bookings, setBookings] = useState<TripBookingType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -56,45 +26,14 @@ export default function TripBookingsPage() {
   const loadBookings = async () => {
     try {
       const response = await tripBookingAPI.getAll();
-      setBookings(response.data?.bookings || []);
+      const data = response.data;
+      const list = Array.isArray(data) ? data : data?.bookings;
+      setBookings(list || []);
     } catch (error) {
       console.error("Failed to load bookings:", error);
       setError("ไม่สามารถโหลดข้อมูลได้");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleConfirmGuideArrival = async (bookingId: number) => {
-    try {
-      await tripBookingAPI.confirmGuideArrival(bookingId);
-      loadBookings(); // Reload data
-    } catch (error) {
-      console.error("Failed to confirm guide arrival:", error);
-      alert("ไม่สามารถยืนยันได้");
-    }
-  };
-
-  const handleConfirmTripComplete = async (bookingId: number) => {
-    try {
-      await tripBookingAPI.confirmTripComplete(bookingId);
-      loadBookings(); // Reload data
-    } catch (error) {
-      console.error("Failed to confirm trip complete:", error);
-      alert("ไม่สามารถยืนยันได้");
-    }
-  };
-
-  const handleReportNoShow = async (bookingId: number) => {
-    const reason = prompt("กรุณาระบุเหตุผลที่ลูกค้าไม่มา:");
-    if (!reason) return;
-
-    try {
-      await tripBookingAPI.reportUserNoShow(bookingId, { reason });
-      loadBookings(); // Reload data
-    } catch (error) {
-      console.error("Failed to report no show:", error);
-      alert("ไม่สามารถรีพอร์ตได้");
     }
   };
 
@@ -132,8 +71,37 @@ export default function TripBookingsPage() {
       case "no_show":
         return "ลูกค้าไม่มา";
       default:
-        return status;
+        return status || "-";
     }
+  };
+
+  // Helpers to read from multiple possible shapes
+  const getId = (b: TripBookingType) => (b as any).ID ?? (b as any).id;
+  const getTitle = (b: TripBookingType) =>
+    (b as any).TripOffer?.Title ||
+    (b as any).trip_title ||
+    (b as any).TripTitle ||
+    `การจอง #${getId(b)}`;
+  const getProvince = (b: TripBookingType) =>
+    (b as any).TripOffer?.TripRequire?.Province?.Name ||
+    (b as any).province_name ||
+    (b as any).ProvinceName ||
+    "-";
+  const getStatusVal = (b: TripBookingType) =>
+    (b as any).Status || (b as any).status || "";
+  const getTotal = (b: TripBookingType) =>
+    (b as any).TotalAmount ?? (b as any).total_amount ?? 0;
+  const getUserName = (b: TripBookingType) => {
+    const u = (b as any).User;
+    if (u?.FirstName || u?.LastName)
+      return `${u?.FirstName || ""} ${u?.LastName || ""}`.trim();
+    return (b as any).user_name || (b as any).UserName || "-";
+  };
+  const getGuideName = (b: TripBookingType) => {
+    const g = (b as any).Guide?.User;
+    if (g?.FirstName || g?.LastName)
+      return `${g?.FirstName || ""} ${g?.LastName || ""}`.trim();
+    return (b as any).guide_name || (b as any).GuideName || "-";
   };
 
   if (loading) {
@@ -159,139 +127,51 @@ export default function TripBookingsPage() {
         )}
 
         {bookings.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">ไม่มีการจองทริปในขณะนี้</p>
+          <div className="bg-white p-6 rounded shadow text-center">
+            ไม่มีการจองในขณะนี้
           </div>
         ) : (
-          <div className="space-y-6">
-            {bookings.map((booking) => (
-              <div
-                key={booking.ID}
-                className="bg-white rounded-lg shadow-md overflow-hidden"
-              >
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {booking.TripOffer?.Title}
-                      </h3>
-                      <p className="text-gray-600">
-                        {booking.TripOffer?.TripRequire?.Title}
-                      </p>
+          <div className="grid gap-4">
+            {bookings.map((b) => {
+              const id = getId(b);
+              const status = getStatusVal(b);
+              return (
+                <div
+                  key={id}
+                  className="bg-white rounded-lg shadow p-4 flex flex-col md:flex-row md:items-center md:justify-between"
+                >
+                  <div>
+                    <Link
+                      href={`/trip-bookings/${id}`}
+                      className="text-lg font-semibold text-blue-600 hover:underline"
+                    >
+                      {getTitle(b)}
+                    </Link>
+                    <div className="text-sm text-gray-600">
+                      {getProvince(b)}
                     </div>
-                    <span
-                      className={`px-3 py-1 text-sm rounded-full ${getStatusColor(
-                        booking.Status
+                    <div className="text-sm text-gray-700 mt-2">
+                      ผู้จอง: {getUserName(b)} • ไกด์: {getGuideName(b)}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 md:mt-0 flex items-center gap-3">
+                    <div
+                      className={`px-3 py-1 rounded-full text-sm ${getStatusColor(
+                        status
                       )}`}
                     >
-                      {getStatusText(booking.Status)}
-                    </span>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2 text-sm">
-                      <div>
-                        📍 จังหวัด:{" "}
-                        {booking.TripOffer?.TripRequire?.Province?.Name}
-                      </div>
-                      <div>
-                        👤 ลูกค้า: {booking.User?.FirstName}{" "}
-                        {booking.User?.LastName}
-                      </div>
-                      <div>
-                        🏃‍♂️ ไกด์: {booking.Guide?.User?.FirstName}{" "}
-                        {booking.Guide?.User?.LastName}
-                      </div>
-                      <div>
-                        📅 วันเริ่มทริป:{" "}
-                        {new Date(booking.StartDate).toLocaleDateString(
-                          "th-TH"
-                        )}
-                      </div>
+                      {getStatusText(status)}
                     </div>
 
-                    <div className="space-y-2 text-sm">
-                      <div>
-                        💰 ราคารวม: {booking.TotalAmount?.toLocaleString()} บาท
-                      </div>
-                      <div>💳 สถานะชำระเงิน: {booking.PaymentStatus}</div>
-                      {booking.TripStartedAt && (
-                        <div>
-                          🚀 เริ่มทริป:{" "}
-                          {new Date(booking.TripStartedAt).toLocaleDateString(
-                            "th-TH"
-                          )}
-                        </div>
-                      )}
-                      {booking.TripCompletedAt && (
-                        <div>
-                          ✅ เสร็จสิ้น:{" "}
-                          {new Date(booking.TripCompletedAt).toLocaleDateString(
-                            "th-TH"
-                          )}
-                        </div>
-                      )}
+                    <div className="text-right">
+                      <div className="text-sm text-gray-500">ยอดรวม</div>
+                      <div className="font-medium">฿{getTotal(b)}</div>
                     </div>
-                  </div>
-
-                  {/* Actions based on user role and booking status */}
-                  <div className="mt-6 flex flex-wrap gap-3">
-                    <Link
-                      href={`/trip-bookings/${booking.ID}`}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-                    >
-                      ดูรายละเอียด
-                    </Link>
-
-                    {/* User actions */}
-                    {user?.role === 1 && (
-                      <>
-                        {booking.Status === "pending_payment" && (
-                          <Link
-                            href={`/trip-bookings/${booking.ID}/payment`}
-                            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-                          >
-                            ชำระเงิน
-                          </Link>
-                        )}
-
-                        {booking.Status === "paid" && (
-                          <button
-                            onClick={() =>
-                              handleConfirmGuideArrival(booking.ID)
-                            }
-                            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-                          >
-                            ยืนยันไกด์มาแล้ว
-                          </button>
-                        )}
-
-                        {booking.Status === "trip_started" && (
-                          <button
-                            onClick={() =>
-                              handleConfirmTripComplete(booking.ID)
-                            }
-                            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-                          >
-                            ยืนยันทริปเสร็จ
-                          </button>
-                        )}
-                      </>
-                    )}
-
-                    {/* Guide actions */}
-                    {user?.role === 2 && booking.Status === "paid" && (
-                      <button
-                        onClick={() => handleReportNoShow(booking.ID)}
-                        className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
-                      >
-                        รีพอร์ตลูกค้าไม่มา
-                      </button>
-                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
