@@ -1,32 +1,24 @@
 // Auth Types
 export interface User {
-  ID: number;
-  Email: string;
-  FirstName: string;
-  LastName: string;
-  Phone: string;
-  Nationality: string;
-  Sex: string;
+  id: number;
+  email: string;
+  role: number;
+  FirstName?: string;
+  LastName?: string;
+  Phone?: string;
+  Nationality?: string;
+  Sex?: string;
   Avatar?: string;
-  Role: {
-    ID: number;
-    Name: string;
-  };
 }
 
 export interface LoginData {
-  Email: string;
-  Password: string;
+  email: string;
+  password: string;
 }
 
 export interface RegisterData {
-  Email: string;
-  Password: string;
-  FirstName: string;
-  LastName: string;
-  Phone: string;
-  Nationality: string;
-  Sex: string;
+  email: string;
+  password: string;
 }
 
 // Province Types
@@ -88,7 +80,8 @@ export interface TripRequire {
   ExpiresAt?: string;
   Province?: Province;
   User?: User;
-  OffersCount?: number;
+  total_offers?: number;
+  province_name?: string;
 }
 
 export interface CreateTripRequireData {
@@ -125,6 +118,7 @@ export interface TripOffer {
   Guide?: Guide;
   TripRequire?: TripRequire;
   Quotation?: TripOfferQuotation;
+  TripOfferQuotation?: TripOfferQuotation[];
 }
 
 export interface TripOfferQuotation {
@@ -161,14 +155,41 @@ export interface CreateTripOfferData {
 
 // TripBooking Types
 export interface TripBooking {
-  ID: number;
-  TripOfferID: number;
-  UserID: number;
-  GuideID: number;
-  StartDate: string;
-  TotalAmount: number;
-  Status: string;
-  PaymentStatus: string;
+  // Backend properties (snake_case)
+  id: number;
+  trip_offer_id: number;
+  user_id: number;
+  guide_id: number;
+  start_date: string;
+  total_amount: number;
+  status: string;
+  payment_status: string;
+  trip_started_at?: string;
+  trip_completed_at?: string;
+  cancelled_at?: string;
+  no_show_at?: string;
+  cancellation_reason?: string;
+  special_requests?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+
+  // Flattened properties from backend response
+  province_name?: string;
+  trip_title?: string;
+  trip_require_title?: string;
+  user_name?: string;
+  guide_name?: string;
+
+  // Legacy/Alternative properties (PascalCase) for backward compatibility
+  ID: number; // Make this required as fallback
+  TripOfferID?: number;
+  UserID?: number;
+  GuideID?: number;
+  StartDate: string; // Make this required as fallback
+  TotalAmount: number; // Make this required as fallback
+  Status?: string;
+  PaymentStatus?: string;
   TripStartedAt?: string;
   TripCompletedAt?: string;
   CancelledAt?: string;
@@ -176,14 +197,19 @@ export interface TripBooking {
   CancellationReason?: string;
   SpecialRequests?: string;
   Notes?: string;
-  CreatedAt: string;
-  UpdatedAt: string;
+  CreatedAt?: string;
+  UpdatedAt?: string;
   ProvinceName?: string;
   TripTitle?: string;
   UserName?: string;
   GuideName?: string;
+
+  // Related objects (might not be populated in list responses)
   Payment?: TripPayment;
   PaymentReleases?: PaymentRelease[];
+  TripOffer?: TripOffer;
+  User?: User;
+  Guide?: Guide;
 }
 
 export interface TripPayment {
@@ -242,4 +268,41 @@ export interface PaginatedResponse<T> {
   Total: number;
   Page?: number;
   Limit?: number;
+}
+
+export interface GuideVerification {
+  ID: number;
+  Status: string;
+  VerificationDate: string;
+  Bio: string;
+  Description: string;
+  Price: number;
+  ProvinceID: number;
+  Province: {
+    ID: number;
+    Name: string;
+    Region: string;
+  };
+  User: {
+    FirstName: string;
+    LastName: string;
+    Email: string;
+  };
+}
+
+export interface TripReport {
+  ID: number;
+  ReportType: string;
+  Title: string;
+  Description: string;
+  Severity: string;
+  Status: string;
+  Reporter: {
+    FirstName: string;
+    LastName: string;
+  };
+  ReportedUser: {
+    FirstName: string;
+    LastName: string;
+  };
 }

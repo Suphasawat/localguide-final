@@ -9,10 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@stripe/react-stripe-js": "^3.9.0",
+    "@stripe/stripe-js": "^7.8.0",
     "axios": "^1.9.0",
     "cookies-next": "^6.1.0",
     "daisyui": "^5.0.35",
     "dayjs": "^1.11.13",
+    "js-cookie": "^3.0.5",
     "next": "15.3.1",
     "next-auth": "^4.24.11",
     "react": "^19.0.0",
@@ -24,6 +27,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/js-cookie": "^3.0.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

@@ -23,16 +23,28 @@ export default function Navbar() {
                   Dashboard
                 </Link>
 
-                {user?.role?.name === "guide" ? (
+                {user?.role === 3 && (
+                  <Link href="/admin" className="hover:text-blue-200">
+                    Admin
+                  </Link>
+                )}
+
+                {user?.role === 2 ? (
                   <>
                     <Link
-                      href="/guide/trip-requires"
+                      href="/guide/browse-trips"
                       className="hover:text-blue-200"
                     >
-                      Browse Trips
+                      หาทริป
                     </Link>
-                    <Link href="/guide/offers" className="hover:text-blue-200">
-                      My Offers
+                    <Link
+                      href="/guide/my-offers"
+                      className="hover:text-blue-200"
+                    >
+                      ข้อเสนอของฉัน
+                    </Link>
+                    <Link href="/trip-bookings" className="hover:text-blue-200">
+                      การจอง
                     </Link>
                   </>
                 ) : (
@@ -41,43 +53,40 @@ export default function Navbar() {
                       href="/user/trip-requires"
                       className="hover:text-blue-200"
                     >
-                      My Trips
+                      ทริปของฉัน
                     </Link>
                     <Link
                       href="/user/trip-requires/create"
                       className="hover:text-blue-200"
                     >
-                      Post Trip
+                      โพสต์ทริป
+                    </Link>
+                    <Link href="/trip-bookings" className="hover:text-blue-200">
+                      การจอง
                     </Link>
                   </>
                 )}
 
-                <Link href="/bookings" className="hover:text-blue-200">
-                  Bookings
-                </Link>
-
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm">
-                    {user?.first_name} {user?.last_name}
-                  </span>
+                  <span className="text-sm">{user?.email}</span>
                   <button
                     onClick={logout}
                     className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm"
                   >
-                    Logout
+                    ออกจากระบบ
                   </button>
                 </div>
               </>
             ) : (
               <>
                 <Link href="/auth/login" className="hover:text-blue-200">
-                  Login
+                  เข้าสู่ระบบ
                 </Link>
                 <Link
                   href="/auth/register"
                   className="bg-blue-500 hover:bg-blue-700 px-4 py-2 rounded"
                 >
-                  Register
+                  สมัครสมาชิก
                 </Link>
               </>
             )}

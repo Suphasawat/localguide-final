@@ -23,7 +23,7 @@ func (s *StripeService) CreatePaymentIntent(booking *models.TripBooking, userEma
 	params := &stripe.PaymentIntentParams{
 		Amount:   stripe.Int64(amountInCents),
 		Currency: stripe.String("thb"), // Thai Baht
-		// ลบ Customer field ออก เพราะไม่จำเป็นสำหรับการชำระเงินครั้งเดียว
+		PaymentMethodTypes: stripe.StringSlice([]string{"card", "promptpay"}), // support card and PromptPay
 		Metadata: map[string]string{
 			"booking_id": fmt.Sprintf("%d", booking.ID),
 			"guide_id":   fmt.Sprintf("%d", booking.GuideID),

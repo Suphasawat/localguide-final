@@ -278,6 +278,33 @@ func GetTripRequiresByTripID(c *fiber.Ctx) error {
 	})
 }
 
+func GetTripRequireByID(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil || id <= 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid trip require ID",
+			"details": err.Error(),
+		})
+	}
+
+	var tripRequire models.TripRequire
+	if err := config.DB.Preload("Province").Preload("User").First(&tripRequire, id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "Trip requirement not found",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to retrieve trip requirement",
+			"details": err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": tripRequire,
+	})
+}
+
 func UpdateTripRequire(c *fiber.Ctx) error {
 
 	tripID ,err := strconv.Atoi(c.Params("id"))

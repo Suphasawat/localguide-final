@@ -22,7 +22,13 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const success = await login(formData);
+      // Map form data to backend expected format (lowercase)
+      const loginData = {
+        email: formData.email,
+        password: formData.password,
+      };
+
+      const success = await login(loginData);
       if (success) {
         router.push("/dashboard");
       } else {

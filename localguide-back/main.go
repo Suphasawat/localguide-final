@@ -74,6 +74,8 @@ func main() {
     // Public routes
     api.Get("/provinces", controllers.GetProvinces)
     api.Get("/provinces/:id/attractions", controllers.GetProvinceAttractions)
+    api.Get("/languages", controllers.GetLanguages)
+    api.Get("/attractions", controllers.GetTouristAttractions)
     api.Get("/guides", controllers.GetGuides)
     api.Get("/guides/:id", controllers.GetGuideByID)
     
@@ -82,7 +84,7 @@ func main() {
     // 1. TripRequire routes (User โพสต์ความต้องการ)
     api.Post("/trip-requires", middleware.AuthRequired(), controllers.CreateTripRequire)
     api.Get("/trip-requires", middleware.AuthRequired(), controllers.GetTripRequires) // ดู requires ของตัวเอง
-    api.Get("/trip-requires/:id", middleware.AuthRequired(), controllers.GetTripRequiresByTripID)
+    api.Get("/trip-requires/:id", middleware.AuthRequired(), controllers.GetTripRequireByID)
     api.Put("/trip-requires/:id", middleware.AuthRequired(), controllers.UpdateTripRequire)
     api.Delete("/trip-requires/:id", middleware.AuthRequired(), controllers.DeleteTripRequire)
     
@@ -115,8 +117,11 @@ func main() {
     api.Put("/trip-bookings/:id/confirm-guide-arrival", middleware.AuthRequired(), controllers.ConfirmGuideArrival) // User ยืนยันไกด์มา -> ไกด์ได้เงิน 50%
     api.Put("/trip-bookings/:id/confirm-trip-complete", middleware.AuthRequired(), controllers.ConfirmTripComplete) // User ยืนยันทริปเสร็จ -> ไกด์ได้เงินเต็ม
     api.Put("/trip-bookings/:id/report-user-no-show", middleware.AuthRequired(), controllers.ReportUserNoShow) // Guide รีพอร์ต user ไม่มา -> ไกด์ได้ 50% + คืนเงินส่วนที่เหลือให้ user
+    api.Put("/trip-bookings/:id/confirm-user-no-show", middleware.AuthRequired(), controllers.ConfirmUserNoShow) // User ยืนยันตัวเองไม่มา -> ไกด์ได้ 50% + คืนเงิน 50%
 
     // User profile routes
+    api.Get("/users/profile", middleware.AuthRequired(), controllers.GetUserProfile)
+    api.Put("/users/profile", middleware.AuthRequired(), controllers.UpdateUserProfile)
     api.Post("/guides", middleware.AuthRequired(), controllers.CreateGuide)
     api.Get("/users/:id", middleware.AuthRequired(), middleware.OwnerOrAdminRequired(), controllers.GetUserByID)
     api.Put("/users/:id", middleware.AuthRequired(), middleware.OwnerOrAdminRequired(), controllers.EditUser)

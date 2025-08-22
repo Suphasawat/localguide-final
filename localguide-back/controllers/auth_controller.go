@@ -159,6 +159,8 @@ func Me(c *fiber.Ctx) error {
         "id":    user.ID,
         "email": authUser.Email,
         "role":  user.RoleID,
+		"FirstName": user.FirstName,
+		"LastName": user.LastName,
     })
 }
 

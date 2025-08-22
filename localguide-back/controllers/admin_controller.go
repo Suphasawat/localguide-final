@@ -1,10 +1,8 @@
 package controllers
 
 import (
-	"encoding/json"
 	"localguide-back/config"
 	"localguide-back/models"
-	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -51,6 +49,7 @@ func ApproveGuide(c *fiber.Ctx) error {
 			Bio:         verification.Bio,
 			Description: verification.Description,
 			Price:       verification.Price,
+			ProvinceID:  verification.ProvinceID, // ใช้ ProvinceID จาก verification
 			Available:   true, // ตั้งค่าเป็น available
 			Rating:      0,    // เริ่มต้นที่ 0
 		}
@@ -70,21 +69,16 @@ func ApproveGuide(c *fiber.Ctx) error {
 			})
 		}
 
-		// --- เพิ่มส่วนนี้เพื่อสร้าง GuideCertification ---
-		var certs []struct {
-			CertificationNumber string `json:"CertificationNumber"`
-		}
-		if err := json.Unmarshal([]byte(verification.CertificationData), &certs); err == nil {
-			for _, cert := range certs {
-				guideCert := models.GuideCertification{
-					GuideID:     newGuide.ID,
-					CertificationNumber: cert.CertificationNumber,
-				}
-				if err := tx.Create(&guideCert).Error; err != nil {
-					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-						"error": "Failed to create guide certification",
-					})
-				}
+		// สร้าง GuideCertification ถ้ามีหมายเลขใบอนุญาต
+		if verification.CertificationData != "" {
+			guideCert := models.GuideCertification{
+				GuideID:             newGuide.ID,
+				CertificationNumber: verification.CertificationData,
+			}
+			if err := tx.Create(&guideCert).Error; err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": "Failed to create guide certification",
+				})
 			}
 		}
 		
@@ -104,21 +98,27 @@ func ApproveGuide(c *fiber.Ctx) error {
 		}
 
 		// --- เชื่อมโยง guide กับภาษาใน many2many ---
-		if verification.Language != "" {
-			languageNames := strings.Split(verification.Language, ",")
-			for _, name := range languageNames {
-				langName := strings.TrimSpace(name)
-				if langName == "" {
-					continue
+		// โหลด languages ที่เชื่อมโยงกับ verification
+		if err := tx.Preload("Language").First(&verification, verification.ID).Error; err == nil {
+			for _, lang := range verification.Language {
+				// เชื่อมโยง guide กับ language (many2many)
+				if err := tx.Model(&newGuide).Association("Language").Append(&lang); err != nil {
+					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+						"error": "Failed to associate guide with language",
+					})
 				}
-				var lang models.Language
-				if err := tx.Where("name = ?", langName).First(&lang).Error; err == nil {
-					// เชื่อมโยง guide กับ language (many2many)
-					if err := tx.Model(&newGuide).Association("Language").Append(&lang); err != nil {
-						return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-							"error": "Failed to associate guide with language",
-						})
-					}
+			}
+		}
+
+		// --- เชื่อมโยง guide กับ tourist attractions ใน many2many ---
+		// โหลด attractions ที่เชื่อมโยงกับ verification
+		if err := tx.Preload("Attraction").First(&verification, verification.ID).Error; err == nil {
+			for _, attraction := range verification.Attraction {
+				// เชื่อมโยง guide กับ tourist attraction (many2many)
+				if err := tx.Model(&newGuide).Association("TouristAttraction").Append(&attraction); err != nil {
+					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+						"error": "Failed to associate guide with tourist attraction",
+					})
 				}
 			}
 		}
@@ -165,6 +165,7 @@ func GetPendingVerifications(c *fiber.Ctx) error {
 	if err := config.DB.
 		Where("status = ?", "pending").
 		Preload("User").
+		Preload("Province").
 		Preload("Guide").
 		Find(&verifications).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

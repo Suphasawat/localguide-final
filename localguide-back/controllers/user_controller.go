@@ -3,9 +3,81 @@ package controllers
 import (
 	"localguide-back/config"
 	"localguide-back/models"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
-)	
+)
+
+// GetUserProfile - ดึงข้อมูล profile ของผู้ใช้ที่ login อยู่
+func GetUserProfile(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(uint)
+	var user models.User
+
+	if err := config.DB.
+		Preload("AuthUser").
+		Preload("Role").
+		First(&user, userID).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
+	}
+
+	return c.JSON(fiber.Map{"user": user})
+}
+
+// UpdateUserProfile - อัปเดตข้อมูล profile ของผู้ใช้ที่ login อยู่
+func UpdateUserProfile(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(uint)
+	
+	var req struct {
+		FirstName   string `json:"first_name"`
+		LastName    string `json:"last_name"`
+		Nickname    string `json:"nickname"`
+		BirthDate   string `json:"birth_date"`
+		Phone       string `json:"phone"`
+		Nationality string `json:"nationality"`
+		Sex         string `json:"sex"`
+	}
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	var user models.User
+	if err := config.DB.First(&user, userID).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
+	}
+
+	// Update fields
+	user.FirstName = req.FirstName
+	user.LastName = req.LastName
+	user.Nickname = req.Nickname
+	user.Phone = req.Phone
+	user.Nationality = req.Nationality
+	user.Sex = req.Sex
+
+	// Parse birth date if provided
+	if req.BirthDate != "" {
+		if birthDate, err := time.Parse("2006-01-02", req.BirthDate); err == nil {
+			user.BirthDate = &birthDate
+		}
+	}
+
+	if err := config.DB.Save(&user).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update profile"})
+	}
+
+	// Reload user with relations
+	if err := config.DB.
+		Preload("AuthUser").
+		Preload("Role").
+		First(&user, userID).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to reload user data"})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Profile updated successfully",
+		"user":    user,
+	})
+}	
 
 func GetUserByID(c *fiber.Ctx) error {
 	userID := c.Params("id")
