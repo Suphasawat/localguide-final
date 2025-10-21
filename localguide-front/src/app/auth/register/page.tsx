@@ -4,269 +4,326 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../../contexts/AuthContext";
+import Logo from "@/app/components/Logo";
+import Footer from "@/app/components/Footer";
+
+/** ชนิดของ error ต่อช่อง (ไม่มี any) */
+type FieldErrors = Partial<{
+  email: string;
+  phone: string;
+  first_name: string;
+  last_name: string;
+  nationality: string;
+  sex: string;
+  password: string;
+  confirmPassword: string;
+}>;
 
 export default function RegisterPage() {
+  /* ----------------------- state ----------------------- */
   const [formData, setFormData] = useState({
     email: "",
-    password: "",
-    confirmPassword: "",
+    phone: "",
     first_name: "",
     last_name: "",
-    phone: "",
     nationality: "ไทย",
     sex: "",
+    password: "",
+    confirmPassword: "",
   });
+
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [submitError, setSubmitError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const { register } = useAuth();
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  /* -------------------- classes reuse ------------------- */
+  const inputBase =
+    "w-full h-12 rounded-full border-2 px-5 text-[15px] placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-blue-600";
+  const inputOk = "border-gray-300";
+  const inputErr = "border-red-500";
+  const toggleBtn =
+    "absolute right-3 top-1/2 -translate-y-1/2 h-7 px-2.5 rounded-full border text-[11px] font-semibold border-gray-300 text-gray-700 hover:bg-gray-50";
+
+  /* --------------------- validation --------------------- */
+  function validate(values = formData): FieldErrors {
+    const e: FieldErrors = {};
+
+    // email
+    if (!values.email.trim()) e.email = "กรุณากรอกอีเมล";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email))
+      e.email = "รูปแบบอีเมลไม่ถูกต้อง";
+
+    // phone (ตัวเลข 9–10 หลัก)
+    if (!values.phone.trim()) e.phone = "กรุณากรอกเบอร์โทร";
+    else if (!/^[0-9]{9,10}$/.test(values.phone))
+      e.phone = "กรุณากรอกตัวเลข 9–10 หลัก";
+
+    // name
+    if (!values.first_name.trim()) e.first_name = "กรุณากรอกชื่อ";
+    if (!values.last_name.trim()) e.last_name = "กรุณากรอกนามสกุล";
+
+    // nationality & sex
+    if (!values.nationality.trim()) e.nationality = "กรุณาระบุสัญชาติ";
+    if (!values.sex.trim()) e.sex = "กรุณาเลือกเพศ";
+
+    // password rules: >=8, มี a-z, A-Z, 0-9
+    if (!values.password) e.password = "กรุณากรอกรหัสผ่าน";
+    else if (values.password.length < 8) e.password = "อย่างน้อย 8 ตัวอักษร";
+    else if (!/[a-z]/.test(values.password)) e.password = "ต้องมีตัวอักษรพิมพ์เล็ก (a-z)";
+    else if (!/[A-Z]/.test(values.password)) e.password = "ต้องมีตัวอักษรพิมพ์ใหญ่ (A-Z)";
+    else if (!/[0-9]/.test(values.password)) e.password = "ต้องมีตัวเลขอย่างน้อย 1 ตัว";
+
+    if (!values.confirmPassword) e.confirmPassword = "กรุณายืนยันรหัสผ่าน";
+    else if (values.confirmPassword !== values.password)
+      e.confirmPassword = "รหัสผ่านไม่ตรงกัน";
+
+    return e;
+  }
+
+  /* -------------------- handlers -------------------- */
+  function handleChange(
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name as keyof FieldErrors]) {
+      setErrors(prev => ({ ...prev, [name]: "" }));
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setSubmitError("");
+
+    const found = validate();
+    setErrors(found);
+    if (Object.keys(found).length > 0) return;
+
     setLoading(true);
-    setError("");
-
-    // Validate password confirmation
-    if (formData.password !== formData.confirmPassword) {
-      setError("รหัสผ่านไม่ตรงกัน");
-      setLoading(false);
-      return;
-    }
-
-    // Validate required fields
-    if (!formData.email || !formData.password) {
-      setError("กรุณากรอกอีเมลและรหัสผ่าน");
-      setLoading(false);
-      return;
-    }
-
     try {
-      // Map form data to backend expected format (only email and password required)
-      const registerData = {
-        email: formData.email,
-        password: formData.password,
-      };
-
-      const success = await register(registerData);
-      if (success) {
-        router.push("/auth/login?message=registration-success");
-      } else {
-        setError("เกิดข้อผิดพลาดในการสมัครสมาชิก");
-      }
-    } catch (err) {
-      setError("เกิดข้อผิดพลาดในการสมัครสมาชิก");
+      // backend ต้องการแค่อีเมล/รหัสผ่านสำหรับสมัคร
+      const ok = await register({ email: formData.email, password: formData.password });
+      if (ok) router.push("/auth/login?message=registration-success");
+      else setSubmitError("เกิดข้อผิดพลาดในการสมัครสมาชิก");
+    } catch {
+      setSubmitError("เกิดข้อผิดพลาดในการสมัครสมาชิก");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
+  /* ----------------------- UI ----------------------- */
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            สมัครสมาชิก
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            หรือ{" "}
-            <Link
-              href="/auth/login"
-              className="font-medium text-blue-600 hover:text-blue-500"
-            >
-              เข้าสู่ระบบ
-            </Link>
-          </p>
+    <>
+      <Logo />
+
+      <div className="min-h-[calc(100dvh-120px)] bg-gray-100 px-4 py-12 flex items-center justify-center">
+        <div className="w-full max-w-2xl bg-white border border-gray-300 rounded-[24px] shadow-sm">
+          {/* header */}
+          <div className="px-8 pt-8 pb-4 md:px-10">
+            <h1 className="text-3xl md:text-4xl font-extrabold text-blue-900">
+              ลงทะเบียนผู้ใช้ใหม่
+            </h1>
+          </div>
+          <hr className="border-gray-300" />
+
+          <form onSubmit={handleSubmit} className="px-8 pb-8 pt-6 md:px-10 md:pt-8 space-y-6">
+            {/* submit error */}
+            {submitError ? (
+              <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {submitError}
+              </div>
+            ) : null}
+
+            {/* ผู้ใช้งาน */}
+            <div>
+              <p className="mb-2 text-sm font-extrabold text-blue-800">ข้อมูลผู้ใช้งาน</p>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {/* email */}
+                <div>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="ชื่อผู้ใช้งาน(อีเมล)"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className={`${inputBase} ${errors.email ? inputErr : inputOk}`}
+                  />
+                  {errors.email ? (
+                    <p className="mt-1 text-xs text-red-600">{errors.email}</p>
+                  ) : null}
+                </div>
+
+                {/* phone */}
+                <div>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    inputMode="numeric"
+                    placeholder="เบอร์โทร"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className={`${inputBase} ${errors.phone ? inputErr : inputOk}`}
+                  />
+                  {errors.phone ? (
+                    <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
+                  ) : null}
+                </div>
+
+                {/* first name */}
+                <div>
+                  <input
+                    id="first_name"
+                    name="first_name"
+                    type="text"
+                    placeholder="ชื่อ"
+                    value={formData.first_name}
+                    onChange={handleChange}
+                    className={`${inputBase} ${errors.first_name ? inputErr : inputOk}`}
+                  />
+                  {errors.first_name ? (
+                    <p className="mt-1 text-xs text-red-600">{errors.first_name}</p>
+                  ) : null}
+                </div>
+
+                {/* last name */}
+                <div>
+                  <input
+                    id="last_name"
+                    name="last_name"
+                    type="text"
+                    placeholder="นามสกุล"
+                    value={formData.last_name}
+                    onChange={handleChange}
+                    className={`${inputBase} ${errors.last_name ? inputErr : inputOk}`}
+                  />
+                  {errors.last_name ? (
+                    <p className="mt-1 text-xs text-red-600">{errors.last_name}</p>
+                  ) : null}
+                </div>
+
+                {/* nationality */}
+                <div>
+                  <input
+                    id="nationality"
+                    name="nationality"
+                    type="text"
+                    placeholder="สัญชาติ"
+                    value={formData.nationality}
+                    onChange={handleChange}
+                    className={`${inputBase} ${errors.nationality ? inputErr : inputOk}`}
+                  />
+                  {errors.nationality ? (
+                    <p className="mt-1 text-xs text-red-600">{errors.nationality}</p>
+                  ) : null}
+                </div>
+
+                {/* sex */}
+                <div>
+                  <select
+                    id="sex"
+                    name="sex"
+                    value={formData.sex}
+                    onChange={handleChange}
+                    className={`${inputBase} ${errors.sex ? inputErr : inputOk} appearance-none pr-8`}
+                  >
+                    <option value="">เพศ</option>
+                    <option value="ชาย">ชาย</option>
+                    <option value="หญิง">หญิง</option>
+                    <option value="ไม่ระบุ">ไม่ระบุ</option>
+                  </select>
+                  {errors.sex ? (
+                    <p className="mt-1 text-xs text-red-600">{errors.sex}</p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            {/* รหัสผ่าน */}
+            <div>
+              <p className="mb-2 text-sm font-extrabold text-blue-800">สร้างรหัสผ่าน</p>
+
+              {/* password */}
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="รหัสผ่าน"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className={`${inputBase} ${errors.password ? inputErr : inputOk} pr-24`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  className={toggleBtn}
+                >
+                  {showPassword ? "ซ่อน" : "แสดง"}
+                </button>
+
+                {errors.password ? (
+                  <p className="mt-2 text-xs text-red-600">{errors.password}</p>
+                ) : (
+                  <p className="mt-2 text-xs text-gray-500">
+                    อย่างน้อย 8 ตัวอักษร และมี a-z, A-Z, 0-9 อย่างละ 1
+                  </p>
+                )}
+              </div>
+
+              {/* confirm */}
+              <div className="relative mt-4">
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirm ? "text" : "password"}
+                  placeholder="ยืนยันรหัสผ่าน"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className={`${inputBase} ${errors.confirmPassword ? inputErr : inputOk} pr-24`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(v => !v)}
+                  className={toggleBtn}
+                >
+                  {showConfirm ? "ซ่อน" : "แสดง"}
+                </button>
+
+                {errors.confirmPassword ? (
+                  <p className="mt-2 text-xs text-red-600">{errors.confirmPassword}</p>
+                ) : null}
+              </div>
+            </div>
+
+            {/* actions */}
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-full bg-blue-700 px-6 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-blue-800 disabled:opacity-60"
+              >
+                {loading ? "กำลังสมัครสมาชิก..." : "ลงทะเบียน"}
+              </button>
+              <p className="mt-3 text-center text-sm text-gray-600">
+                มีบัญชีแล้ว?{" "}
+                <Link href="/auth/login" className="font-semibold text-blue-700 hover:underline">
+                  เข้าสู่ระบบ
+                </Link>
+              </p>
+            </div>
+          </form>
         </div>
-
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="first_name"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  ชื่อ
-                </label>
-                <input
-                  id="first_name"
-                  name="first_name"
-                  type="text"
-                  required
-                  className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="ชื่อ"
-                  value={formData.first_name}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="last_name"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  นามสกุล
-                </label>
-                <input
-                  id="last_name"
-                  name="last_name"
-                  type="text"
-                  required
-                  className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="นามสกุล"
-                  value={formData.last_name}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
-                อีเมล
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="your@email.com"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="phone"
-                className="block text-sm font-medium text-gray-700"
-              >
-                เบอร์โทรศัพท์
-              </label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="0812345678"
-                value={formData.phone}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="nationality"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  สัญชาติ
-                </label>
-                <input
-                  id="nationality"
-                  name="nationality"
-                  type="text"
-                  required
-                  className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="ไทย"
-                  value={formData.nationality}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="sex"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  เพศ
-                </label>
-                <select
-                  id="sex"
-                  name="sex"
-                  required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  value={formData.sex}
-                  onChange={handleChange}
-                >
-                  <option value="">เลือกเพศ</option>
-                  <option value="ชาย">ชาย</option>
-                  <option value="หญิง">หญิง</option>
-                  <option value="ไม่ระบุ">ไม่ระบุ</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                รหัสผ่าน
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="รหัสผ่าน"
-                value={formData.password}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium text-gray-700"
-              >
-                ยืนยันรหัสผ่าน
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="ยืนยันรหัสผ่าน"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {loading ? "กำลังสมัครสมาชิก..." : "สมัครสมาชิก"}
-            </button>
-          </div>
-        </form>
       </div>
-    </div>
+      <Footer />
+    </>
   );
 }
