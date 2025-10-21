@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../contexts/AuthContext";
 import { provinceAPI, tripRequireAPI } from "../../../lib/api";
 import { Province, CreateTripRequireData } from "../../../types";
-import Loading from "../../../components/Loading";
+import Loading from "@/app/components/Loading";
+import Navbar from "@/app/components/Navbar";
+import Footer from "@/app/components/Footer";
 
 export default function CreateTripRequirePage() {
   const { isAuthenticated } = useAuth();
@@ -145,6 +147,8 @@ export default function CreateTripRequirePage() {
   }
 
   return (
+    <>
+    <Navbar />
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">
@@ -373,5 +377,7 @@ export default function CreateTripRequirePage() {
         </form>
       </div>
     </div>
+    <Footer />
+    </>
   );
 }
