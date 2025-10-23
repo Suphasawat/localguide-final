@@ -38,7 +38,7 @@ const defaultItems: ExtraItem[] = [
   },
 ];
 
-export default function ExtraRecommendations({
+export default function Recommendations({
   items = defaultItems,
 }: ExtraRecommendationsProps){
   return (
