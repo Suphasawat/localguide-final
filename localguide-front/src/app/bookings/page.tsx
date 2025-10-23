@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { tripBookingAPI } from "../lib/api";
 import { TripBooking } from "../types";
-import Loading from "../components/Loading";
+import Loading from "@/app/components/Loading";
 
 export default function BookingsPage() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
