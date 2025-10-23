@@ -117,9 +117,17 @@ export default function TripBookingsPage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">การจองทริป</h1>
-          <p className="mt-2 text-gray-600">ดูและจัดการการจองทริปของคุณ</p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">การจองทริป</h1>
+            <p className="mt-2 text-gray-600">ดูและจัดการการจองทริปของคุณ</p>
+          </div>
+          <Link
+            href="/dashboard"
+            className="border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            ← กลับไป Dashboard
+          </Link>
         </div>
 
         {error && (
@@ -130,7 +138,15 @@ export default function TripBookingsPage() {
 
         {bookings.length === 0 ? (
           <div className="bg-white p-6 rounded shadow text-center">
-            ไม่มีการจองในขณะนี้
+            <div className="text-gray-700">ไม่มีการจองในขณะนี้</div>
+            <div className="mt-4 flex justify-center gap-3">
+              <Link
+                href="/dashboard"
+                className="inline-block border border-gray-300 text-gray-700 px-5 py-2 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                กลับไป Dashboard
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="grid gap-4">

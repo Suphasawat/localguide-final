@@ -10,7 +10,7 @@ import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 
 export default function CreateTripRequirePage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [provinces, setProvinces] = useState<Province[]>([]);
@@ -34,13 +34,13 @@ export default function CreateTripRequirePage() {
   });
 
   useEffect(() => {
+    if (authLoading) return; // รอ auth ให้เสร็จก่อน
     if (!isAuthenticated) {
       router.push("/auth/login");
       return;
     }
-
     loadProvinces();
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, authLoading, router]);
 
   const loadProvinces = async () => {
     try {
@@ -54,12 +54,40 @@ export default function CreateTripRequirePage() {
     }
   };
 
+  // Helper: แปลงวันที่จาก input type=date (YYYY-MM-DD) เป็นรูปแบบที่ backend ต้องการ (DD/MM/YYYY)
+  const toBackendDate = (s: string) => {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      const [y, m, d] = s.split("-");
+      return `${d}/${m}/${y}`;
+    }
+    return s; // กรณีผู้ใช้กรอกเป็น DD/MM/YYYY ไว้อยู่แล้ว
+  };
+
+  // คำนวณจำนวนวันอัตโนมัติเมื่อเลือกช่วงวันที่ครบ
+  useEffect(() => {
+    const { start_date, end_date } = formData;
+    if (
+      /^\d{4}-\d{2}-\d{2}$/.test(start_date) &&
+      /^\d{4}-\d{2}-\d{2}$/.test(end_date)
+    ) {
+      const start = new Date(start_date);
+      const end = new Date(end_date);
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end >= start) {
+        const diff =
+          Math.round(
+            (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+          ) + 1;
+        if (diff !== formData.days) {
+          setFormData((prev) => ({ ...prev, days: diff }));
+        }
+      }
+    }
+  }, [formData.start_date, formData.end_date]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-
-    console.log("Trip require created:", formData);
 
     // Validation
     if (
@@ -85,23 +113,23 @@ export default function CreateTripRequirePage() {
       return;
     }
 
-    try {
-      // Map form data to backend expected format
-      const tripRequireData = {
-        province_id: formData.province_id,
-        title: formData.title,
-        description: formData.description,
-        min_price: formData.min_price,
-        max_price: formData.max_price,
-        start_date: formData.start_date,
-        end_date: formData.end_date,
-        days: formData.days,
-        min_rating: formData.min_rating,
-        group_size: formData.group_size,
-        requirements: formData.requirements,
-        expires_at: formData.expires_at,
-      };
+    // Map form data to backend expected format (แปลงวันที่)
+    const tripRequireData = {
+      province_id: formData.province_id,
+      title: formData.title,
+      description: formData.description,
+      min_price: formData.min_price,
+      max_price: formData.max_price,
+      start_date: toBackendDate(formData.start_date),
+      end_date: toBackendDate(formData.end_date),
+      days: formData.days,
+      min_rating: formData.min_rating,
+      group_size: formData.group_size,
+      requirements: formData.requirements,
+      expires_at: formData.expires_at ? toBackendDate(formData.expires_at) : "",
+    };
 
+    try {
       const response = await tripRequireAPI.create(tripRequireData);
       if (response.data) {
         router.push("/user/trip-requires");
@@ -142,7 +170,19 @@ export default function CreateTripRequirePage() {
     }));
   };
 
-  if (loadingProvinces) {
+  const isPriceInvalid =
+    formData.min_price > 0 &&
+    formData.max_price > 0 &&
+    formData.min_price >= formData.max_price;
+  const isDateRangeInvalid = (() => {
+    const { start_date, end_date } = formData;
+    if (!start_date || !end_date) return false; // ให้ผู้ใช้กรอกครบก่อน
+    const s = new Date(start_date);
+    const e = new Date(end_date);
+    return isNaN(s.getTime()) || isNaN(e.getTime()) || e < s;
+  })();
+
+  if (authLoading || loadingProvinces) {
     return <Loading text="Loading form..." />;
   }
 
@@ -151,6 +191,13 @@ export default function CreateTripRequirePage() {
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard")}
+            className="mb-4 text-blue-600 hover:text-blue-800"
+          >
+            ← กลับแดชบอร์ด
+          </button>
           <h1 className="text-3xl font-bold text-gray-900 mb-8">
             สร้างความต้องการเที่ยวใหม่
           </h1>
@@ -199,7 +246,6 @@ export default function CreateTripRequirePage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 จังหวัด *
               </label>
-
               <select
                 name="province_id"
                 required
@@ -217,7 +263,7 @@ export default function CreateTripRequirePage() {
             </div>
 
             {/* Price Range */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   ราคาต่ำสุด (บาท) *
@@ -226,6 +272,8 @@ export default function CreateTripRequirePage() {
                   type="number"
                   name="min_price"
                   required
+                  min={0}
+                  step={100}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.min_price}
                   onChange={handleChange}
@@ -238,24 +286,31 @@ export default function CreateTripRequirePage() {
                 <input
                   type="number"
                   name="max_price"
+                  required
+                  min={0}
+                  step={100}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.max_price}
                   onChange={handleChange}
                 />
+                {isPriceInvalid && (
+                  <p className="mt-1 text-sm text-red-600">
+                    ราคาสูงสุดต้องมากกว่าราคาต่ำสุด
+                  </p>
+                )}
               </div>
             </div>
 
             {/* Dates */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  วันเริ่มต้น * (DD/MM/YYYY)
+                  วันเริ่มต้น *
                 </label>
                 <input
-                  type="text"
+                  type="date"
                   name="start_date"
                   required
-                  placeholder="15/02/2024"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.start_date}
                   onChange={handleChange}
@@ -263,22 +318,26 @@ export default function CreateTripRequirePage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  วันสิ้นสุด * (DD/MM/YYYY)
+                  วันสิ้นสุด *
                 </label>
                 <input
-                  type="text"
+                  type="date"
                   name="end_date"
                   required
-                  placeholder="17/02/2024"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.end_date}
                   onChange={handleChange}
                 />
+                {isDateRangeInvalid && (
+                  <p className="mt-1 text-sm text-red-600">
+                    วันสิ้นสุดต้องไม่เร็วกว่าวันเริ่มต้น
+                  </p>
+                )}
               </div>
             </div>
 
             {/* Days and Group Size */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   จำนวนวัน *
@@ -287,11 +346,14 @@ export default function CreateTripRequirePage() {
                   type="number"
                   name="days"
                   required
-                  min="1"
+                  min={1}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.days}
                   onChange={handleChange}
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  ระบบจะคำนวณอัตโนมัติจากช่วงวันที่
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -301,7 +363,7 @@ export default function CreateTripRequirePage() {
                   type="number"
                   name="group_size"
                   required
-                  min="1"
+                  min={1}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.group_size}
                   onChange={handleChange}
@@ -345,12 +407,11 @@ export default function CreateTripRequirePage() {
             {/* Expires At */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                วันหมดอายุโพสต์ (DD/MM/YYYY)
+                วันหมดอายุโพสต์
               </label>
               <input
-                type="text"
+                type="date"
                 name="expires_at"
-                placeholder="10/02/2024"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.expires_at}
                 onChange={handleChange}
@@ -361,7 +422,14 @@ export default function CreateTripRequirePage() {
             <div className="flex space-x-4">
               <button
                 type="submit"
-                disabled={loading}
+                disabled={
+                  loading ||
+                  isPriceInvalid ||
+                  isDateRangeInvalid ||
+                  !formData.title ||
+                  !formData.description ||
+                  !formData.province_id
+                }
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium disabled:opacity-50"
               >
                 {loading ? "กำลังสร้าง..." : "สร้างความต้องการ"}
@@ -372,6 +440,13 @@ export default function CreateTripRequirePage() {
                 className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
               >
                 ยกเลิก
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard")}
+                className="px-6 py-2 border border-blue-600 text-blue-700 rounded-md hover:bg-blue-50"
+              >
+                กลับแดชบอร์ด
               </button>
             </div>
           </form>

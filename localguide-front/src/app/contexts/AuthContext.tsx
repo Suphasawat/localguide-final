@@ -21,7 +21,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in via cookie
     const token = Cookies.get("token");
     if (token) {
       fetchUser();
@@ -44,48 +43,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (data: LoginData): Promise<boolean> => {
     try {
-      console.log("Attempting login with data:", data);
       const response = await authAPI.login(data);
-      console.log("Full login response:", response);
-      console.log("Login response data:", response.data);
-
       // Handle different response structures from backend
-      // Backend returns: { token: "...", user: { id: 1, email: "...", role: 1 } }
-      let token = response.data?.token || response.data?.Token;
+      let token =
+        (response as any).data?.token || (response as any).data?.Token;
       let userData =
-        response.data?.user || response.data?.User || response.data;
-
-      console.log("Extracted token:", token ? "exists" : "missing");
-      console.log("Extracted user data:", userData);
+        (response as any).data?.user ||
+        (response as any).data?.User ||
+        (response as any).data;
 
       if (token) {
-        // Set cookie with secure options
         Cookies.set("token", token, {
-          expires: 7, // 7 days
+          expires: 7,
           secure: process.env.NODE_ENV === "production",
           sameSite: "strict",
           path: "/",
         });
-
-        // If we have user data, set it immediately
-        if (userData && (userData.id || userData.ID)) {
-          console.log("Setting user data from login response:", userData);
-          setUser(userData);
+        if (userData && (userData.id || (userData as any).ID)) {
+          setUser(userData as any);
         } else {
-          // Otherwise fetch user data separately
-          console.log("No user data in login response, fetching separately...");
           await fetchUser();
         }
-
-        console.log("Login successful");
         return true;
       } else {
-        console.error("No token found in login response");
         return false;
       }
     } catch (error: any) {
-      console.error("Login failed:", error);
-      console.error("Error response:", error.response?.data);
       return false;
     }
   };
@@ -95,7 +78,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await authAPI.register(data);
       return true;
     } catch (error) {
-      console.error("Registration failed:", error);
       return false;
     }
   };
@@ -111,7 +93,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     register,
     logout,
-    isAuthenticated: !!user,
+    // Consider token during loading to avoid flicker redirects
+    isAuthenticated: !!user || !!Cookies.get("token"),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

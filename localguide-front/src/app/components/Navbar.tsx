@@ -9,8 +9,7 @@ export default function Navbar() {
   const isAdmin = isAuthenticated && user?.role === 3;
   const isGuide = isAuthenticated && user?.role === 2;
 
-  const displayName =
-    user?.FirstName || user?.email?.split("@")[0] || "ผู้ใช้";
+  const displayName = user?.FirstName || user?.email?.split("@")[0] || "ผู้ใช้";
 
   return (
     <>
@@ -120,7 +119,13 @@ export default function Navbar() {
             {isAuthenticated ? (
               <>
                 <div className="text-right">
-                  <p className="text-sm font-bold text-gray-900">{displayName}</p>
+                  <Link
+                    href="/profile"
+                    title="ไปหน้าโปรไฟล์"
+                    className="text-sm font-bold text-gray-900 hover:underline hover:text-blue-600 transition-colors"
+                  >
+                    {displayName}
+                  </Link>
                   <div className="flex items-center justify-end gap-2">
                     <span className="text-xs text-gray-500">{user?.email}</span>
                     {/* ป้าย Role */}

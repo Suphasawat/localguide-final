@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "../../../contexts/AuthContext";
-import { tripRequireAPI } from "../../../lib/api";
-import { TripRequire } from "../../../types";
+import { tripRequireAPI, tripOfferAPI } from "../../../lib/api";
+import { TripRequire, TripOffer } from "../../../types";
 import Link from "next/link";
 import Navbar from "@/app/components/Navbar";
 
@@ -16,6 +16,10 @@ export default function TripRequireDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
+  // Highlight offers
+  const [offersLoading, setOffersLoading] = useState(true);
+  const [offersCount, setOffersCount] = useState(0);
+  const [offersPreview, setOffersPreview] = useState<TripOffer[]>([]);
 
   const tripId = params.id as string;
 
@@ -31,6 +35,7 @@ export default function TripRequireDetailPage() {
     }
 
     loadTripRequire();
+    loadOffers();
   }, [user, isAuthenticated, router, tripId, user?.id]);
 
   const loadTripRequire = async () => {
@@ -56,6 +61,24 @@ export default function TripRequireDetailPage() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadOffers = async () => {
+    try {
+      setOffersLoading(true);
+      const res = await tripOfferAPI.getByRequire(Number(tripId));
+      const raw = res.data;
+      const list: any[] = Array.isArray(raw)
+        ? raw
+        : raw?.offers || raw?.data || raw?.TripOffers || [];
+      setOffersCount(list?.length || 0);
+      setOffersPreview((list || []).slice(0, 2));
+    } catch (e) {
+      setOffersCount(0);
+      setOffersPreview([]);
+    } finally {
+      setOffersLoading(false);
     }
   };
 
@@ -112,6 +135,25 @@ export default function TripRequireDetailPage() {
       default:
         return status;
     }
+  };
+
+  // Helpers for offers preview
+  const getOfferGuideName = (o: any) => {
+    const u = o?.Guide?.User;
+    if (u?.FirstName || u?.LastName)
+      return `${u?.FirstName || ""} ${u?.LastName || ""}`.trim();
+    return o?.GuideName || o?.guide_name || "ไกด์ไม่ระบุชื่อ";
+  };
+  const getOfferTitle = (o: any) =>
+    o?.Title || `ข้อเสนอจาก ${getOfferGuideName(o)}`;
+  const getOfferPrice = (o: any) => {
+    const q =
+      o?.Quotation ||
+      (Array.isArray(o?.TripOfferQuotation)
+        ? o.TripOfferQuotation[o.TripOfferQuotation.length - 1]
+        : null);
+    const price = q?.TotalPrice ?? o?.TotalPrice;
+    return typeof price === "number" ? price : undefined;
   };
 
   if (loading) {
@@ -214,13 +256,32 @@ export default function TripRequireDetailPage() {
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                 {tripRequire.Title}
               </h1>
-              <span
-                className={`inline-block px-3 py-1 text-sm rounded-full ${getStatusColor(
-                  tripRequire.Status
-                )}`}
-              >
-                {getStatusText(tripRequire.Status)}
-              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`inline-block px-3 py-1 text-sm rounded-full ${getStatusColor(
+                    tripRequire.Status
+                  )}`}
+                >
+                  {getStatusText(tripRequire.Status)}
+                </span>
+                <span className="inline-flex items-center px-3 py-1 text-sm rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                  📥 ข้อเสนอ {offersLoading ? "…" : offersCount}
+                </span>
+              </div>
+
+              {/* Quick chips */}
+              <div className="mt-3 flex flex-wrap gap-2 text-sm text-gray-600">
+                <span className="inline-flex items-center gap-1 bg-gray-100 px-2.5 py-1 rounded-full">
+                  📍 {tripRequire.Province?.Name || "ไม่ระบุ"}
+                </span>
+                <span className="inline-flex items-center gap-1 bg-gray-100 px-2.5 py-1 rounded-full">
+                  📅 {tripRequire.Days} วัน
+                </span>
+                <span className="inline-flex items-center gap-1 bg-gray-100 px-2.5 py-1 rounded-full">
+                  💰 {tripRequire.MinPrice.toLocaleString()} -{" "}
+                  {tripRequire.MaxPrice.toLocaleString()} บาท
+                </span>
+              </div>
             </div>
 
             {/* Mobile Action Buttons */}
@@ -229,7 +290,7 @@ export default function TripRequireDetailPage() {
                 href={`/user/trip-requires/${tripRequire.ID}/offers`}
                 className="flex-1 bg-green-600 text-white text-center py-2 px-3 rounded-md hover:bg-green-700 transition-colors text-sm"
               >
-                ดูข้อเสนอ
+                ดูข้อเสนอ{offersLoading ? "" : ` (${offersCount})`}
               </Link>
               {tripRequire.Status === "open" && (
                 <Link
@@ -242,6 +303,127 @@ export default function TripRequireDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Offers highlight */}
+        <div className="mb-6">
+          {offersLoading ? (
+            <div className="animate-pulse bg-blue-50 border border-blue-200 rounded-lg p-4 h-16" />
+          ) : offersCount > 0 ? (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+              <div className="text-blue-800">
+                <div className="font-semibold">
+                  คุณได้รับข้อเสนอแล้ว {offersCount} รายการ
+                </div>
+                <div className="text-sm">
+                  เลือกข้อเสนอที่เหมาะสมที่สุดสำหรับทริปของคุณ
+                </div>
+              </div>
+              <Link
+                href={`/user/trip-requires/${tripRequire.ID}/offers`}
+                className="shrink-0 inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              >
+                ดูข้อเสนอทั้งหมด
+                <svg
+                  className="w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </Link>
+            </div>
+          ) : (
+            tripRequire.Status === "open" && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-center justify-between">
+                <div className="text-yellow-800">
+                  <div className="font-semibold">ยังไม่มีข้อเสนอ</div>
+                  <div className="text-sm">
+                    ปรับรายละเอียดความต้องการให้ชัดเจนเพื่อดึงดูดไกด์มากขึ้น
+                  </div>
+                </div>
+                <Link
+                  href={`/user/trip-requires/${tripRequire.ID}/edit`}
+                  className="shrink-0 inline-flex items-center gap-2 bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700"
+                >
+                  แก้ไขความต้องการ
+                </Link>
+              </div>
+            )
+          )}
+        </div>
+
+        {/* Offers preview cards */}
+        {offersPreview.length > 0 && (
+          <div className="mb-6">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">
+                ข้อเสนอล่าสุด
+              </h3>
+              <Link
+                href={`/user/trip-requires/${tripRequire!.ID}/offers`}
+                className="text-sm text-blue-600 hover:text-blue-700"
+              >
+                ดูทั้งหมด →
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {offersPreview.map((o) => (
+                <div key={o.ID} className="bg-white rounded-lg shadow p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="font-medium text-gray-900 line-clamp-1">
+                        {getOfferTitle(o)}
+                      </div>
+                      <div className="text-sm text-gray-600 mt-1">
+                        โดย {getOfferGuideName(o)}
+                      </div>
+                    </div>
+                    {getOfferPrice(o) !== undefined && (
+                      <div className="shrink-0 text-right">
+                        <div className="text-xs text-gray-500">ราคาโดยรวม</div>
+                        <div className="font-semibold text-gray-900">
+                          ฿{getOfferPrice(o)!.toLocaleString()}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {o.Description && (
+                    <p className="text-sm text-gray-700 mt-3 line-clamp-2">
+                      {o.Description}
+                    </p>
+                  )}
+                  <div className="mt-4">
+                    <Link
+                      href={`/user/trip-requires/${tripRequire!.ID}/offers`}
+                      className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-green-600 text-white hover:bg-green-700"
+                    >
+                      ดูข้อเสนอนี้
+                      <svg
+                        className="w-4 h-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
@@ -365,7 +547,7 @@ export default function TripRequireDetailPage() {
                 href={`/user/trip-requires/${tripRequire.ID}/offers`}
                 className="w-full bg-green-600 text-white text-center py-3 px-4 rounded-md hover:bg-green-700 transition-colors block"
               >
-                ดูข้อเสนอที่ได้รับ
+                ดูข้อเสนอที่ได้รับ{offersLoading ? "" : ` (${offersCount})`}
               </Link>
 
               {tripRequire.Status === "open" && (
@@ -390,8 +572,24 @@ export default function TripRequireDetailPage() {
         </div>
 
         {/* Mobile Action Buttons - Bottom Fixed */}
-        {tripRequire.Status === "open" && (
-          <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 space-y-2">
+        <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 space-y-2">
+          <div className="flex gap-2">
+            <Link
+              href={`/user/trip-requires/${tripRequire.ID}/offers`}
+              className="flex-1 bg-green-600 text-white text-center py-3 px-4 rounded-md hover:bg-green-700 transition-colors"
+            >
+              ดูข้อเสนอ{offersLoading ? "" : ` (${offersCount})`}
+            </Link>
+            {tripRequire.Status === "open" && (
+              <Link
+                href={`/user/trip-requires/${tripRequire.ID}/edit`}
+                className="flex-1 bg-blue-600 text-white text-center py-3 px-4 rounded-md hover:bg-blue-700 transition-colors"
+              >
+                แก้ไข
+              </Link>
+            )}
+          </div>
+          {tripRequire.Status === "open" && (
             <button
               onClick={handleDelete}
               disabled={deleteLoading}
@@ -399,8 +597,8 @@ export default function TripRequireDetailPage() {
             >
               {deleteLoading ? "กำลังลบ..." : "ลบความต้องการ"}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
