@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../../contexts/AuthContext";
-import Logo from "../../components/Logo";
+import Logo from "@/app/components/Logo";
 import Footer from "@/app/components/Footer";
 
 export default function LoginPage() {
