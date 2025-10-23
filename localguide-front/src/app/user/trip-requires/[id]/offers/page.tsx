@@ -5,6 +5,7 @@ import { useAuth } from "../../../../contexts/AuthContext";
 import { useRouter, useParams } from "next/navigation";
 import { tripOfferAPI, tripRequireAPI } from "../../../../lib/api";
 import { TripRequire, TripOffer } from "../../../../types";
+import Navbar from "@/app/components/Navbar";
 
 export default function TripOffersPage() {
   const { user, isAuthenticated } = useAuth();
@@ -168,6 +169,7 @@ export default function TripOffersPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+      <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <button

@@ -6,6 +6,7 @@ import { useAuth } from "../../../contexts/AuthContext";
 import { tripRequireAPI } from "../../../lib/api";
 import { TripRequire } from "../../../types";
 import Link from "next/link";
+import Navbar from "@/app/components/Navbar";
 
 export default function TripRequireDetailPage() {
   const params = useParams();
@@ -145,6 +146,7 @@ export default function TripRequireDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+      <Navbar />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6">

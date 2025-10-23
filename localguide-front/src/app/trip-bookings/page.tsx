@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { tripBookingAPI } from "../lib/api";
 import Link from "next/link";
 import type { TripBooking as TripBookingType } from "../types";
+import Navbar from "../components/Navbar";
 
 export default function TripBookingsPage() {
   const { user, isAuthenticated } = useAuth();
@@ -114,6 +115,7 @@ export default function TripBookingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+      <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">การจองทริป</h1>
@@ -168,6 +170,17 @@ export default function TripBookingsPage() {
                       <div className="text-sm text-gray-500">ยอดรวม</div>
                       <div className="font-medium">฿{getTotal(b)}</div>
                     </div>
+
+                    {(
+                      ["paid", "trip_started", "trip_completed"] as const
+                    ).includes(status as any) && (
+                      <Link
+                        href={`/trip-bookings/${id}`}
+                        className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700"
+                      >
+                        ไปหน้าทริป
+                      </Link>
+                    )}
                   </div>
                 </div>
               );
