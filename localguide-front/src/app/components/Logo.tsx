@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-export default function GlobalBrand(){
+export default function Logo(){
   return (
     <Link
       href="/"
