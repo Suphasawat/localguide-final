@@ -34,7 +34,7 @@ const defaultItems: ProvinceItem[] = [
   },
 ];
 
-export default function Page({
+export default function Jangwadrong({
   items = defaultItems,
 }: SecondaryProvincesNorthProps) {
   return (
