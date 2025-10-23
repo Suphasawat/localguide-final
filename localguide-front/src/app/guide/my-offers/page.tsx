@@ -5,6 +5,8 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { api } from "../../lib/api";
 import Link from "next/link";
+import Navbar from "@/app/components/Navbar";
+import Footer from "@/app/components/Footer";
 
 interface TripOffer {
   ID: number;
@@ -111,6 +113,8 @@ export default function MyOffersPage() {
   }
 
   return (
+    <>
+    <Navbar />
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8 flex justify-between items-center">
@@ -216,5 +220,7 @@ export default function MyOffersPage() {
         )}
       </div>
     </div>
+    <Footer />
+    </>
   );
 }

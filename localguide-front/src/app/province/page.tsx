@@ -1,10 +1,10 @@
 // app/provinces/north/page.tsx
 import Image from "next/image";
 import Link from "next/link";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+import Navbar from "@/app/components/Navbar";
+import Footer from "@/app/components/Footer";
 
-export default function NorthProvincesPage() {
+export default function Province() {
   return (
     <>
       <Navbar />

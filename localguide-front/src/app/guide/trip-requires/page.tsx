@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { tripRequireAPI } from "../../lib/api";
 import { TripRequire } from "../../types";
-import Loading from "../../components/Loading";
+import Loading from "@/app/components/Loading";
 
 export default function GuideTripRequiresPage() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
