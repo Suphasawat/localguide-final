@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-export default function Page() {
+export default function Praknorth() {
   return (
     <>
       <div className="bg-white">
