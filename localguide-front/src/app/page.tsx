@@ -1,10 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import Navbar from "./components/Navbar";
-import Praknorth from "./components/Praknorth";
-import Jangwadrong from "./components/Jangwadrong";
-import Recommendations from "./components/Recommendations";
-import Footer from "./components/Footer";
+import Navbar from "@/app/components/Navbar";
+import Praknorth from "@/app/components/Praknorth";
+import Jangwadrong from "@/app/components/Jangwadrong";
+import Recommendations from "@/app/components/Recommendations";
+import Footer from "@/app/components/Footer";
 
 export default function Page() {
   return (
