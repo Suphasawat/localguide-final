@@ -19,17 +19,9 @@ export default function TripOffersPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [acceptLoading, setAcceptLoading] = useState<number | null>(null);
-  const [selectedOffer, setSelectedOffer] = useState<TripOffer | null>(null);
-  const [showNegotiateModal, setShowNegotiateModal] = useState(false);
   // New: filter & sort states
   const [statusFilter, setStatusFilter] = useState<
-    | "all"
-    | "sent"
-    | "negotiating"
-    | "accepted"
-    | "rejected"
-    | "expired"
-    | "withdrawn"
+    "all" | "sent" | "accepted" | "rejected" | "expired" | "withdrawn"
   >("all");
   const [sortBy, setSortBy] = useState<
     "latest" | "price_low" | "price_high" | "rating_high"
@@ -143,11 +135,6 @@ export default function TripOffersPage() {
     }
   };
 
-  const handleNegotiate = (offer: TripOffer) => {
-    setSelectedOffer(offer);
-    setShowNegotiateModal(true);
-  };
-
   const handleRejectOffer = async (offerId: number) => {
     setRejectLoading(offerId);
     setError("");
@@ -177,8 +164,6 @@ export default function TripOffersPage() {
     switch (status) {
       case "sent":
         return "bg-blue-100 text-blue-800";
-      case "negotiating":
-        return "bg-yellow-100 text-yellow-800";
       case "accepted":
         return "bg-green-100 text-green-800";
       case "rejected":
@@ -196,8 +181,6 @@ export default function TripOffersPage() {
     switch (status) {
       case "sent":
         return "รอการตอบรับ";
-      case "negotiating":
-        return "กำลังเจรจา";
       case "accepted":
         return "ยอมรับแล้ว";
       case "rejected":
@@ -315,8 +298,6 @@ export default function TripOffersPage() {
           (() => {
             const counts = {
               sent: offers.filter((o) => o.Status === "sent").length,
-              negotiating: offers.filter((o) => o.Status === "negotiating")
-                .length,
               accepted: offers.filter((o) => o.Status === "accepted").length,
               rejected: offers.filter((o) => o.Status === "rejected").length,
               expired: offers.filter((o) => o.Status === "expired").length,
@@ -363,11 +344,6 @@ export default function TripOffersPage() {
                           key: "sent",
                           label: "รอการตอบรับ",
                           count: counts.sent,
-                        },
-                        {
-                          key: "negotiating",
-                          label: "กำลังเจรจา",
-                          count: counts.negotiating,
                         },
                         {
                           key: "accepted",
@@ -427,8 +403,6 @@ export default function TripOffersPage() {
                         ? "border-green-500"
                         : offer.Status === "rejected"
                         ? "border-red-500"
-                        : offer.Status === "negotiating"
-                        ? "border-yellow-500"
                         : offer.Status === "expired"
                         ? "border-gray-400"
                         : "border-blue-500"
@@ -626,12 +600,6 @@ export default function TripOffersPage() {
                               <>✅ ยอมรับข้อเสนอ</>
                             </button>
                             <button
-                              className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors"
-                              onClick={() => handleNegotiate(offer)}
-                            >
-                              💬 เจรจาต่อรอง
-                            </button>
-                            <button
                               className="flex-1 bg-gray-400 text-white py-3 px-4 rounded-md hover:bg-gray-500 transition-colors"
                               onClick={() => openReject(offer)}
                             >
@@ -649,19 +617,6 @@ export default function TripOffersPage() {
                             {tripRequire.Status})
                           </div>
                         )}
-
-                      {offer.Status === "negotiating" && (
-                        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-md flex items-center">
-                          <span className="mr-2">🔄</span>
-                          กำลังเจรจาต่อรองข้อเสนอนี้
-                          <button
-                            className="ml-auto bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                            onClick={() => handleNegotiate(offer)}
-                          >
-                            ดูการเจรจา
-                          </button>
-                        </div>
-                      )}
 
                       {offer.Status === "accepted" && (
                         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md flex items-center">
@@ -703,69 +658,6 @@ export default function TripOffersPage() {
           })()
         )}
       </div>
-
-      {/* Negotiate Modal */}
-      {showNegotiateModal && selectedOffer && (
-        <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-6">
-                <h3 className="text-xl font-semibold">💬 เจรจาต่อรองข้อเสนอ</h3>
-                <button
-                  onClick={() => setShowNegotiateModal(false)}
-                  className="text-gray-400 hover:text-gray-600 text-2xl"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-medium mb-2">{selectedOffer.Title}</h4>
-                <p className="text-sm text-gray-600">
-                  จาก: {selectedOffer.Guide?.User?.FirstName}{" "}
-                  {selectedOffer.Guide?.User?.LastName}
-                </p>
-                {selectedOffer.Quotation && (
-                  <p className="text-lg font-semibold text-green-600 mt-2">
-                    ราคาปัจจุบัน:{" "}
-                    {selectedOffer.Quotation.TotalPrice?.toLocaleString()} บาท
-                  </p>
-                )}
-              </div>
-
-              <div className="text-center py-8">
-                <div className="text-gray-400 text-6xl mb-4">🚧</div>
-                <h4 className="text-lg font-medium text-gray-700 mb-2">
-                  ฟีเจอร์เจรจาต่อรองยังไม่พร้อมใช้งาน
-                </h4>
-                <p className="text-gray-500 mb-6">
-                  ขณะนี้ระบบเจรจาต่อรองยังอยู่ระหว่างการพัฒนา
-                  <br />
-                  คุณสามารถติดต่อไกด์โดยตรงหรือยอมรับข้อเสนอนี้ได้เลย
-                </p>
-
-                <div className="flex space-x-4 justify-center">
-                  <button
-                    onClick={() => setShowNegotiateModal(false)}
-                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
-                  >
-                    ปิด
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowNegotiateModal(false);
-                      openAccept(selectedOffer);
-                    }}
-                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                  >
-                    ยอมรับข้อเสนอนี้
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Accept Confirm Modal */}
       {showAcceptModal && acceptTarget && (

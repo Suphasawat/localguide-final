@@ -166,21 +166,31 @@ export default function CreateTripOfferPage() {
 
   async function confirmSubmit() {
     setSubmitting(true);
+    setShowConfirm(false); // ปิด modal ก่อน
     try {
       await tripOfferAPI.create(buildOfferPayload());
-      setShowConfirm(false);
       router.push("/guide/my-offers");
     } catch (apiError: unknown) {
+      console.error("Create offer error:", apiError);
       // แสดง error ที่อ่านง่าย
-      const err = apiError as { response?: { data?: { error?: string } } };
+      const err = apiError as {
+        response?: { data?: { error?: string; details?: string } };
+      };
       const msg = err?.response?.data?.error || "ไม่สามารถส่งข้อเสนอได้";
+      const details = err?.response?.data?.details;
+
       if (msg.includes("already made an offer"))
         setError("คุณได้เสนอข้อเสนอสำหรับทริปนี้แล้ว");
       else if (msg.includes("Only guides can create offers"))
         setError("เฉพาะไกด์เท่านั้นที่สามารถสร้างข้อเสนอได้");
       else if (msg.includes("no longer accepting offers"))
-        setError("ทริปนี้ไม่รับข้อเสนอแล้ว (อยู่ระหว่างการพิจารณา)");
-      else setError(msg);
+        setError("ทริปนี้ไม่รับข้อเสนอแล้ว (อาจถูกยอมรับหรือปิดรับแล้ว)");
+      else if (msg.includes("Trip requirement not found"))
+        setError("ไม่พบความต้องการทริปนี้");
+      else if (msg.includes("register as a guide"))
+        setError("คุณต้องลงทะเบียนเป็นไกด์ก่อนสร้างข้อเสนอ");
+      else if (details) setError(`เกิดข้อผิดพลาด: ${msg}\n${details}`);
+      else setError(`เกิดข้อผิดพลาด: ${msg}`);
     } finally {
       setSubmitting(false);
     }
