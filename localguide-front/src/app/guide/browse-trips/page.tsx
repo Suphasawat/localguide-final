@@ -3,202 +3,234 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { tripRequireAPI } from "../../lib/api";
 import Link from "next/link";
+import { tripRequireAPI } from "../../lib/api";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 
+// ---------- Types ----------
+interface Province {
+  ID: number;
+  Name: string;
+}
 interface TripRequire {
   ID: number;
   Title: string;
   Description: string;
   MinPrice: number;
   MaxPrice: number;
-  StartDate: string;
-  EndDate: string;
+  StartDate: string; // ISO
+  EndDate: string;   // ISO
   Days: number;
   GroupSize: number;
   Status: string;
-  // จาก API /browse/trip-requires จะได้เป็นชื่อแบบ flat ไม่ได้ preload relations
+  // optional (บาง backend อาจส่งมา)
   province_name?: string;
   user_name?: string;
-  // บางกรณี API อื่นอาจ preload relations ไว้ ให้กำหนดเป็น optional
-  Province?: {
-    ID: number;
-    Name: string;
-  };
-  User?: {
-    ID: number;
-    FirstName: string;
-    LastName: string;
-  };
+  Province?: Province;
+}
+interface BrowseResponse {
+  tripRequires?: TripRequire[];
+  trip_requires?: TripRequire[]; // เผื่อบางที่ใช้ snake_case
 }
 
+// ---------- Helpers ----------
+function thDate(iso: string) {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? iso
+    : d.toLocaleDateString("th-TH", { year: "numeric", month: "long", day: "numeric" });
+}
+function baht(n: number) {
+  return n.toLocaleString("th-TH");
+}
+function provinceText(t: TripRequire) {
+  return t.province_name || t.Province?.Name || "ไม่ระบุจังหวัด";
+}
+function customerText(t: TripRequire) {
+  return t.user_name && t.user_name.trim().length > 0 ? t.user_name : "ผู้ใช้ไม่ระบุชื่อ";
+}
+
+// ---------- Page ----------
 export default function BrowseTripsPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [tripRequires, setTripRequires] = useState<TripRequire[]>([]);
-  const [dataLoading, setDataLoading] = useState(true);
+
+  const [items, setItems] = useState<TripRequire[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Auth gate (เฉพาะไกด์)
   useEffect(() => {
-    if (authLoading) return; // wait until auth resolved
-
+    if (authLoading) return;
     if (!isAuthenticated) {
       router.replace("/auth/login");
       return;
     }
-
     if (user?.role !== 2) {
       router.replace("/dashboard");
       return;
     }
-
-    loadTripRequires();
+    void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isAuthenticated, authLoading]);
+  }, [authLoading, isAuthenticated, user?.role]);
 
-  const getProvinceText = (trip: TripRequire) =>
-    (
-      trip.province_name ||
-      trip.Province?.Name ||
-      (trip as any)?.ProvinceName ||
-      ""
-    ).toString();
-
-  const getUserNameText = (trip: TripRequire) => {
-    // API /browse/trip-requires ส่ง field เป็น user_name
-    const flat = (trip.user_name ||
-      (trip as any)?.UserName ||
-      (trip as any)?.user ||
-      "") as string;
-    if (flat && typeof flat === "string") return flat.trim();
-    // เผื่อกรณี preload User
-    if (trip.User) {
-      return `${trip.User.FirstName ?? ""} ${trip.User.LastName ?? ""}`.trim();
-    }
-    return "";
-  };
-
-  const loadTripRequires = async () => {
+  async function load() {
     try {
-      const response = await tripRequireAPI.browse();
-      const body = response?.data;
+      setLoading(true);
+      setError("");
+      const res = await tripRequireAPI.browse(); // GET /api/browse/trip-requires
+      const body: BrowseResponse | TripRequire[] = res?.data;
       const list =
-        body?.tripRequires ??
-        body?.trip_requires ??
-        (Array.isArray(body) ? body : []);
-      setTripRequires(Array.isArray(list) ? list : []);
-    } catch (error) {
-      console.error("Failed to load trip requires:", error);
+        (Array.isArray(body) ? body : body?.tripRequires ?? body?.trip_requires) ?? [];
+      setItems(list);
+    } catch (_e) {
       setError("ไม่สามารถโหลดข้อมูลได้");
+      setItems([]);
     } finally {
-      setDataLoading(false);
+      setLoading(false);
     }
-  };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">กำลังตรวจสอบสิทธิ์...</div>
-      </div>
-    );
   }
 
-  if (dataLoading) {
+  if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">กำลังโหลด...</div>
-      </div>
+      <>
+        <Navbar />
+        <div className="min-h-[60vh] grid place-items-center bg-emerald-50">
+          <div className="animate-pulse text-emerald-700 font-semibold">กำลังโหลด...</div>
+        </div>
+        <Footer />
+      </>
     );
   }
 
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
-              ความต้องการทริป
-            </h1>
-            <p className="mt-2 text-gray-600">
-              ดูความต้องการเที่ยวจากลูกค้าและเสนอแพ็กเกจของคุณ
-            </p>
-          </div>
 
+      {/* HERO: เขียวสดใส */}
+      <section className="relative overflow-hidden">
+        <div className="bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600">
+          <div className="mx-auto max-w-7xl px-4 py-10 sm:py-12">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+              <div>
+                <p className="text-emerald-50/90 text-xs uppercase tracking-wider">สำหรับไกด์</p>
+                <h1 className="mt-1 text-3xl sm:text-4xl font-extrabold text-white">
+                  ความต้องการทริป
+                </h1>
+                <p className="mt-2 text-emerald-50">
+                  ดูความต้องการเที่ยวจากลูกค้าและเสนอแพ็กเกจของคุณ
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={load}
+                className="self-start md:self-auto rounded-full bg-white/90 hover:bg-white text-emerald-700 px-5 py-2 text-sm font-semibold shadow-sm transition"
+              >
+                รีเฟรชรายการ
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* BODY */}
+      <div className="min-h-[60vh] bg-emerald-50/30 py-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {error && (
-            <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            <div className="mb-6 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
               {error}
             </div>
           )}
 
-          {tripRequires.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">
-                ไม่มีความต้องการทริปในขณะนี้
-              </p>
+          {items.length === 0 ? (
+            <div className="grid place-items-center py-16">
+              <div className="text-center">
+                <div className="text-6xl mb-2">🗺️</div>
+                <p className="text-gray-600">ยังไม่มีความต้องการทริปในขณะนี้</p>
+              </div>
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {tripRequires.map((trip) => (
-                <div
-                  key={trip.ID}
-                  className="bg-white rounded-lg shadow-md overflow-hidden"
+              {items.map((t) => (
+                <article
+                  key={t.ID}
+                  className="group rounded-2xl border border-emerald-100 bg-white shadow-sm hover:shadow-md transition overflow-hidden"
                 >
-                  <div className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {trip.Title}
+                  {/* Header */}
+                  <div className="p-5 pb-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="text-lg font-bold text-gray-900 line-clamp-2">
+                        {t.Title || "ไม่ระบุหัวข้อ"}
                       </h3>
-                      <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                        {trip.Status}
+                      <span
+                        className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                          t.Status === "open"
+                            ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
+                            : "bg-gray-100 text-gray-700 ring-1 ring-gray-200"
+                        }`}
+                      >
+                        {t.Status || "unknown"}
                       </span>
                     </div>
-
-                    <p className="text-gray-600 mb-4 line-clamp-3">
-                      {trip.Description}
+                    <p className="mt-2 text-sm text-gray-600 line-clamp-3">
+                      {t.Description || "—"}
                     </p>
+                  </div>
 
-                    <div className="space-y-2 text-sm text-gray-500">
-                      <div>📍 {getProvinceText(trip) || "ไม่ระบุจังหวัด"}</div>
-                      <div>
-                        👤 {getUserNameText(trip) || "ผู้ใช้ไม่ระบุชื่อ"}
+                  {/* Info */}
+                  <div className="px-5 pt-4 pb-5 text-sm text-gray-700">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span>📍</span>
+                        <span>{provinceText(t)}</span>
                       </div>
-                      <div>👥 {trip.GroupSize} คน</div>
-                      <div>📅 {trip.Days} วัน</div>
-                      <div>
-                        💰 {trip.MinPrice.toLocaleString()} -{" "}
-                        {trip.MaxPrice.toLocaleString()} บาท
+                      {/* แสดงชื่อผู้ใช้ถ้า backend ส่งมา (ไม่ใช้ any) */}
+                      {t.user_name && (
+                        <div className="flex items-center gap-2">
+                          <span>👤</span>
+                          <span>{customerText(t)}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <span>👥</span>
+                        <span>{t.GroupSize} คน</span>
                       </div>
-                      <div>
-                        📆{" "}
-                        {new Date(trip.StartDate).toLocaleDateString("th-TH")} -{" "}
-                        {new Date(trip.EndDate).toLocaleDateString("th-TH")}
+                      <div className="flex items-center gap-2">
+                        <span>📅</span>
+                        <span>{t.Days} วัน</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>💰</span>
+                        <span>
+                          {baht(t.MinPrice)} - {baht(t.MaxPrice)} บาท
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>🗓️</span>
+                        <span>
+                          {thDate(t.StartDate)} - {thDate(t.EndDate)}
+                        </span>
                       </div>
                     </div>
 
-                    <div className="mt-6 flex space-x-3">
+                    {/* Actions – เหลือเฉพาะ “เสนอแพ็กเกจ” */}
+                    <div className="mt-5">
                       <Link
-                        href={`/guide/trip-requires/${trip.ID}`}
-                        className="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
-                      >
-                        ดูรายละเอียด
-                      </Link>
-                      <Link
-                        href={`/guide/trip-offers/create?trip_require_id=${trip.ID}`}
-                        className="flex-1 bg-green-600 text-white text-center py-2 px-4 rounded-md hover:bg-green-700 transition-colors"
+                        href={`/guide/trip-offers/create?trip_require_id=${t.ID}`}
+                        className="inline-flex w-full items-center justify-center rounded-full bg-emerald-600 px-4 py-2.5 text-sm font-extrabold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 transition"
                       >
                         เสนอแพ็กเกจ
                       </Link>
                     </div>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
           )}
         </div>
       </div>
+
       <Footer />
     </>
   );
