@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import { tripOfferAPI, tripRequireAPI } from "../../../lib/api";
+import Navbar from "@/app/components/Navbar";
+import Footer from "@/app/components/Footer";
 
 interface TripRequire {
   ID: number;
@@ -15,17 +17,30 @@ interface TripRequire {
   EndDate: string;
   Days: number;
   GroupSize: number;
-  Province: {
-    Name: string;
-  };
+  Province?: { Name: string };
 }
+
+type FormState = {
+  title: string;
+  description: string;
+  itinerary: string;
+  includedServices: string;
+  excludedServices: string;
+  totalPrice: number;
+  priceBreakdown: string;
+  terms: string;
+  paymentTerms: string;
+  validUntil: string; // YYYY-MM-DD
+  notes: string;
+};
 
 export default function CreateTripOfferPage() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  // รองรับทั้งชื่อพารามิเตอร์แบบ snake_case และ camelCase
-  const tripRequireId =
+
+  // รองรับทั้ง snake_case และ camelCase
+  const tripRequireIdParam =
     searchParams.get("trip_require_id") || searchParams.get("tripRequireId");
 
   const [tripRequire, setTripRequire] = useState<TripRequire | null>(null);
@@ -34,7 +49,7 @@ export default function CreateTripOfferPage() {
   const [error, setError] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormState>({
     title: "",
     description: "",
     itinerary: "",
@@ -48,162 +63,195 @@ export default function CreateTripOfferPage() {
     notes: "",
   });
 
+  const todayISO = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString().slice(0, 10);
+  }, []);
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.push("/auth/login");
       return;
     }
-
     if (user?.role !== 2) {
       router.push("/dashboard");
       return;
     }
-
-    if (!tripRequireId) {
+    if (!tripRequireIdParam) {
       router.push("/guide/trip-requires");
       return;
     }
+    void loadTripRequire();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, user?.role, tripRequireIdParam]);
 
-    loadTripRequire();
-  }, [user, isAuthenticated, tripRequireId, router]);
-
-  const loadTripRequire = async () => {
+  async function loadTripRequire() {
     try {
-      const response = await tripRequireAPI.getById(Number(tripRequireId));
-      setTripRequire(response.data);
+      setLoading(true);
+      const response = await tripRequireAPI.getById(Number(tripRequireIdParam));
+      const data: TripRequire = response.data?.data || response.data;
+      setTripRequire(data);
 
-      // Set default values
       setFormData((prev) => ({
         ...prev,
-        title: `แพ็กเกจทัวร์ ${response.data.Province?.Name} ${response.data.Days} วัน`,
-        totalPrice: response.data.MinPrice,
+        title: `แพ็กเกจทัวร์ ${data.Province?.Name || ""} ${data.Days} วัน`,
+        totalPrice: data.MinPrice,
         validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
           .toISOString()
-          .split("T")[0],
+          .slice(0, 10),
       }));
-    } catch (error: any) {
-      console.error("Failed to load trip require:", error);
-      console.error("Error details:", error.response?.data);
+    } catch (e) {
+      setError("โหลดข้อมูลความต้องการทริปล้มเหลว");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  // เปิด modal เพื่อยืนยันก่อนส่ง
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setShowConfirm(true);
-  };
-
-  // เตรียมข้อมูลที่จะส่ง
-  const buildOfferData = () => {
-    const validUntilDate = new Date(formData.validUntil);
-    const today = new Date();
-    const diffTime = validUntilDate.getTime() - today.getTime();
-    const validDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
-
-    return {
-      trip_require_id: Number(tripRequireId),
-      title: formData.title,
-      description: formData.description,
-      itinerary: formData.itinerary ? JSON.stringify(formData.itinerary) : '""',
-      included_services: formData.includedServices
-        ? JSON.stringify(formData.includedServices)
-        : '""',
-      excluded_services: formData.excludedServices
-        ? JSON.stringify(formData.excludedServices)
-        : '""',
-      total_price: formData.totalPrice,
-      price_breakdown: formData.priceBreakdown
-        ? JSON.stringify(formData.priceBreakdown)
-        : '""',
-      terms: formData.terms ? JSON.stringify(formData.terms) : '""',
-      payment_terms: formData.paymentTerms
-        ? JSON.stringify(formData.paymentTerms)
-        : '""',
-      offer_notes: formData.notes || "",
-      valid_days: validDays,
-    };
-  };
-
-  // ยืนยันการส่งข้อเสนอจริง
-  const confirmSubmit = async () => {
-    setSubmitting(true);
-    const offerData = buildOfferData();
-    try {
-      await tripOfferAPI.create(offerData);
-      setShowConfirm(false);
-      router.push("/guide/my-offers");
-    } catch (apiError: any) {
-      console.error("API Error:", apiError);
-      if (apiError.response?.data?.error) {
-        const errorMessage = apiError.response.data.error;
-        if (errorMessage.includes("already made an offer")) {
-          setError("คุณได้เสนอข้อเสนอสำหรับทริปนี้แล้ว");
-        } else if (errorMessage.includes("Only guides can create offers")) {
-          setError("เฉพาะไกด์เท่านั้นที่สามารถสร้างข้อเสนอได้");
-        } else if (errorMessage.includes("no longer accepting offers")) {
-          setError("ทริปนี้ไม่รับข้อเสนอแล้ว เนื่องจากอยู่ระหว่างการพิจารณา");
-        } else {
-          setError(errorMessage);
-        }
-      } else {
-        setError("ไม่สามารถส่งข้อเสนอได้ กรุณาลองใหม่อีกครั้ง");
-      }
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleChange = (
+  function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  ) {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: name === "totalPrice" ? Number(value) : value,
     }));
-  };
+  }
+
+  // เช็คง่าย ๆ ฝั่งหน้าเว็บ (backend ยังตรวจซ้ำ)
+  const priceOutOfRange =
+    !!tripRequire &&
+    (formData.totalPrice < tripRequire.MinPrice ||
+      formData.totalPrice > tripRequire.MaxPrice);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+
+    if (!formData.title || !formData.description) {
+      setError("กรุณากรอกชื่อแพ็กเกจและรายละเอียดให้ครบ");
+      return;
+    }
+    if (!formData.validUntil) {
+      setError("กรุณาระบุวันที่ข้อเสนอมีผลถึง");
+      return;
+    }
+    setShowConfirm(true);
+  }
+
+  function buildOfferPayload() {
+    // backend รับเป็น string ทั้งหมด ไม่ต้อง JSON.stringify
+    const validUntilDate = new Date(formData.validUntil);
+    const today = new Date();
+    const validDays = Math.max(
+      1,
+      Math.ceil((validUntilDate.getTime() - today.getTime()) / 86400000)
+    );
+
+    return {
+      trip_require_id: Number(tripRequireIdParam),
+      title: formData.title,
+      description: formData.description,
+      itinerary: formData.itinerary,
+      included_services: formData.includedServices,
+      excluded_services: formData.excludedServices,
+      total_price: formData.totalPrice,
+      price_breakdown: formData.priceBreakdown,
+      terms: formData.terms,
+      payment_terms: formData.paymentTerms,
+      offer_notes: formData.notes,
+      valid_days: validDays,
+    };
+  }
+
+  async function confirmSubmit() {
+    setSubmitting(true);
+    try {
+      await tripOfferAPI.create(buildOfferPayload());
+      setShowConfirm(false);
+      router.push("/guide/my-offers");
+    } catch (apiError: unknown) {
+      // แสดง error ที่อ่านง่าย
+      const err = apiError as { response?: { data?: { error?: string } } };
+      const msg = err?.response?.data?.error || "ไม่สามารถส่งข้อเสนอได้";
+      if (msg.includes("already made an offer"))
+        setError("คุณได้เสนอข้อเสนอสำหรับทริปนี้แล้ว");
+      else if (msg.includes("Only guides can create offers"))
+        setError("เฉพาะไกด์เท่านั้นที่สามารถสร้างข้อเสนอได้");
+      else if (msg.includes("no longer accepting offers"))
+        setError("ทริปนี้ไม่รับข้อเสนอแล้ว (อยู่ระหว่างการพิจารณา)");
+      else setError(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">กำลังโหลด...</div>
-      </div>
+      <>
+        <Navbar />
+        <div className="min-h-[60vh] grid place-items-center bg-emerald-50">
+          <div className="animate-pulse text-emerald-700 font-semibold">
+            กำลังโหลด...
+          </div>
+        </div>
+        <Footer />
+      </>
     );
   }
 
   if (!tripRequire) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg text-red-600">ไม่พบข้อมูลความต้องการทริป</div>
-      </div>
+      <>
+        <Navbar />
+        <div className="min-h-[60vh] grid place-items-center">
+          <div className="text-rose-600">ไม่พบข้อมูลความต้องการทริป</div>
+        </div>
+        <Footer />
+      </>
     );
   }
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
-              เสนอแพ็กเกจทัวร์
-            </h1>
-            <p className="mt-2 text-gray-600">
-              เสนอแพ็กเกจสำหรับ: {tripRequire.Title}
-            </p>
-          </div>
+      <Navbar />
 
+      {/* HERO เขียวสดใส */}
+      <section className="relative overflow-hidden">
+        <div className="bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600 rounded-b-xl">
+          <div className="mx-auto max-w-5xl px-4 py-8 sm:py-10">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+              <div>
+                <p className="text-emerald-50/90 text-xs uppercase tracking-wider">
+                  สำหรับไกด์
+                </p>
+                <h1 className="mt-1 text-3xl sm:text-4xl font-extrabold text-white">
+                  เสนอแพ็กเกจทัวร์
+                </h1>
+                <p className="mt-2 text-emerald-50">
+                  เสนอแพ็กเกจสำหรับ: {tripRequire.Title}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* BODY */}
+      <div className="bg-emerald-50/40 py-10">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           {/* Trip Require Info */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-4">ข้อมูลความต้องการ</h2>
-            <div className="grid md:grid-cols-2 gap-4 text-sm">
-              <div>📍 จังหวัด: {tripRequire.Province?.Name}</div>
+          <div className="mb-6 rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-emerald-800">
+              ข้อมูลความต้องการ
+            </h2>
+            <div className="mt-3 grid gap-4 text-sm text-gray-700 md:grid-cols-2">
+              <div>📍 จังหวัด: {tripRequire.Province?.Name || "-"}</div>
               <div>👥 จำนวนคน: {tripRequire.GroupSize} คน</div>
               <div>📅 ระยะเวลา: {tripRequire.Days} วัน</div>
               <div>
-                💰 งบประมาณ: {tripRequire.MinPrice} - {tripRequire.MaxPrice} บาท
+                💰 งบประมาณ: {tripRequire.MinPrice.toLocaleString()} -{" "}
+                {tripRequire.MaxPrice.toLocaleString()} บาท
               </div>
               <div className="md:col-span-2">
                 📝 รายละเอียด: {tripRequire.Description}
@@ -212,17 +260,18 @@ export default function CreateTripOfferPage() {
           </div>
 
           {error && (
-            <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            <div className="mb-6 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
               {error}
             </div>
           )}
 
+          {/* FORM */}
           <form
             onSubmit={handleSubmit}
-            className="bg-white rounded-lg shadow-md p-6 space-y-6"
+            className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm space-y-6"
           >
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="mb-2 block text-sm font-medium text-gray-700">
                 ชื่อแพ็กเกจ *
               </label>
               <input
@@ -231,12 +280,12 @@ export default function CreateTripOfferPage() {
                 value={formData.title}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="mb-2 block text-sm font-medium text-gray-700">
                 รายละเอียดแพ็กเกจ *
               </label>
               <textarea
@@ -245,13 +294,13 @@ export default function CreateTripOfferPage() {
                 onChange={handleChange}
                 required
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="อธิบายรายละเอียดการเที่ยวที่คุณเสนอ..."
+                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                placeholder="อธิบายรายละเอียดที่ลูกค้าจะได้รับ..."
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="mb-2 block text-sm font-medium text-gray-700">
                 กำหนดการเที่ยว (Itinerary)
               </label>
               <textarea
@@ -259,17 +308,17 @@ export default function CreateTripOfferPage() {
                 value={formData.itinerary}
                 onChange={handleChange}
                 rows={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="วันที่ 1: เที่ยวสถานที่ A, B, C&#10;วันที่ 2: เที่ยวสถานที่ D, E, F...&#10;วันที่ 3: ช้อปปิ้งและเดินทางกลับ"
+                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                placeholder={`วันที่ 1: ...\nวันที่ 2: ...`}
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="mt-1 text-xs text-gray-500">
                 แยกแต่ละวันด้วยการเว้นบรรทัด
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid gap-6 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
                   บริการที่รวมในแพ็กเกจ
                 </label>
                 <textarea
@@ -277,16 +326,16 @@ export default function CreateTripOfferPage() {
                   value={formData.includedServices}
                   onChange={handleChange}
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="- รถรับส่ง&#10;- ค่าน้ำมัน&#10;- ไกด์นำเที่ยว&#10;- ประกันภัย..."
+                  className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                  placeholder={`- รถรับส่ง\n- ค่าน้ำมัน\n- ไกด์นำเที่ยว\n- ประกันภัย ...`}
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="mt-1 text-xs text-gray-500">
                   แยกแต่ละบริการด้วยการเว้นบรรทัด
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
                   บริการที่ไม่รวมในแพ็กเกจ
                 </label>
                 <textarea
@@ -294,24 +343,25 @@ export default function CreateTripOfferPage() {
                   value={formData.excludedServices}
                   onChange={handleChange}
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="- ค่าอาหาร&#10;- ค่าที่พัก&#10;- ค่าเข้าสถานที่ท่องเที่ยว..."
+                  className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                  placeholder={`- ค่าอาหาร\n- ค่าที่พัก\n- ค่าเข้าสถานที่ ...`}
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="mt-1 text-xs text-gray-500">
                   แยกแต่ละบริการด้วยการเว้นบรรทัด
                 </p>
               </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid gap-6 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
                   ราคารวม (บาท) *
                 </label>
                 {tripRequire && (
-                  <p className="text-sm text-gray-600 mb-1">
-                    งบประมาณที่ต้องการ: {tripRequire.MinPrice} -{" "}
-                    {tripRequire.MaxPrice} บาท
+                  <p className="mb-1 text-xs text-gray-500">
+                    งบประมาณที่ลูกค้าต้องการ:{" "}
+                    {tripRequire.MinPrice.toLocaleString()} -{" "}
+                    {tripRequire.MaxPrice.toLocaleString()} บาท
                   </p>
                 )}
                 <input
@@ -320,27 +370,37 @@ export default function CreateTripOfferPage() {
                   value={formData.totalPrice}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
+                    priceOutOfRange
+                      ? "border-rose-300 focus:ring-rose-200"
+                      : "border-gray-300 focus:border-emerald-500 focus:ring-emerald-200"
+                  }`}
                 />
+                {priceOutOfRange && (
+                  <p className="mt-1 text-xs text-rose-600">
+                    ราคารวมต้องอยู่ในช่วงงบประมาณของลูกค้า
+                  </p>
+                )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
                   ข้อเสนอมีผลถึง *
                 </label>
                 <input
                   type="date"
                   name="validUntil"
                   value={formData.validUntil}
+                  min={todayISO}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="mb-2 block text-sm font-medium text-gray-700">
                 รายละเอียดค่าใช้จ่าย
               </label>
               <textarea
@@ -348,13 +408,13 @@ export default function CreateTripOfferPage() {
                 value={formData.priceBreakdown}
                 onChange={handleChange}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="- ค่าน้ำมัน: 2,000 บาท&#10;- ค่าไกด์: 3,000 บาท&#10;- อื่นๆ: 1,000 บาท"
+                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                placeholder={`- ค่าน้ำมัน: 2,000 บาท\n- ค่าไกด์: 3,000 บาท\n- อื่น ๆ: 1,000 บาท`}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="mb-2 block text-sm font-medium text-gray-700">
                 เงื่อนไขการให้บริการ
               </label>
               <textarea
@@ -362,13 +422,27 @@ export default function CreateTripOfferPage() {
                 value={formData.terms}
                 onChange={handleChange}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="- ต้องชำระเงินล่วงหน้า 100%&#10;- หากยกเลิกก่อน 7 วัน คืนเงิน 50%&#10;- ประกันภัยครอบคลุม..."
+                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                placeholder={`- ชำระเงินล่วงหน้า ...\n- ยกเลิกก่อน ...`}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                เงื่อนไขการชำระเงิน
+              </label>
+              <textarea
+                name="paymentTerms"
+                value={formData.paymentTerms}
+                onChange={handleChange}
+                rows={3}
+                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                placeholder={`- วางมัดจำ ...\n- ชำระส่วนที่เหลือ ...`}
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700">
                 หมายเหตุเพิ่มเติม
               </label>
               <textarea
@@ -376,23 +450,23 @@ export default function CreateTripOfferPage() {
                 value={formData.notes}
                 onChange={handleChange}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="ข้อมูลเพิ่มเติมที่ต้องการแจ้งลูกค้า..."
+                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                placeholder="ข้อมูลเพิ่มเติมที่อยากแจ้งลูกค้า..."
               />
             </div>
 
-            <div className="flex space-x-4">
+            <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="flex-1 py-3 px-4 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex-1 rounded-full border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
               >
                 ยกเลิก
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                className="flex-1 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
               >
                 {submitting ? "กำลังส่ง..." : "ตรวจสอบและส่ง"}
               </button>
@@ -420,14 +494,14 @@ export default function CreateTripOfferPage() {
               <div>
                 <div className="text-gray-500">ชื่อแพ็กเกจ</div>
                 <div className="font-medium text-gray-900">
-                  {formData.title}
+                  {formData.title || "-"}
                 </div>
               </div>
               <div>
                 <div className="text-gray-500">จังหวัด / วัน / คน</div>
                 <div className="font-medium text-gray-900">
-                  {tripRequire?.Province?.Name || "-"} / {tripRequire?.Days} วัน
-                  / {tripRequire?.GroupSize} คน
+                  {tripRequire.Province?.Name || "-"} / {tripRequire.Days} วัน /{" "}
+                  {tripRequire.GroupSize} คน
                 </div>
               </div>
               <div>
@@ -439,7 +513,7 @@ export default function CreateTripOfferPage() {
               <div>
                 <div className="text-gray-500">ข้อเสนอมีผลถึง</div>
                 <div className="font-medium text-gray-900">
-                  {formData.validUntil}
+                  {formData.validUntil || "-"}
                 </div>
               </div>
             </div>
@@ -447,7 +521,7 @@ export default function CreateTripOfferPage() {
             {formData.description && (
               <div className="mt-4">
                 <div className="text-gray-500 text-sm">รายละเอียดแพ็กเกจ</div>
-                <div className="mt-1 whitespace-pre-wrap text-gray-800 max-h-40 overflow-auto rounded-md border border-gray-200 p-3">
+                <div className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded-md border border-gray-200 p-3 text-gray-800">
                   {formData.description}
                 </div>
               </div>
@@ -457,7 +531,7 @@ export default function CreateTripOfferPage() {
               <button
                 type="button"
                 onClick={() => (submitting ? null : setShowConfirm(false))}
-                className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                className="rounded-full border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 disabled={submitting}
               >
                 แก้ไขต่อ
@@ -465,7 +539,7 @@ export default function CreateTripOfferPage() {
               <button
                 type="button"
                 onClick={confirmSubmit}
-                className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-extrabold text-white hover:bg-emerald-700 disabled:opacity-50"
                 disabled={submitting}
               >
                 {submitting ? "กำลังส่ง..." : "ยืนยันส่งข้อเสนอ"}
@@ -474,6 +548,8 @@ export default function CreateTripOfferPage() {
           </div>
         </div>
       )}
+
+      <Footer />
     </>
   );
 }
