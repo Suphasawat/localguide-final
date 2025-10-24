@@ -34,6 +34,15 @@ export default function TripOffersPage() {
   const [sortBy, setSortBy] = useState<
     "latest" | "price_low" | "price_high" | "rating_high"
   >("latest");
+  // Accept modal state
+  const [acceptTarget, setAcceptTarget] = useState<TripOffer | null>(null);
+  const [showAcceptModal, setShowAcceptModal] = useState(false);
+
+  // Reject modal state
+  const [rejectTarget, setRejectTarget] = useState<TripOffer | null>(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectLoading, setRejectLoading] = useState<number | null>(null);
 
   // Helpers to read optional fields safely
   const getOfferPrice = (o: any) => {
@@ -97,27 +106,32 @@ export default function TripOffersPage() {
     }
   };
 
-  const handleAcceptOffer = async (offerId: number) => {
-    if (
-      !confirm(
-        "คุณต้องการยอมรับข้อเสนอนี้หรือไม่? การยอมรับจะทำให้ข้อเสนออื่นๆ ถูกปฏิเสธอัตโนมัติ"
-      )
-    ) {
-      return;
-    }
+  // เปิด modal ยืนยันก่อนยอมรับข้อเสนอ
+  const openAccept = (offer: TripOffer) => {
+    setAcceptTarget(offer);
+    setShowAcceptModal(true);
+  };
 
+  // เปิด modal ยืนยันปฏิเสธข้อเสนอ
+  const openReject = (offer: TripOffer) => {
+    setRejectTarget(offer);
+    setRejectReason("");
+    setShowRejectModal(true);
+  };
+
+  // ยืนยันยอมรับข้อเสนอ (เรียก API)
+  const handleAcceptOffer = async (offerId: number) => {
     setAcceptLoading(offerId);
     setError("");
     setSuccess("");
-
     try {
       await tripOfferAPI.accept(offerId);
       setSuccess("ยอมรับข้อเสนอเรียบร้อยแล้ว กำลังนำท่านไปยังหน้าการจอง...");
-
-      // Delay before redirect to show success message
+      setShowAcceptModal(false);
+      setAcceptTarget(null);
       setTimeout(() => {
         router.push("/trip-bookings");
-      }, 2000);
+      }, 1500);
     } catch (error: any) {
       console.error("Failed to accept offer:", error);
       setError(
@@ -135,12 +149,28 @@ export default function TripOffersPage() {
   };
 
   const handleRejectOffer = async (offerId: number) => {
-    if (!confirm("คุณแน่ใจหรือไม่ที่จะปฏิเสธข้อเสนอนี้?")) {
-      return;
+    setRejectLoading(offerId);
+    setError("");
+    setSuccess("");
+    try {
+      await tripOfferAPI.reject(
+        offerId,
+        rejectReason ? { reason: rejectReason } : undefined
+      );
+      setShowRejectModal(false);
+      setRejectTarget(null);
+      setSuccess("ปฏิเสธข้อเสนอเรียบร้อยแล้ว");
+      // Refresh offers list
+      await loadData();
+    } catch (error: any) {
+      console.error("Failed to reject offer:", error);
+      setError(
+        error.response?.data?.error ||
+          "ไม่สามารถปฏิเสธข้อเสนอได้ กรุณาลองใหม่อีกครั้ง"
+      );
+    } finally {
+      setRejectLoading(null);
     }
-
-    // TODO: Implement reject offer API
-    alert("ฟีเจอร์ปฏิเสธข้อเสนอจะเปิดใช้ในอนาคต");
   };
 
   const getStatusColor = (status: string) => {
@@ -589,18 +619,11 @@ export default function TripOffersPage() {
                           tripRequire.Status === "in_review") && (
                           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                             <button
-                              onClick={() => handleAcceptOffer(offer.ID)}
-                              disabled={acceptLoading === offer.ID}
+                              onClick={() => openAccept(offer)}
+                              disabled={acceptLoading !== null}
                               className="flex-1 bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                             >
-                              {acceptLoading === offer.ID ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                  กำลังยอมรับ...
-                                </>
-                              ) : (
-                                <>✅ ยอมรับข้อเสนอ</>
-                              )}
+                              <>✅ ยอมรับข้อเสนอ</>
                             </button>
                             <button
                               className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors"
@@ -610,7 +633,7 @@ export default function TripOffersPage() {
                             </button>
                             <button
                               className="flex-1 bg-gray-400 text-white py-3 px-4 rounded-md hover:bg-gray-500 transition-colors"
-                              onClick={() => handleRejectOffer(offer.ID)}
+                              onClick={() => openReject(offer)}
                             >
                               ❌ ปฏิเสธ
                             </button>
@@ -683,7 +706,7 @@ export default function TripOffersPage() {
 
       {/* Negotiate Modal */}
       {showNegotiateModal && selectedOffer && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-start mb-6">
@@ -731,13 +754,190 @@ export default function TripOffersPage() {
                   <button
                     onClick={() => {
                       setShowNegotiateModal(false);
-                      handleAcceptOffer(selectedOffer.ID);
+                      openAccept(selectedOffer);
                     }}
                     className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                   >
                     ยอมรับข้อเสนอนี้
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Accept Confirm Modal */}
+      {showAcceptModal && acceptTarget && (
+        <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-xl w-full shadow-xl">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-xl font-semibold">
+                  ✅ ยืนยันการยอมรับข้อเสนอ
+                </h3>
+                <button
+                  onClick={() =>
+                    acceptLoading ? null : setShowAcceptModal(false)
+                  }
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                  aria-label="close"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="space-y-3 text-sm">
+                <div>
+                  <div className="text-gray-500">ชื่อข้อเสนอ</div>
+                  <div className="font-medium text-gray-900">
+                    {acceptTarget.Title}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-gray-500">ไกด์</div>
+                  <div className="font-medium text-gray-900">
+                    {getGuideName(acceptTarget)}
+                  </div>
+                </div>
+                {(() => {
+                  const q =
+                    acceptTarget.Quotation ||
+                    acceptTarget.TripOfferQuotation?.[0];
+                  return (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <div className="text-gray-500">ราคารวม</div>
+                        <div className="text-lg font-bold text-green-700">
+                          ฿
+                          {(
+                            q?.TotalPrice ??
+                            getOfferPrice(acceptTarget) ??
+                            0
+                          ).toLocaleString()}
+                        </div>
+                      </div>
+                      {q?.ValidUntil && (
+                        <div>
+                          <div className="text-gray-500">มีผลถึง</div>
+                          <div className="font-medium text-gray-900">
+                            {new Date(q.ValidUntil).toLocaleDateString("th-TH")}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+                <div className="mt-2 text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                  การยอมรับข้อเสนอนี้จะปฏิเสธข้อเสนออื่นๆ โดยอัตโนมัติ
+                  และจะพาไปยังหน้าการจอง
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  onClick={() =>
+                    acceptLoading ? null : setShowAcceptModal(false)
+                  }
+                  className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  disabled={acceptLoading !== null}
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  onClick={() => handleAcceptOffer(acceptTarget.ID)}
+                  className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 flex items-center"
+                  disabled={acceptLoading === acceptTarget.ID}
+                >
+                  {acceptLoading === acceptTarget.ID ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      กำลังยอมรับ...
+                    </>
+                  ) : (
+                    <>ยืนยันยอมรับ</>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Confirm Modal */}
+      {showRejectModal && rejectTarget && (
+        <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-xl w-full shadow-xl">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-xl font-semibold">
+                  ❌ ยืนยันการปฏิเสธข้อเสนอ
+                </h3>
+                <button
+                  onClick={() =>
+                    rejectLoading ? null : setShowRejectModal(false)
+                  }
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                  aria-label="close"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="space-y-3 text-sm">
+                <div>
+                  <div className="text-gray-500">ชื่อข้อเสนอ</div>
+                  <div className="font-medium text-gray-900">
+                    {rejectTarget.Title}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-gray-500">ไกด์</div>
+                  <div className="font-medium text-gray-900">
+                    {getGuideName(rejectTarget)}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-gray-500 mb-1">
+                    เหตุผล (ไม่บังคับ)
+                  </label>
+                  <textarea
+                    className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                    rows={3}
+                    placeholder="เช่น ราคาเกินงบ ประเภททริปไม่ตรงความต้องการ ฯลฯ"
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                  />
+                </div>
+                <div className="mt-2 text-gray-700 bg-gray-50 border border-gray-200 rounded-md p-3">
+                  เมื่อปฏิเสธแล้ว คุณยังสามารถยอมรับข้อเสนออื่นได้ในภายหลัง
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  onClick={() =>
+                    rejectLoading ? null : setShowRejectModal(false)
+                  }
+                  className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  disabled={rejectLoading !== null}
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  onClick={() => handleRejectOffer(rejectTarget.ID)}
+                  className="px-4 py-2 rounded-md bg-gray-600 text-white hover:bg-gray-700 disabled:opacity-50 flex items-center"
+                  disabled={rejectLoading === rejectTarget.ID}
+                >
+                  {rejectLoading === rejectTarget.ID ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      กำลังปฏิเสธ...
+                    </>
+                  ) : (
+                    <>ยืนยันปฏิเสธ</>
+                  )}
+                </button>
               </div>
             </div>
           </div>

@@ -19,11 +19,15 @@ interface TripRequire {
   Days: number;
   GroupSize: number;
   Status: string;
-  Province: {
+  // จาก API /browse/trip-requires จะได้เป็นชื่อแบบ flat ไม่ได้ preload relations
+  province_name?: string;
+  user_name?: string;
+  // บางกรณี API อื่นอาจ preload relations ไว้ ให้กำหนดเป็น optional
+  Province?: {
     ID: number;
     Name: string;
   };
-  User: {
+  User?: {
     ID: number;
     FirstName: string;
     LastName: string;
@@ -55,17 +59,25 @@ export default function BrowseTripsPage() {
   }, [user, isAuthenticated, authLoading]);
 
   const getProvinceText = (trip: TripRequire) =>
-    trip?.Province?.Name ||
-    (trip as any)?.province_name ||
-    (trip as any)?.ProvinceName ||
-    "";
+    (
+      trip.province_name ||
+      trip.Province?.Name ||
+      (trip as any)?.ProvinceName ||
+      ""
+    ).toString();
 
   const getUserNameText = (trip: TripRequire) => {
-    if ((trip as any)?.User) {
-      const u = (trip as any).User;
-      return `${u.FirstName ?? ""} ${u.LastName ?? ""}`.trim();
+    // API /browse/trip-requires ส่ง field เป็น user_name
+    const flat = (trip.user_name ||
+      (trip as any)?.UserName ||
+      (trip as any)?.user ||
+      "") as string;
+    if (flat && typeof flat === "string") return flat.trim();
+    // เผื่อกรณี preload User
+    if (trip.User) {
+      return `${trip.User.FirstName ?? ""} ${trip.User.LastName ?? ""}`.trim();
     }
-    return (trip as any)?.user_name || (trip as any)?.UserName || "";
+    return "";
   };
 
   const loadTripRequires = async () => {
@@ -149,9 +161,9 @@ export default function BrowseTripsPage() {
                     </p>
 
                     <div className="space-y-2 text-sm text-gray-500">
-                      <div>📍 {trip.Province?.Name}</div>
+                      <div>📍 {getProvinceText(trip) || "ไม่ระบุจังหวัด"}</div>
                       <div>
-                        👤 {trip.User?.FirstName} {trip.User?.LastName}
+                        👤 {getUserNameText(trip) || "ผู้ใช้ไม่ระบุชื่อ"}
                       </div>
                       <div>👥 {trip.GroupSize} คน</div>
                       <div>📅 {trip.Days} วัน</div>

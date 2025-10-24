@@ -31,7 +31,6 @@ func main() {
 		&models.TripRequire{}, 
         &models.TripOffer{}, 
         &models.TripOfferQuotation{}, 
-        &models.TripOfferNegotiation{},
         &models.TripBooking{}, 
 		&models.TripPayment{}, 
         &models.TripReview{}, 
@@ -98,8 +97,9 @@ func main() {
     api.Put("/trip-offers/:id", middleware.AuthRequired(), controllers.UpdateTripOffer) // สำหรับแก้ไข/เจรจา
     api.Delete("/trip-offers/:id", middleware.AuthRequired(), controllers.WithdrawTripOffer)
     
-    // 3. Accept offer (User เลือก offer 1 คน - คนที่เหลือ reject อัตโนมัติ)
+    // 3. Accept/Reject offer
     api.Put("/trip-offers/:id/accept", middleware.AuthRequired(), controllers.AcceptTripOffer)
+    api.Put("/trip-offers/:id/reject", middleware.AuthRequired(), controllers.RejectTripOffer)
     
     // 4. Payment (User จ่ายเงิน 100%)
     api.Post("/trip-bookings/:id/payment", middleware.AuthRequired(), controllers.CreateTripPayment)

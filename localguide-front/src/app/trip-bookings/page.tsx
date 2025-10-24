@@ -14,6 +14,7 @@ export default function TripBookingsPage() {
   const [bookings, setBookings] = useState<TripBookingType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [payingId, setPayingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -103,6 +104,35 @@ export default function TripBookingsPage() {
     if (g?.FirstName || g?.LastName)
       return `${g?.FirstName || ""} ${g?.LastName || ""}`.trim();
     return (b as any).guide_name || (b as any).GuideName || "-";
+  };
+
+  const handlePayFromList = async (bookingId: number) => {
+    try {
+      setPayingId(bookingId);
+      setError("");
+      const resp = await tripBookingAPI.createPayment(bookingId);
+      // Support both legacy and new shapes
+      const cs =
+        resp.data?.client_secret || resp.data?.payment?.StripeClientSecret;
+      const pi =
+        resp.data?.payment_intent_id ||
+        resp.data?.payment?.StripePaymentIntentID;
+      const amount =
+        resp.data?.amount ?? resp.data?.payment?.TotalAmount ?? undefined;
+      if (!cs || !pi) throw new Error("missing payment param");
+      router.push(
+        `/trip-bookings/${bookingId}/payment?pi=${encodeURIComponent(
+          pi
+        )}&cs=${encodeURIComponent(cs)}${
+          amount != null ? `&amount=${encodeURIComponent(amount)}` : ""
+        }`
+      );
+    } catch (e) {
+      console.error(e);
+      setError("ไม่สามารถสร้างการชำระเงินได้");
+    } finally {
+      setPayingId(null);
+    }
   };
 
   if (loading) {
@@ -196,6 +226,18 @@ export default function TripBookingsPage() {
                       >
                         ไปหน้าทริป
                       </Link>
+                    )}
+
+                    {status === "pending_payment" && user?.role === 1 && (
+                      <button
+                        onClick={() => handlePayFromList(Number(id))}
+                        disabled={payingId === Number(id)}
+                        className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+                      >
+                        {payingId === Number(id)
+                          ? "กำลังสร้างการชำระเงิน..."
+                          : "ชำระเงิน"}
+                      </button>
                     )}
                   </div>
                 </div>

@@ -88,6 +88,8 @@ export const tripOfferAPI = {
   update: (id: number, data: any) => api.put(`/trip-offers/${id}`, data),
   delete: (id: number) => api.delete(`/trip-offers/${id}`),
   accept: (id: number) => api.put(`/trip-offers/${id}/accept`),
+  reject: (id: number, data?: { reason?: string }) =>
+    api.put(`/trip-offers/${id}/reject`, data || {}),
 };
 
 // TripBooking API

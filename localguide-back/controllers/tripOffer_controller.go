@@ -352,29 +352,73 @@ func AcceptTripOffer(c *fiber.Ctx) error {
 }
 
 func RejectTripOffer(c *fiber.Ctx) error {
-    id, err := strconv.Atoi(c.Params("id"))
-    if err != nil {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid offer ID"})
-    }
-
-	if id <= 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Offer ID must be greater than 0"})
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil || id <= 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid offer ID"})
 	}
 
-    var offer models.TripOffer
-    if err := config.DB.First(&offer, id).Error; err != nil {
-        if err == gorm.ErrRecordNotFound {
-            return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Offer not found"})
-        }
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get offer"})
-    }
+	// Optional body with reason
+	var body struct {
+		Reason string `json:"reason"`
+	}
+	_ = c.BodyParser(&body)
 
-    offer.Status = "rejected" 
-    if err := config.DB.Save(&offer).Error; err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to reject offer"})
-    }
+	userID := c.Locals("userID").(uint)
 
-    return c.Status(fiber.StatusOK).JSON(fiber.Map{
-        "offer":   offer,
-    })
+	// Start transaction for consistency
+	tx := config.DB.Begin()
+	defer tx.Rollback()
+
+	var offer models.TripOffer
+	if err := tx.Preload("TripRequire").First(&offer, id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Offer not found"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get offer"})
+	}
+
+	// Load the related TripRequire to validate ownership
+	var tripRequire models.TripRequire
+	if err := tx.First(&tripRequire, offer.TripRequireID).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get trip requirement"})
+	}
+
+	// Only the owner of the TripRequire can reject a guide's offer
+	if tripRequire.UserID != userID {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "You can only reject offers for your own trip requirements"})
+	}
+
+	// Only reject if in a rejectable state
+	if offer.Status != "sent" && offer.Status != "negotiating" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Only pending offers can be rejected"})
+	}
+
+	now := time.Now()
+	updates := map[string]interface{}{
+		"status":           "rejected",
+		"rejected_at":      &now,
+		"rejection_reason": func() string { if body.Reason != "" { return body.Reason }; return "manual_reject" }(),
+	}
+
+	if err := tx.Model(&offer).Updates(updates).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to reject offer"})
+	}
+
+	// Update latest quotation status (if exists)
+	var quotation models.TripOfferQuotation
+	if err := tx.Where("trip_offer_id = ?", offer.ID).Order("version DESC").First(&quotation).Error; err == nil {
+		_ = tx.Model(&quotation).Updates(map[string]interface{}{
+			"status":      "rejected",
+			"rejected_at": &now,
+		}).Error
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to complete rejection"})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Offer rejected successfully",
+		"offer":   offer,
+	})
 }
