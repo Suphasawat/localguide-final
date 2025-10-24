@@ -38,7 +38,8 @@ export default function Jangwadrong({
   items = defaultItems,
 }: SecondaryProvincesNorthProps) {
   return (
-    <section
+    <>
+    <div
       aria-labelledby="secondary-north-heading"
       className="bg-white py-16 md:py-20"
     >
@@ -85,6 +86,7 @@ export default function Jangwadrong({
           })}
         </div>
       </div>
-    </section>
+    </div>
+    </>
   );
 }

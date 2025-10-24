@@ -42,6 +42,7 @@ export default function Recommendations({
   items = defaultItems,
 }: ExtraRecommendationsProps){
   return (
+    <>
     <section aria-labelledby="extra-heading" className="bg-white py-16 md:py-20">
       <div className="container mx-auto px-6">
         <h2
@@ -87,5 +88,6 @@ export default function Recommendations({
         </div>
       </div>
     </section>
+    </>
   );
 }
