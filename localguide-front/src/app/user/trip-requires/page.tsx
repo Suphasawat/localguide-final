@@ -37,6 +37,11 @@ export default function MyTripRequiresPage() {
   const [error, setError] = useState("");
   const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
   const [successMessage, setSuccessMessage] = useState("");
+  // Modal target for deletion
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -65,15 +70,12 @@ export default function MyTripRequiresPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("คุณต้องการลบความต้องการทริปนี้หรือไม่?")) {
-      return;
-    }
-
     setDeleteLoading(id);
     try {
       await tripRequireAPI.delete(id);
       setSuccessMessage("ลบความต้องการทริปเรียบร้อยแล้ว");
       setTimeout(() => setSuccessMessage(""), 3000);
+      setDeleteTarget(null);
       loadTripRequires(); // Reload data
     } catch (error) {
       console.error("Failed to delete trip require:", error);
@@ -293,11 +295,14 @@ export default function MyTripRequiresPage() {
                           แก้ไข
                         </Link>
                         <button
-                          onClick={() => handleDelete(trip.ID)}
-                          disabled={deleteLoading === trip.ID}
+                          type="button"
+                          onClick={() =>
+                            setDeleteTarget({ id: trip.ID, title: trip.Title })
+                          }
+                          disabled={deleteLoading !== null}
                           className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {deleteLoading === trip.ID ? "กำลังลบ..." : "ลบ"}
+                          ลบ
                         </button>
                       </div>
                     )}
@@ -305,6 +310,44 @@ export default function MyTripRequiresPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Delete confirm modal */}
+        {deleteTarget && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div
+              className="absolute inset-0 bg-black/50"
+              onClick={() => (deleteLoading ? null : setDeleteTarget(null))}
+            />
+            <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+              <h3 className="text-lg font-semibold text-gray-900">
+                ยืนยันการลบ
+              </h3>
+              <p className="mt-2 text-sm text-gray-600">
+                คุณต้องการลบ{" "}
+                <span className="font-medium">"{deleteTarget.title}"</span>{" "}
+                หรือไม่? การดำเนินการนี้ไม่สามารถย้อนคืนได้
+              </p>
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => (deleteLoading ? null : setDeleteTarget(null))}
+                  className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  disabled={deleteLoading !== null}
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(deleteTarget.id)}
+                  className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                  disabled={deleteLoading === deleteTarget.id}
+                >
+                  {deleteLoading === deleteTarget.id ? "กำลังลบ..." : "ลบ"}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

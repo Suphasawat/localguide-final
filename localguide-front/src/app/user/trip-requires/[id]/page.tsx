@@ -189,7 +189,7 @@ export default function TripRequireDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <Navbar />
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6">
           {/* Breadcrumb */}
@@ -284,21 +284,30 @@ export default function TripRequireDetailPage() {
               </div>
             </div>
 
-            {/* Mobile Action Buttons */}
-            <div className="flex sm:hidden space-x-2 w-full">
+            {/* Desktop Action Buttons */}
+            <div className="hidden sm:flex items-center gap-2">
               <Link
                 href={`/user/trip-requires/${tripRequire.ID}/offers`}
-                className="flex-1 bg-green-600 text-white text-center py-2 px-3 rounded-md hover:bg-green-700 transition-colors text-sm"
+                className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
               >
                 ดูข้อเสนอ{offersLoading ? "" : ` (${offersCount})`}
               </Link>
               {tripRequire.Status === "open" && (
-                <Link
-                  href={`/user/trip-requires/${tripRequire.ID}/edit`}
-                  className="flex-1 bg-blue-600 text-white text-center py-2 px-3 rounded-md hover:bg-blue-700 transition-colors text-sm"
-                >
-                  แก้ไข
-                </Link>
+                <>
+                  <Link
+                    href={`/user/trip-requires/${tripRequire.ID}/edit`}
+                    className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                  >
+                    แก้ไข
+                  </Link>
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleteLoading}
+                    className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {deleteLoading ? "กำลังลบ..." : "ลบ"}
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -539,34 +548,6 @@ export default function TripRequireDetailPage() {
                   </div>
                 )}
               </div>
-            </div>
-
-            {/* Action Buttons - Desktop Only */}
-            <div className="hidden sm:block space-y-3">
-              <Link
-                href={`/user/trip-requires/${tripRequire.ID}/offers`}
-                className="w-full bg-green-600 text-white text-center py-3 px-4 rounded-md hover:bg-green-700 transition-colors block"
-              >
-                ดูข้อเสนอที่ได้รับ{offersLoading ? "" : ` (${offersCount})`}
-              </Link>
-
-              {tripRequire.Status === "open" && (
-                <>
-                  <Link
-                    href={`/user/trip-requires/${tripRequire.ID}/edit`}
-                    className="w-full bg-blue-600 text-white text-center py-3 px-4 rounded-md hover:bg-blue-700 transition-colors block"
-                  >
-                    แก้ไขความต้องการ
-                  </Link>
-                  <button
-                    onClick={handleDelete}
-                    disabled={deleteLoading}
-                    className="w-full bg-red-600 text-white py-3 px-4 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {deleteLoading ? "กำลังลบ..." : "ลบความต้องการ"}
-                  </button>
-                </>
-              )}
             </div>
           </div>
         </div>
