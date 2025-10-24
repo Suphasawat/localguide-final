@@ -8,6 +8,7 @@ import { Province, CreateTripRequireData } from "../../../types";
 import Loading from "@/app/components/Loading";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
+import Link from "next/link";
 
 export default function CreateTripRequirePage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -191,16 +192,17 @@ export default function CreateTripRequirePage() {
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
-          <button
-            type="button"
-            onClick={() => router.push("/dashboard")}
-            className="mb-4 text-blue-600 hover:text-blue-800"
-          >
-            ← กลับแดชบอร์ด
-          </button>
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">
-            สร้างความต้องการเที่ยวใหม่
-          </h1>
+          <div className="mb-8 flex justify-between items-center">
+            <h1 className="text-3xl font-bold text-gray-900">
+              สร้างความต้องการเที่ยวใหม่
+            </h1>
+            <Link
+              href="/dashboard"
+              className="border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              ← กลับไป Dashboard
+            </Link>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
@@ -440,13 +442,6 @@ export default function CreateTripRequirePage() {
                 className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
               >
                 ยกเลิก
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push("/dashboard")}
-                className="px-6 py-2 border border-blue-600 text-blue-700 rounded-md hover:bg-blue-50"
-              >
-                กลับแดชบอร์ด
               </button>
             </div>
           </form>
