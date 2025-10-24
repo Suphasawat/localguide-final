@@ -34,6 +34,7 @@ export default function CreateTripRequirePage() {
     expires_at: "",
   });
 
+  // auth แล้วค่อยโหลดจังหวัด
   useEffect(() => {
     if (authLoading) return;
     if (!isAuthenticated) {
@@ -54,6 +55,7 @@ export default function CreateTripRequirePage() {
     }
   }
 
+  // เช็ก yyyy-mm-dd แบบไม่ใช้ regex
   function isISODate(value: string): boolean {
     if (value.length !== 10) return false;
     if (value[4] !== "-" || value[7] !== "-") return false;
@@ -70,6 +72,7 @@ export default function CreateTripRequirePage() {
     return new Date(y, m - 1, d);
   }
 
+  // แปลงเป็น dd/mm/yyyy สำหรับ backend
   function toBackendDate(iso: string): string {
     if (!isISODate(iso)) return iso;
     const y = iso.slice(0, 4);
@@ -78,23 +81,25 @@ export default function CreateTripRequirePage() {
     return `${d}/${m}/${y}`;
   }
 
+  // คำนวณจำนวนวันเมื่อเลือกช่วงวันที่ (deps คงที่ 2 ตัว)
   useEffect(() => {
     const s = formData.start_date;
     const e = formData.end_date;
-    if (isISODate(s) && isISODate(e)) {
-      const sy = Number(s.slice(0, 4));
-      const sm = Number(s.slice(5, 7));
-      const sd = Number(s.slice(8, 10));
-      const ey = Number(e.slice(0, 4));
-      const em = Number(e.slice(5, 7));
-      const ed = Number(e.slice(8, 10));
-      const start = toLocalDate(sy, sm, sd);
-      const end = toLocalDate(ey, em, ed);
-      if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && end >= start) {
-        const days = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
-        if (days !== formData.days) setFormData((prev) => ({ ...prev, days }));
-      }
-    }
+    if (!isISODate(s) || !isISODate(e)) return;
+
+    const sy = Number(s.slice(0, 4));
+    const sm = Number(s.slice(5, 7));
+    const sd = Number(s.slice(8, 10));
+    const ey = Number(e.slice(0, 4));
+    const em = Number(e.slice(5, 7));
+    const ed = Number(e.slice(8, 10));
+
+    const start = toLocalDate(sy, sm, sd);
+    const end = toLocalDate(ey, em, ed);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return;
+
+    const days = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+    setFormData(prev => (prev.days === days ? prev : { ...prev, days }));
   }, [formData.start_date, formData.end_date]);
 
   function handleChange(
@@ -102,7 +107,7 @@ export default function CreateTripRequirePage() {
   ) {
     const { name, value } = e.target;
     const numeric = new Set(["province_id", "min_price", "max_price", "days", "group_size", "min_rating"]);
-    setFormData((prev) => ({ ...prev, [name]: numeric.has(name) ? Number(value) : value }));
+    setFormData(prev => ({ ...prev, [name]: numeric.has(name) ? Number(value) : value }));
   }
 
   const isPriceInvalid =
@@ -119,7 +124,7 @@ export default function CreateTripRequirePage() {
     return Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start;
   })();
 
-  // ❗ expires_at ต้องไม่ช้ากว่าวันเริ่มต้นทริป
+  // วันหมดอายุต้องไม่ช้ากว่าวันเริ่มต้นทริป
   const isExpireAfterStart = (() => {
     const expireISO = formData.expires_at;
     const startISO = formData.start_date;
@@ -178,8 +183,11 @@ export default function CreateTripRequirePage() {
     setLoading(true);
     try {
       const res = await tripRequireAPI.create(payload);
-      if (res.data) router.push("/user/trip-requires");
-      else setError("ไม่สามารถสร้างความต้องการได้");
+      if (res.data) {
+        router.push("/user/trip-requires");
+      } else {
+        setError("ไม่สามารถสร้างความต้องการได้");
+      }
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string; message?: string } } };
       setError(err?.response?.data?.error || err?.response?.data?.message || "เกิดข้อผิดพลาดในการสร้างความต้องการ");
@@ -298,6 +306,7 @@ export default function CreateTripRequirePage() {
                       type="date"
                       name="start_date"
                       required
+                      min=""
                       className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-blue-600"
                       value={formData.start_date}
                       onChange={handleChange}
@@ -309,6 +318,7 @@ export default function CreateTripRequirePage() {
                       type="date"
                       name="end_date"
                       required
+                      min={formData.start_date || undefined}
                       className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-blue-600"
                       value={formData.end_date}
                       onChange={handleChange}
@@ -327,7 +337,7 @@ export default function CreateTripRequirePage() {
                       name="days"
                       required
                       min={1}
-                      className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text:[15px] focus:outline-none focus:ring-0 focus:border-blue-600"
+                      className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-blue-600"
                       value={formData.days}
                       onChange={handleChange}
                     />
@@ -379,6 +389,7 @@ export default function CreateTripRequirePage() {
                   <input
                     type="date"
                     name="expires_at"
+                    max={formData.start_date || undefined}
                     className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-blue-600"
                     value={formData.expires_at}
                     onChange={handleChange}
