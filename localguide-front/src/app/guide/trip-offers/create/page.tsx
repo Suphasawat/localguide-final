@@ -13,8 +13,8 @@ interface TripRequire {
   Description: string;
   MinPrice: number;
   MaxPrice: number;
-  StartDate: string;
-  EndDate: string;
+  StartDate: string; // ISO string
+  EndDate: string;   // ISO string
   Days: number;
   GroupSize: number;
   Province?: { Name: string };
@@ -48,6 +48,7 @@ export default function CreateTripOfferPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false); // แสดงโอเวอร์เลย์สำเร็จ
 
   const [formData, setFormData] = useState<FormState>({
     title: "",
@@ -63,11 +64,46 @@ export default function CreateTripOfferPage() {
     notes: "",
   });
 
+  // ตัดเวลาออกให้เป็น YYYY-MM-DD ของวันนี้ (โซนไทม์เครื่อง)
   const todayISO = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     return d.toISOString().slice(0, 10);
   }, []);
+
+  // helper: ตัด string ให้เหลือ yyyy-mm-dd
+  function toDateOnly(isoLike: string | undefined | null): string {
+    if (!isoLike) {
+      return "";
+    }
+    // กรณีเป็น "YYYY-MM-DD" อยู่แล้ว
+    if (/^\d{4}-\d{2}-\d{2}$/.test(isoLike)) {
+      return isoLike;
+    }
+    // กรณีเป็น ISO string
+    try {
+      const d = new Date(isoLike);
+      if (isNaN(d.getTime())) {
+        return "";
+      }
+      d.setHours(0, 0, 0, 0);
+      return d.toISOString().slice(0, 10);
+    } catch {
+      return "";
+    }
+  }
+
+  // วันที่ start/end ของทริปลูกค้าในรูปแบบ YYYY-MM-DD
+  const tripStartDate = toDateOnly(tripRequire?.StartDate);
+  const tripEndDate = toDateOnly(tripRequire?.EndDate);
+
+  // max ของ validUntil = วันที่เริ่มทริป (ไม่เกินวันไปจริง)
+  const maxValidUntilISO = useMemo(() => {
+    if (!tripStartDate) {
+      return "";
+    }
+    return tripStartDate;
+  }, [tripStartDate]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -89,17 +125,29 @@ export default function CreateTripOfferPage() {
   async function loadTripRequire() {
     try {
       setLoading(true);
+      setError("");
+
       const response = await tripRequireAPI.getById(Number(tripRequireIdParam));
       const data: TripRequire = response.data?.data || response.data;
       setTripRequire(data);
 
+      // ตั้งค่าเริ่มต้นให้ title / totalPrice / validUntil
+      const defaultTitle = `แพ็กเกจทัวร์ ${data.Province?.Name || ""} ${data.Days} วัน`;
+
+      // default validUntil = วันนี้+7 แต่ต้องไม่เกินวันเริ่มทริป
+      const sevenDaysLater = new Date();
+      sevenDaysLater.setHours(0, 0, 0, 0);
+      sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
+      const sevenISO = sevenDaysLater.toISOString().slice(0, 10);
+      const computedValidUntil = toDateOnly(data.StartDate)
+        ? (sevenISO <= toDateOnly(data.StartDate) ? sevenISO : toDateOnly(data.StartDate))
+        : sevenISO;
+
       setFormData((prev) => ({
         ...prev,
-        title: `แพ็กเกจทัวร์ ${data.Province?.Name || ""} ${data.Days} วัน`,
+        title: defaultTitle.trim(),
         totalPrice: data.MinPrice,
-        validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .slice(0, 10),
+        validUntil: computedValidUntil || todayISO,
       }));
     } catch (e) {
       setError("โหลดข้อมูลความต้องการทริปล้มเหลว");
@@ -112,17 +160,33 @@ export default function CreateTripOfferPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "totalPrice" ? Number(value) : value,
-    }));
+    setFormData((prev) => {
+      const next: any = { ...prev };
+      if (name === "totalPrice") {
+        next[name] = Number(value);
+      } else {
+        next[name] = value;
+      }
+      return next;
+    });
   }
 
-  // เช็คง่าย ๆ ฝั่งหน้าเว็บ (backend ยังตรวจซ้ำ)
+  // ตรวจช่วงราคาให้สอดคล้องกับงบ
   const priceOutOfRange =
     !!tripRequire &&
     (formData.totalPrice < tripRequire.MinPrice ||
       formData.totalPrice > tripRequire.MaxPrice);
+
+  // ตรวจวันที่ validUntil: ต้องไม่ย้อนหลัง และต้องไม่เกินวันเริ่มทริป
+  const validUntilTooEarly =
+    !!formData.validUntil && formData.validUntil < todayISO;
+
+  const validUntilAfterTripStart =
+    !!formData.validUntil && !!maxValidUntilISO && formData.validUntil > maxValidUntilISO;
+
+  // ตรวจว่าทริปนี้เริ่มไปแล้วหรือยัง (ถ้าเริ่มแล้ว ไม่ควรรับข้อเสนอใหม่)
+  const tripAlreadyStarted =
+    !!tripStartDate && tripStartDate < todayISO;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -136,17 +200,34 @@ export default function CreateTripOfferPage() {
       setError("กรุณาระบุวันที่ข้อเสนอมีผลถึง");
       return;
     }
+    if (validUntilTooEarly) {
+      setError("วันที่ข้อเสนอมีผลถึง ต้องไม่น้อยกว่าวันนี้");
+      return;
+    }
+    if (validUntilAfterTripStart) {
+      setError("วันที่ข้อเสนอมีผลถึง ต้องไม่เกินวันเริ่มทริปของลูกค้า");
+      return;
+    }
+    if (tripAlreadyStarted) {
+      setError("ทริปนี้เริ่มต้นไปแล้ว ไม่สามารถส่งข้อเสนอใหม่ได้");
+      return;
+    }
+    if (priceOutOfRange) {
+      setError("ราคารวมต้องอยู่ในช่วงงบประมาณของลูกค้า");
+      return;
+    }
+
     setShowConfirm(true);
   }
 
   function buildOfferPayload() {
-    // backend รับเป็น string ทั้งหมด ไม่ต้อง JSON.stringify
     const validUntilDate = new Date(formData.validUntil);
     const today = new Date();
-    const validDays = Math.max(
-      1,
-      Math.ceil((validUntilDate.getTime() - today.getTime()) / 86400000)
-    );
+    today.setHours(0, 0, 0, 0);
+    validUntilDate.setHours(0, 0, 0, 0);
+
+    const diffMs = validUntilDate.getTime() - today.getTime();
+    const validDays = Math.max(1, Math.ceil(diffMs / 86400000));
 
     return {
       trip_require_id: Number(tripRequireIdParam),
@@ -167,30 +248,41 @@ export default function CreateTripOfferPage() {
   async function confirmSubmit() {
     setSubmitting(true);
     setShowConfirm(false); // ปิด modal ก่อน
+    setError("");
+
     try {
       await tripOfferAPI.create(buildOfferPayload());
-      router.push("/guide/my-offers");
+
+      // แสดงโอเวอร์เลย์ "เสนอราคาเรียบร้อยแล้ว" สั้น ๆ
+      setShowSuccess(true);
+
+      // รอ 1200ms แล้วค่อยพาไปหน้ารายการข้อเสนอของไกด์
+      setTimeout(() => {
+        router.push("/guide/my-offers?created=1");
+      }, 1200);
     } catch (apiError: unknown) {
       console.error("Create offer error:", apiError);
-      // แสดง error ที่อ่านง่าย
       const err = apiError as {
         response?: { data?: { error?: string; details?: string } };
       };
       const msg = err?.response?.data?.error || "ไม่สามารถส่งข้อเสนอได้";
       const details = err?.response?.data?.details;
 
-      if (msg.includes("already made an offer"))
+      if (msg.includes("already made an offer")) {
         setError("คุณได้เสนอข้อเสนอสำหรับทริปนี้แล้ว");
-      else if (msg.includes("Only guides can create offers"))
+      } else if (msg.includes("Only guides can create offers")) {
         setError("เฉพาะไกด์เท่านั้นที่สามารถสร้างข้อเสนอได้");
-      else if (msg.includes("no longer accepting offers"))
+      } else if (msg.includes("no longer accepting offers")) {
         setError("ทริปนี้ไม่รับข้อเสนอแล้ว (อาจถูกยอมรับหรือปิดรับแล้ว)");
-      else if (msg.includes("Trip requirement not found"))
+      } else if (msg.includes("Trip requirement not found")) {
         setError("ไม่พบความต้องการทริปนี้");
-      else if (msg.includes("register as a guide"))
+      } else if (msg.includes("register as a guide")) {
         setError("คุณต้องลงทะเบียนเป็นไกด์ก่อนสร้างข้อเสนอ");
-      else if (details) setError(`เกิดข้อผิดพลาด: ${msg}\n${details}`);
-      else setError(`เกิดข้อผิดพลาด: ${msg}`);
+      } else if (details) {
+        setError(`เกิดข้อผิดพลาด: ${msg}\n${details}`);
+      } else {
+        setError(`เกิดข้อผิดพลาด: ${msg}`);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -226,7 +318,7 @@ export default function CreateTripOfferPage() {
     <>
       <Navbar />
 
-      {/* HERO เขียวสดใส */}
+      {/* HERO */}
       <section className="relative overflow-hidden">
         <div className="bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600 rounded-b-xl">
           <div className="mx-auto max-w-5xl px-4 py-8 sm:py-10">
@@ -263,6 +355,8 @@ export default function CreateTripOfferPage() {
                 💰 งบประมาณ: {tripRequire.MinPrice.toLocaleString()} -{" "}
                 {tripRequire.MaxPrice.toLocaleString()} บาท
               </div>
+              <div>🧭 เริ่มทริป: {tripStartDate || "-"}</div>
+              <div>🏁 สิ้นสุด: {tripEndDate || "-"}</div>
               <div className="md:col-span-2">
                 📝 รายละเอียด: {tripRequire.Description}
               </div>
@@ -270,7 +364,7 @@ export default function CreateTripOfferPage() {
           </div>
 
           {error && (
-            <div className="mb-6 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            <div className="mb-6 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 whitespace-pre-line">
               {error}
             </div>
           )}
@@ -402,10 +496,21 @@ export default function CreateTripOfferPage() {
                   name="validUntil"
                   value={formData.validUntil}
                   min={todayISO}
+                  max={maxValidUntilISO || undefined}
                   onChange={handleChange}
                   required
                   className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                 />
+                {validUntilTooEarly && (
+                  <p className="mt-1 text-xs text-rose-600">
+                    วันที่ข้อเสนอมีผลถึง ต้องไม่น้อยกว่าวันนี้
+                  </p>
+                )}
+                {validUntilAfterTripStart && (
+                  <p className="mt-1 text-xs text-rose-600">
+                    วันที่ข้อเสนอมีผลถึง ต้องไม่เกินวันเริ่มทริปของลูกค้า
+                  </p>
+                )}
               </div>
             </div>
 
@@ -490,7 +595,7 @@ export default function CreateTripOfferPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div
             className="absolute inset-0 bg-black/50"
-            onClick={() => (submitting ? null : setShowConfirm(false))}
+            onClick={() => { if (!submitting) { setShowConfirm(false); } }}
           />
           <div className="relative z-10 w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl">
             <h3 className="text-xl font-semibold text-gray-900">
@@ -540,7 +645,7 @@ export default function CreateTripOfferPage() {
             <div className="mt-6 flex justify-end gap-3">
               <button
                 type="button"
-                onClick={() => (submitting ? null : setShowConfirm(false))}
+                onClick={() => { if (!submitting) { setShowConfirm(false); } }}
                 className="rounded-full border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 disabled={submitting}
               >
@@ -555,6 +660,24 @@ export default function CreateTripOfferPage() {
                 {submitting ? "กำลังส่ง..." : "ยืนยันส่งข้อเสนอ"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Overlay */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative z-10 w-[92%] max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-center h-14 w-14 rounded-full bg-emerald-100 mx-auto">
+              <div className="h-7 w-7 rounded-full bg-emerald-500" />
+            </div>
+            <h4 className="mt-4 text-center text-lg font-semibold text-gray-900">
+              เสนอราคาเรียบร้อยแล้ว
+            </h4>
+            <p className="mt-1 text-center text-sm text-gray-600">
+              กำลังพาไปยังหน้ารายการข้อเสนอของคุณ...
+            </p>
           </div>
         </div>
       )}
