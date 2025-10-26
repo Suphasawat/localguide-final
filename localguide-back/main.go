@@ -92,6 +92,7 @@ func main() {
     
     // 2. TripOffer routes (Guide เสนอรายละเอียด)
     api.Post("/trip-offers", middleware.AuthRequired(), controllers.CreateTripOffer)
+    api.Get("/trip-offers", middleware.AuthRequired(), controllers.GetGuideOffers) // ดู offers ของ guide เอง
     api.Get("/trip-requires/:id/offers", middleware.AuthRequired(), controllers.GetTripOffers) // ดู offers ของ require นี้
     api.Get("/trip-offers/:id", middleware.AuthRequired(), controllers.GetTripOfferByID)
     api.Put("/trip-offers/:id", middleware.AuthRequired(), controllers.UpdateTripOffer) // สำหรับแก้ไข/เจรจา

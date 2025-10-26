@@ -139,15 +139,25 @@ func GetTripBookings(c *fiber.Ctx) error {
 		Preload("Guide.User")
 
 	// Filter ตาม role
-	if user.Role.Name == "guide" {
-		// ถ้าเป็น guide ให้ดู booking ที่ตัวเองเป็น guide
-		query = query.Where("guide_id = ?", userID)
+	if user.Role.Name == "guide" || user.RoleID == 2 {
+		// ถ้าเป็น guide ต้องหา guide_id ก่อน
+		var guide models.Guide
+		if err := config.DB.Where("user_id = ?", userID).First(&guide).Error; err != nil {
+			// ถ้าไม่พบ guide record (ยังไม่ได้ลงทะเบียน) ให้ return empty
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"bookings": []fiber.Map{},
+				"total":   0,
+				"message": "No guide profile found",
+			})
+		}
+		// ใช้ guide.ID ในการกรอง
+		query = query.Where("guide_id = ?", guide.ID)
 	} else {
 		// ถ้าเป็น user ให้ดู booking ที่ตัวเองเป็น user
 		query = query.Where("user_id = ?", userID)
 	}
 
-	if err := query.Find(&bookings).Error; err != nil {
+	if err := query.Order("created_at DESC").Find(&bookings).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to get bookings",
 		})
@@ -260,7 +270,21 @@ func GetTripBookingByID(c *fiber.Ctx) error {
 	}
 
 	// ตรวจสอบสิทธิ์ - ต้องเป็นเจ้าของ booking หรือไกด์ของ booking
-	if booking.UserID != userID && booking.GuideID != userID {
+	isOwner := booking.UserID == userID
+	isGuideOwner := false
+	
+	// ตรวจสอบว่าเป็นไกด์ของ booking หรือไม่ (ต้องตรวจสอบว่า Guide และ User ไม่เป็น nil)
+	if booking.Guide.ID != 0 {
+		// Load guide user if not loaded
+		if booking.Guide.User.ID == 0 {
+			config.DB.Preload("User").First(&booking.Guide, booking.GuideID)
+		}
+		if booking.Guide.User.ID == userID {
+			isGuideOwner = true
+		}
+	}
+	
+	if !isOwner && !isGuideOwner {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"error": "You can only view your own bookings",
 		})

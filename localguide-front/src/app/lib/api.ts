@@ -82,6 +82,7 @@ export const tripRequireAPI = {
 // TripOffer API
 export const tripOfferAPI = {
   create: (data: any) => api.post("/trip-offers", data),
+  getOwn: () => api.get("/trip-offers"), // ดึง offers ของ guide เอง
   getByRequire: (requireId: number) =>
     api.get(`/trip-requires/${requireId}/offers`),
   getById: (id: number) => api.get(`/trip-offers/${id}`),

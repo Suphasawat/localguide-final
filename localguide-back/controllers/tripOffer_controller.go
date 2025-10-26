@@ -163,13 +163,18 @@ func GetTripOfferByID(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Offer ID must be greater than 0"})
 	}
     var offer models.TripOffer
-    if err := config.DB.First(&offer, id).Error; err != nil {
+    if err := config.DB.
+        Preload("TripRequire.User").
+        Preload("TripRequire.Province").
+        Preload("Guide.User").
+        Preload("TripOfferQuotation").
+        First(&offer, id).Error; err != nil {
         if err == gorm.ErrRecordNotFound {
             return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Offer not found"})
         }
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get offer"})
     }
-    return c.Status(fiber.StatusOK).JSON(fiber.Map{"offer": offer})
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{"data": offer})
 }
 
 // แก้ไข TripOffer
@@ -420,5 +425,37 @@ func RejectTripOffer(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Offer rejected successfully",
 		"offer":   offer,
+	})
+}
+
+// GetGuideOffers - ดึงข้อเสนอทั้งหมดของ Guide ที่ login อยู่
+func GetGuideOffers(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(uint)
+	
+	// ตรวจสอบว่าเป็น Guide
+	var guide models.Guide
+	if err := config.DB.Where("user_id = ?", userID).First(&guide).Error; err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "Only guides can view their offers",
+		})
+	}
+	
+	// ดึงข้อเสนอทั้งหมดของ guide
+	var offers []models.TripOffer
+	if err := config.DB.
+		Preload("TripRequire.User").
+		Preload("TripRequire.Province").
+		Preload("TripOfferQuotation").
+		Preload("Guide.User").
+		Where("guide_id = ?", guide.ID).
+		Order("created_at DESC").
+		Find(&offers).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to get offers",
+		})
+	}
+	
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"offers": offers,
 	})
 }
