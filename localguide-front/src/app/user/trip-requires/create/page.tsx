@@ -380,9 +380,6 @@ export default function CreateTripRequirePage() {
                       className="w-full h-12 rounded-full border-2 border-gray-200 bg-gray-100 px-5 text-[15px] text-gray-700 cursor-not-allowed focus:outline-none"
                       value={formData.days}
                     />
-                    <p className="mt-1 text-xs text-gray-500">
-                      ระบบคำนวณอัตโนมัติจากช่วงวันที่ (แก้ไขไม่ได้)
-                    </p>
                   </div>
                   <div>
                     <p className="mb-2 text-sm font-extrabold text-blue-800">จำนวนคน *</p>
@@ -468,12 +465,6 @@ export default function CreateTripRequirePage() {
                 </div>
               </form>
             </div>
-          </div>
-
-          <div className="mt-6 text-center">
-            <Link href="/dashboard" className="text-sm font-semibold text-blue-700 hover:underline">
-              ← กลับไป Dashboard
-            </Link>
           </div>
         </div>
       </div>
