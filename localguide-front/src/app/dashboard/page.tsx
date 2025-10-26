@@ -90,7 +90,7 @@ export default function DashboardPage() {
   }
 
   // ชื่อผู้ใช้แบบ “ชื่อเดียว”
-  let displayName = "ผู้ใช้";
+  let displayName = "ยินดีต้อนรับ";
   if ((user as any).FirstName) {
     displayName = (user as any).FirstName as string;
   }
