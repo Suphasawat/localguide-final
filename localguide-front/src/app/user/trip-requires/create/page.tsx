@@ -9,17 +9,18 @@ import Loading from "@/app/components/Loading";
 import TripRequireForm from "@/app/components/trip-require-form/TripRequireForm";
 import { useTripRequireForm } from "@/app/components/trip-require-form/useTripRequireForm";
 import { useAuth } from "../../../contexts/AuthContext";
+import { useNotification } from "../../../contexts/NotificationContext";
 import { provinceAPI, tripRequireAPI } from "../../../lib/api";
 import { Province } from "../../../types";
 
 export default function CreateTripRequirePage() {
   const router = useRouter();
   const { isAuthenticated, loading: authLoading } = useAuth();
+  const { showNotification } = useNotification();
 
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingProvinces, setLoadingProvinces] = useState(true);
-  const [error, setError] = useState("");
 
   const {
     formData,
@@ -54,27 +55,28 @@ export default function CreateTripRequirePage() {
     e.preventDefault();
     if (loading) return;
 
-    setError("");
-
     if (
       !formData.title ||
       !formData.description ||
       !formData.start_date ||
       !formData.end_date
     ) {
-      setError("กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน");
+      showNotification("กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน", "warning");
       return;
     }
     if (formData.province_id === 0) {
-      setError("กรุณาเลือกจังหวัด");
+      showNotification("กรุณาเลือกจังหวัด", "warning");
       return;
     }
     if (formData.min_price >= formData.max_price) {
-      setError("ราคาสูงสุดต้องมากกว่าราคาต่ำสุด");
+      showNotification("ราคาสูงสุดต้องมากกว่าราคาต่ำสุด", "warning");
       return;
     }
     if (isExpireAfterStart) {
-      setError("วันหมดอายุโพสต์ต้องไม่ช้ากว่าวันเริ่มต้นทริป");
+      showNotification(
+        "วันหมดอายุโพสต์ต้องไม่ช้ากว่าวันเริ่มต้นทริป",
+        "warning"
+      );
       return;
     }
 
@@ -97,18 +99,20 @@ export default function CreateTripRequirePage() {
     try {
       const res = await tripRequireAPI.create(payload);
       if (res.data) {
+        showNotification("สร้างความต้องการทริปสำเร็จ!", "success");
         router.push("/user/trip-requires");
       } else {
-        setError("ไม่สามารถสร้างความต้องการได้");
+        showNotification("ไม่สามารถสร้างความต้องการได้", "error");
       }
     } catch (error: unknown) {
       const err = error as {
         response?: { data?: { error?: string; message?: string } };
       };
-      setError(
+      showNotification(
         err?.response?.data?.error ||
           err?.response?.data?.message ||
-          "เกิดข้อผิดพลาดในการสร้างความต้องการ"
+          "เกิดข้อผิดพลาดในการสร้างความต้องการ",
+        "error"
       );
     } finally {
       setLoading(false);
@@ -153,7 +157,6 @@ export default function CreateTripRequirePage() {
                 formData={formData}
                 provinces={provinces}
                 loading={loading}
-                error={error}
                 onSubmit={handleSubmit}
                 onChange={handleChange}
                 onCancel={() => router.back()}

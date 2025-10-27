@@ -4,7 +4,7 @@ interface TripRequireFormProps {
   formData: CreateTripRequireData;
   provinces: Province[];
   loading: boolean;
-  error: string;
+  error?: string;
   onSubmit: (e: React.FormEvent) => void;
   onChange: (
     e: React.ChangeEvent<

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useNotification } from "../../contexts/NotificationContext";
 import { useRouter } from "next/navigation";
 import { tripRequireAPI } from "../../lib/api";
 import Link from "next/link";
@@ -35,12 +36,11 @@ interface TripRequireResponse {
 
 export default function MyTripRequiresPage() {
   const { user, isAuthenticated } = useAuth();
+  const { showNotification } = useNotification();
   const router = useRouter();
   const [tripRequires, setTripRequires] = useState<TripRequireResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
-  const [successMessage, setSuccessMessage] = useState("");
   // Modal target for deletion
   const [deleteTarget, setDeleteTarget] = useState<{
     id: number;
@@ -67,7 +67,7 @@ export default function MyTripRequiresPage() {
       setTripRequires(response.data?.tripRequires || []);
     } catch (error) {
       console.error("Failed to load trip requires:", error);
-      setError("ไม่สามารถโหลดข้อมูลได้");
+      showNotification("ไม่สามารถโหลดข้อมูลได้", "error");
     } finally {
       setLoading(false);
     }
@@ -77,14 +77,12 @@ export default function MyTripRequiresPage() {
     setDeleteLoading(id);
     try {
       await tripRequireAPI.delete(id);
-      setSuccessMessage("ลบความต้องการทริปเรียบร้อยแล้ว");
-      setTimeout(() => setSuccessMessage(""), 3000);
+      showNotification("ลบความต้องการทริปเรียบร้อยแล้ว", "success");
       setDeleteTarget(null);
       loadTripRequires(); // Reload data
     } catch (error) {
       console.error("Failed to delete trip require:", error);
-      setError("ไม่สามารถลบได้ กรุณาลองใหม่อีกครั้ง");
-      setTimeout(() => setError(""), 3000);
+      showNotification("ไม่สามารถลบได้ กรุณาลองใหม่อีกครั้ง", "error");
     } finally {
       setDeleteLoading(null);
     }
@@ -165,18 +163,6 @@ export default function MyTripRequiresPage() {
             </Link>
           </div>
         </div>
-
-        {error && (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-
-        {successMessage && (
-          <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            {successMessage}
-          </div>
-        )}
 
         {tripRequires.length === 0 ? (
           <EmptyTripRequires />

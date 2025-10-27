@@ -349,3 +349,19 @@ type TripNotification struct {
 	ActionType     string      // make_payment, confirm_trip_start, confirm_trip_complete, report_no_show
 	ExpiresAt      *time.Time  // วันหมดอายุของ notification
 }
+
+// Notification - ระบบ notification ทั่วไปสำหรับ user และ guide
+type Notification struct {
+	gorm.Model
+	UserID         uint      `gorm:"not null;index"` // ผู้รับ notification
+	User           User      `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:UserID"`
+	Type           string    `gorm:"not null;index"` // notification type: offer_accepted, booking_created, payment_confirmed, trip_started, etc.
+	Title          string    `gorm:"not null"`
+	Message        string    `gorm:"type:text;not null"`
+	RelatedID      *uint     // ID ที่เกี่ยวข้อง (trip booking, offer, etc.)
+	RelatedType    string    // ประเภทของ related entity: trip_booking, trip_offer, trip_require
+	IsRead         bool      `gorm:"default:false;index"`
+	ReadAt         *time.Time
+	ActionURL      string    // URL สำหรับการ action (optional)
+	Data           string    `gorm:"type:json"` // ข้อมูลเพิ่มเติมในรูปแบบ JSON
+}

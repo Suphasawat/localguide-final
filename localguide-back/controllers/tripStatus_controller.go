@@ -83,6 +83,22 @@ func ConfirmGuideArrival(c *fiber.Ctx) error {
 		})
 	}
 
+	// สร้างการแจ้งเตือนให้กับ guide ว่าได้รับเงิน 50% แรก
+	bookingIDPtr := booking.ID
+	CreateNotification(
+		booking.GuideID,
+		"payment_released",
+		"First Payment Released",
+		"50% of payment has been released to you. Trip has started!",
+		&bookingIDPtr,
+		"trip_booking",
+		map[string]interface{}{
+			"booking_id":     booking.ID,
+			"amount":         payment.FirstPayment,
+			"release_type":   "first_payment",
+		},
+	)
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Guide arrival confirmed, 50% payment released to guide",
 		"booking": booking,
@@ -162,6 +178,35 @@ func ConfirmTripComplete(c *fiber.Ctx) error {
 			"error":   "Failed to update payment status",
 		})
 	}
+
+	// สร้างการแจ้งเตือนให้กับ guide ว่าได้รับเงิน 50% ที่เหลือ
+	bookingIDPtr := booking.ID
+	CreateNotification(
+		booking.GuideID,
+		"payment_released",
+		"Final Payment Released",
+		"Remaining 50% of payment has been released to you. Trip completed!",
+		&bookingIDPtr,
+		"trip_booking",
+		map[string]interface{}{
+			"booking_id":     booking.ID,
+			"amount":         payment.SecondPayment,
+			"release_type":   "second_payment",
+		},
+	)
+
+	// สร้างการแจ้งเตือนให้กับ user ว่าทริปเสร็จสมบูรณ์
+	CreateNotification(
+		booking.UserID,
+		"trip_completed",
+		"Trip Completed",
+		"Your trip has been completed. Thank you for using our service!",
+		&bookingIDPtr,
+		"trip_booking",
+		map[string]interface{}{
+			"booking_id": booking.ID,
+		},
+	)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Trip completed, remaining 50% payment released to guide",

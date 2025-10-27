@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import NotificationBell from "./NotificationBell";
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -20,9 +21,15 @@ export default function Navbar() {
   const isAdmin = authed && user?.role === 3;
   const isGuide = authed && user?.role === 2;
   const roleLabel = isAdmin ? "ผู้ดูแล" : isGuide ? "ไกด์" : "ผู้ใช้";
-  const roleClass = isAdmin ? "bg-red-600" : isGuide ? "bg-blue-600" : "bg-gray-600";
+  const roleClass = isAdmin
+    ? "bg-red-600"
+    : isGuide
+    ? "bg-blue-600"
+    : "bg-gray-600";
   const displayName =
-    (user?.FirstName || (user?.email ? user.email.split("@")[0] : "") || "ผู้ใช้");
+    user?.FirstName ||
+    (user?.email ? user.email.split("@")[0] : "") ||
+    "ผู้ใช้";
 
   return (
     <div className="w-full bg-white border-b border-gray-200">
@@ -51,19 +58,34 @@ export default function Navbar() {
                 <>
                   {isGuide && (
                     <>
-                      <Link href="/" className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition">
+                      <Link
+                        href="/"
+                        className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition"
+                      >
                         หน้าแรก
                       </Link>
-                      <Link href="/dashboard" className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition">
+                      <Link
+                        href="/dashboard"
+                        className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition"
+                      >
                         Dashboard
                       </Link>
-                      <Link href="/guide/browse-trips" className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition">
+                      <Link
+                        href="/guide/browse-trips"
+                        className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition"
+                      >
                         หาทริป
                       </Link>
-                      <Link href="/guide/my-offers" className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition">
+                      <Link
+                        href="/guide/my-offers"
+                        className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition"
+                      >
                         ข้อเสนอของฉัน
                       </Link>
-                      <Link href="/trip-bookings" className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition">
+                      <Link
+                        href="/trip-bookings"
+                        className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition"
+                      >
                         การจอง
                       </Link>
                     </>
@@ -71,10 +93,16 @@ export default function Navbar() {
 
                   {!isGuide && isAdmin && (
                     <>
-                      <Link href="/" className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition">
+                      <Link
+                        href="/"
+                        className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition"
+                      >
                         หน้าแรก
                       </Link>
-                      <Link href="/dashboard" className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition">
+                      <Link
+                        href="/dashboard"
+                        className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition"
+                      >
                         Dashboard
                       </Link>
                     </>
@@ -82,16 +110,28 @@ export default function Navbar() {
 
                   {!isGuide && !isAdmin && (
                     <>
-                      <Link href="/" className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition">
+                      <Link
+                        href="/"
+                        className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition"
+                      >
                         หน้าแรก
                       </Link>
-                      <Link href="/dashboard" className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition">
+                      <Link
+                        href="/dashboard"
+                        className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition"
+                      >
                         ค้นหาไกด์
                       </Link>
-                      <Link href="/about" className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition">
+                      <Link
+                        href="/about"
+                        className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition"
+                      >
                         เกี่ยวกับเรา
                       </Link>
-                      <Link href="/province" className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition">
+                      <Link
+                        href="/province"
+                        className="px-3 py-2 text-base font-bold text-gray-800 hover:bg-gray-100 rounded-full transition"
+                      >
                         จังหวัดรอง
                       </Link>
                     </>
@@ -112,17 +152,22 @@ export default function Navbar() {
             </>
           ) : authed ? (
             <>
+              {/* Notification Bell */}
+              <NotificationBell />
+
               <div className="text-right">
                 <Link
                   href="/profile"
                   title="ไปหน้าโปรไฟล์"
-                  className="text-sm font-bold text-gray-900 hover:underline hover:text-blue-600 transition-colors"
+                  className="text-sm font-bold text-gray-900 hover:underline hover:text-emerald-600 transition-colors"
                 >
                   {displayName}
                 </Link>
                 <div className="flex items-center justify-end gap-2">
                   <span className="text-xs text-gray-500">{user?.email}</span>
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full text-white ${roleClass}`}>
+                  <span
+                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full text-white ${roleClass}`}
+                  >
                     {roleLabel}
                   </span>
                 </div>
@@ -154,7 +199,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/auth/register"
-                className="px-4 py-2 text-base font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-full transition"
+                className="px-4 py-2 text-base font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-full transition"
               >
                 สมัครสมาชิก
               </Link>
