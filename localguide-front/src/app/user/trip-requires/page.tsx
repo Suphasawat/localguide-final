@@ -93,17 +93,17 @@ export default function MyTripRequiresPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "open":
-        return "bg-green-100 text-green-800";
+        return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200";
       case "in_review":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200";
       case "assigned":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-50 text-blue-700 ring-1 ring-blue-200";
       case "completed":
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-50 text-gray-700 ring-1 ring-gray-200";
       case "cancelled":
-        return "bg-red-100 text-red-800";
+        return "bg-red-50 text-red-700 ring-1 ring-red-200";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-50 text-gray-700 ring-1 ring-gray-200";
     }
   };
 
@@ -126,9 +126,9 @@ export default function MyTripRequiresPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
           <div className="mt-4 text-lg text-gray-600">กำลังโหลดข้อมูล...</div>
         </div>
       </div>
@@ -136,10 +136,10 @@ export default function MyTripRequiresPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-white py-8">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 flex justify-between items-center">
+        <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <TripRequiresHeader
             tripRequiresCount={tripRequires.length}
             openCount={tripRequires.filter((t) => t.Status === "open").length}
@@ -148,30 +148,32 @@ export default function MyTripRequiresPage() {
               0
             )}
           />
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center gap-3">
             <Link
               href="/dashboard"
-              className="border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-full hover:bg-gray-50 transition-all font-medium shadow-sm"
             >
-              ← กลับไป Dashboard
+              <span>←</span>
+              <span>กลับไป Dashboard</span>
             </Link>
             <Link
               href="/user/trip-requires/create"
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center gap-2 bg-emerald-600 text-white px-5 py-2.5 rounded-full hover:bg-emerald-700 transition-all font-medium shadow-sm"
             >
-              โพสต์ความต้องการใหม่
+              <span>+</span>
+              <span>โพสต์ความต้องการใหม่</span>
             </Link>
           </div>
         </div>
 
         {error && (
-          <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
         )}
 
         {successMessage && (
-          <div className="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+          <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
             {successMessage}
           </div>
         )}

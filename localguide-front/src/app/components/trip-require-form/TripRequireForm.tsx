@@ -40,12 +40,12 @@ export default function TripRequireForm({
       )}
 
       <div>
-        <p className="mb-2 text-sm font-extrabold text-blue-800">หัวข้อ *</p>
+        <p className="mb-2 text-sm font-extrabold text-gray-900">หัวข้อ *</p>
         <input
           type="text"
           name="title"
           required
-          className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-blue-600"
+          className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
           placeholder="เช่น หาไกด์เที่ยวแม่ฮ่องสอน 3 วัน 2 คืน"
           value={formData.title}
           onChange={onChange}
@@ -53,14 +53,14 @@ export default function TripRequireForm({
       </div>
 
       <div>
-        <p className="mb-2 text-sm font-extrabold text-blue-800">
+        <p className="mb-2 text-sm font-extrabold text-gray-900">
           รายละเอียด *
         </p>
         <textarea
           name="description"
           required
           rows={4}
-          className="w-full rounded-2xl border-2 border-gray-300 px-5 py-4 text-[15px] placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-blue-600"
+          className="w-full rounded-2xl border-2 border-gray-300 px-5 py-4 text-[15px] placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
           placeholder="อธิบายรายละเอียดการเที่ยวที่ต้องการ"
           value={formData.description}
           onChange={onChange}
@@ -68,11 +68,11 @@ export default function TripRequireForm({
       </div>
 
       <div>
-        <p className="mb-2 text-sm font-extrabold text-blue-800">จังหวัด *</p>
+        <p className="mb-2 text-sm font-extrabold text-gray-900">จังหวัด *</p>
         <select
           name="province_id"
           required
-          className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-blue-600"
+          className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
           value={formData.province_id}
           onChange={onChange}
         >
@@ -87,7 +87,7 @@ export default function TripRequireForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
-          <p className="mb-2 text-sm font-extrabold text-blue-800">
+          <p className="mb-2 text-sm font-extrabold text-gray-900">
             ราคาต่ำสุด (บาท) *
           </p>
           <input
@@ -96,13 +96,13 @@ export default function TripRequireForm({
             required
             min={0}
             step={100}
-            className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-blue-600"
+            className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
             value={formData.min_price}
             onChange={onChange}
           />
         </div>
         <div>
-          <p className="mb-2 text-sm font-extrabold text-blue-800">
+          <p className="mb-2 text-sm font-extrabold text-gray-900">
             ราคาสูงสุด (บาท) *
           </p>
           <input
@@ -111,7 +111,7 @@ export default function TripRequireForm({
             required
             min={0}
             step={100}
-            className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-blue-600"
+            className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
             value={formData.max_price}
             onChange={onChange}
           />
@@ -125,20 +125,20 @@ export default function TripRequireForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
-          <p className="mb-2 text-sm font-extrabold text-blue-800">
+          <p className="mb-2 text-sm font-extrabold text-gray-900">
             วันเริ่มต้น *
           </p>
           <input
             type="date"
             name="start_date"
             required
-            className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-blue-600"
+            className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
             value={formData.start_date}
             onChange={onChange}
           />
         </div>
         <div>
-          <p className="mb-2 text-sm font-extrabold text-blue-800">
+          <p className="mb-2 text-sm font-extrabold text-gray-900">
             วันสิ้นสุด *
           </p>
           <input
@@ -146,7 +146,7 @@ export default function TripRequireForm({
             name="end_date"
             required
             min={formData.start_date || undefined}
-            className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-blue-600"
+            className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
             value={formData.end_date}
             onChange={onChange}
           />
@@ -160,7 +160,7 @@ export default function TripRequireForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
-          <p className="mb-2 text-sm font-extrabold text-blue-800">
+          <p className="mb-2 text-sm font-extrabold text-gray-900">
             จำนวนวัน *
           </p>
           <input
@@ -174,13 +174,13 @@ export default function TripRequireForm({
           />
         </div>
         <div>
-          <p className="mb-2 text-sm font-extrabold text-blue-800">จำนวนคน *</p>
+          <p className="mb-2 text-sm font-extrabold text-gray-900">จำนวนคน *</p>
           <input
             type="number"
             name="group_size"
             required
             min={1}
-            className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-blue-600"
+            className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
             value={formData.group_size}
             onChange={onChange}
           />
@@ -188,12 +188,12 @@ export default function TripRequireForm({
       </div>
 
       <div>
-        <p className="mb-2 text-sm font-extrabold text-blue-800">
+        <p className="mb-2 text-sm font-extrabold text-gray-900">
           คะแนนไกด์ขั้นต่ำ
         </p>
         <select
           name="min_rating"
-          className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-blue-600"
+          className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
           value={formData.min_rating}
           onChange={onChange}
         >
@@ -205,13 +205,13 @@ export default function TripRequireForm({
       </div>
 
       <div>
-        <p className="mb-2 text-sm font-extrabold text-blue-800">
+        <p className="mb-2 text-sm font-extrabold text-gray-900">
           ความต้องการพิเศษ
         </p>
         <textarea
           name="requirements"
           rows={3}
-          className="w-full rounded-2xl border-2 border-gray-300 px-5 py-4 text-[15px] placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-blue-600"
+          className="w-full rounded-2xl border-2 border-gray-300 px-5 py-4 text-[15px] placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
           placeholder="เช่น ต้องการไกด์พูดภาษาอังกฤษได้, มีรถรับส่ง"
           value={formData.requirements}
           onChange={onChange}
@@ -219,14 +219,14 @@ export default function TripRequireForm({
       </div>
 
       <div>
-        <p className="mb-2 text-sm font-extrabold text-blue-800">
+        <p className="mb-2 text-sm font-extrabold text-gray-900">
           วันหมดอายุโพสต์
         </p>
         <input
           type="date"
           name="expires_at"
           max={formData.start_date || undefined}
-          className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-blue-600"
+          className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
           value={formData.expires_at}
           onChange={onChange}
         />
@@ -237,7 +237,7 @@ export default function TripRequireForm({
         )}
       </div>
 
-      <div className="flex gap-4 pt-2">
+      <div className="flex gap-4 pt-4">
         <button
           type="submit"
           disabled={
@@ -249,14 +249,14 @@ export default function TripRequireForm({
             !formData.description ||
             !formData.province_id
           }
-          className="flex-1 rounded-full bg-blue-700 px-6 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-blue-800 disabled:opacity-50"
+          className="flex-1 rounded-full bg-emerald-600 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "กำลังบันทึก..." : submitButtonText}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-full border-2 border-gray-300 px-6 py-3 text-sm font-extrabold text-gray-800 hover:bg-gray-50 transition"
+          className="rounded-full border-2 border-gray-300 px-6 py-3.5 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition"
         >
           ยกเลิก
         </button>

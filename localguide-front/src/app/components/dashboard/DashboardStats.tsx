@@ -18,41 +18,55 @@ export default function DashboardStats({
   isUser,
 }: DashboardStatsProps) {
   return (
-    <section className="relative overflow-hidden">
-      <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-600 rounded-b-xl">
-        <div className="container mx-auto px-4 py-5 sm:py-6 lg:py-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <p className="text-emerald-100 text-xs uppercase tracking-wider">
-                ยินดีต้อนรับ
-              </p>
-              <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold text-white">
-                สวัสดี, {displayName}
-              </h1>
-              <p className="mt-1 text-emerald-100 text-sm">{dashboardTitle}</p>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-white/90">
-              <div className="rounded-xl bg-white/10 backdrop-blur p-3">
-                <div className="text-[11px]">การจองของฉัน</div>
-                <div className="text-xl font-bold">{totalBookings}</div>
+    <section className="relative overflow-hidden bg-emerald-600">
+      <div className="container mx-auto px-4 py-12 sm:py-16">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div className="text-white">
+            <p className="text-white/80 text-sm uppercase tracking-wider font-medium">
+              ยินดีต้อนรับ
+            </p>
+            <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold">
+              สวัสดี, {displayName}
+            </h1>
+            <p className="mt-3 text-white/90 text-lg">{dashboardTitle}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 p-4 sm:p-5 hover:bg-white/20 transition">
+              <div className="text-white/70 text-xs font-medium uppercase tracking-wide">
+                การจองของฉัน
               </div>
-              <div className="rounded-xl bg-white/10 backdrop-blur p-3">
-                <div className="text-[11px]">รอชำระเงิน</div>
-                <div className="text-xl font-bold">{pendingPayments}</div>
-              </div>
-              <div className="rounded-xl bg-white/10 backdrop-blur p-3 col-span-1">
-                <div className="text-[11px]">ความต้องการ</div>
-                <div className="text-xl font-bold">
-                  {isUser ? totalRequires : 0}
-                </div>
-              </div>
-              <div className="rounded-xl bg-white/10 backdrop-blur p-3 col-span-1">
-                <div className="text-[11px]">เปิดรับ</div>
-                <div className="text-xl font-bold">
-                  {isUser ? openRequires : 0}
-                </div>
+              <div className="mt-2 text-3xl font-bold text-white">
+                {totalBookings}
               </div>
             </div>
+            <div className="rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 p-4 sm:p-5 hover:bg-white/20 transition">
+              <div className="text-white/70 text-xs font-medium uppercase tracking-wide">
+                รอชำระเงิน
+              </div>
+              <div className="mt-2 text-3xl font-bold text-white">
+                {pendingPayments}
+              </div>
+            </div>
+            {isUser && (
+              <>
+                <div className="rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 p-4 sm:p-5 hover:bg-white/20 transition">
+                  <div className="text-white/70 text-xs font-medium uppercase tracking-wide">
+                    ความต้องการ
+                  </div>
+                  <div className="mt-2 text-3xl font-bold text-white">
+                    {totalRequires}
+                  </div>
+                </div>
+                <div className="rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 p-4 sm:p-5 hover:bg-white/20 transition">
+                  <div className="text-white/70 text-xs font-medium uppercase tracking-wide">
+                    เปิดรับ
+                  </div>
+                  <div className="mt-2 text-3xl font-bold text-white">
+                    {openRequires}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

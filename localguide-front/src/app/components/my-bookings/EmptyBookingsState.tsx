@@ -48,21 +48,24 @@ export default function EmptyBookingsState({
             <div className="flex flex-col sm:flex-row justify-center gap-3 mt-6">
               <Link
                 href="/guide/browse-trips"
-                className="inline-block bg-emerald-600 text-white px-6 py-2.5 rounded-md hover:bg-emerald-700 transition-colors font-medium"
+                className="inline-flex items-center justify-center gap-2 bg-emerald-600 text-white px-6 py-2.5 rounded-full hover:bg-emerald-700 transition-all font-medium shadow-sm"
               >
-                ดูความต้องการทริป
+                <span>🔍</span>
+                <span>ดูความต้องการทริป</span>
               </Link>
               <Link
                 href="/guide/my-offers"
-                className="inline-block bg-blue-600 text-white px-6 py-2.5 rounded-md hover:bg-blue-700 transition-colors font-medium"
+                className="inline-flex items-center justify-center gap-2 bg-emerald-600 text-white px-6 py-2.5 rounded-full hover:bg-emerald-700 transition-all font-medium shadow-sm"
               >
-                ดูข้อเสนอของฉัน
+                <span>💼</span>
+                <span>ดูข้อเสนอของฉัน</span>
               </Link>
               <Link
                 href="/dashboard"
-                className="inline-block border border-gray-300 text-gray-700 px-6 py-2.5 rounded-md hover:bg-gray-50 transition-colors font-medium"
+                className="inline-flex items-center justify-center gap-2 border border-gray-300 text-gray-700 px-6 py-2.5 rounded-full hover:bg-gray-50 transition-all font-medium shadow-sm"
               >
-                Dashboard
+                <span>←</span>
+                <span>Dashboard</span>
               </Link>
             </div>
           </div>
@@ -85,15 +88,17 @@ export default function EmptyBookingsState({
             <div className="flex flex-col sm:flex-row justify-center gap-3 mt-6">
               <Link
                 href="/user/trip-requires"
-                className="inline-block bg-blue-600 text-white px-6 py-2.5 rounded-md hover:bg-blue-700 transition-colors font-medium"
+                className="inline-flex items-center justify-center gap-2 bg-emerald-600 text-white px-6 py-2.5 rounded-full hover:bg-emerald-700 transition-all font-medium shadow-sm"
               >
-                สร้างความต้องการทริป
+                <span>+</span>
+                <span>สร้างความต้องการทริป</span>
               </Link>
               <Link
                 href="/dashboard"
-                className="inline-block border border-gray-300 text-gray-700 px-6 py-2.5 rounded-md hover:bg-gray-50 transition-colors font-medium"
+                className="inline-flex items-center justify-center gap-2 border border-gray-300 text-gray-700 px-6 py-2.5 rounded-full hover:bg-gray-50 transition-all font-medium shadow-sm"
               >
-                Dashboard
+                <span>←</span>
+                <span>Dashboard</span>
               </Link>
             </div>
           </div>

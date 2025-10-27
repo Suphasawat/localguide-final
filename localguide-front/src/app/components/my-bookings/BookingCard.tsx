@@ -33,7 +33,7 @@ export default function BookingCard({
       <div>
         <Link
           href={`/trip-bookings/${id}`}
-          className="text-lg font-semibold text-blue-600 hover:underline"
+          className="text-lg font-semibold text-emerald-600 hover:text-emerald-700 transition"
         >
           {getTitle(booking)}
         </Link>
@@ -60,7 +60,7 @@ export default function BookingCard({
         ) && (
           <Link
             href={`/trip-bookings/${id}`}
-            className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700"
+            className="px-4 py-2 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 transition"
           >
             ไปหน้าทริป
           </Link>
@@ -70,7 +70,7 @@ export default function BookingCard({
           <button
             onClick={() => onPayFromList(Number(id))}
             disabled={payingId === Number(id)}
-            className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+            className="px-4 py-2 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60 transition"
           >
             {payingId === Number(id) ? "กำลังสร้างการชำระเงิน..." : "ชำระเงิน"}
           </button>

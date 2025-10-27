@@ -51,7 +51,7 @@ export default function ProfileForm({
         {!editing ? (
           <button
             onClick={onEdit}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
           >
             แก้ไขข้อมูล
           </button>
@@ -66,7 +66,7 @@ export default function ProfileForm({
             <button
               onClick={onSave}
               disabled={saving}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
+              className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 transition-colors"
             >
               {saving ? "กำลังบันทึก..." : "บันทึก"}
             </button>
@@ -85,7 +85,7 @@ export default function ProfileForm({
               name="firstName"
               value={formData.firstName}
               onChange={onChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
               placeholder="กรอกชื่อจริง"
             />
           ) : (
@@ -103,7 +103,7 @@ export default function ProfileForm({
               name="lastName"
               value={formData.lastName}
               onChange={onChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
               placeholder="กรอกนามสกุล"
             />
           ) : (
@@ -121,7 +121,7 @@ export default function ProfileForm({
               name="nickname"
               value={formData.nickname}
               onChange={onChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
               placeholder="กรอกชื่อเล่น"
             />
           ) : (
@@ -139,7 +139,7 @@ export default function ProfileForm({
               name="birthDate"
               value={formData.birthDate}
               onChange={onChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           ) : (
             <p className="py-2 text-gray-900">
@@ -160,7 +160,7 @@ export default function ProfileForm({
               name="phone"
               value={formData.phone}
               onChange={onChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
               placeholder="กรอกเบอร์โทรศัพท์"
             />
           ) : (
@@ -178,7 +178,7 @@ export default function ProfileForm({
               name="nationality"
               value={formData.nationality}
               onChange={onChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
               placeholder="กรอกสัญชาติ"
             />
           ) : (
@@ -195,7 +195,7 @@ export default function ProfileForm({
               name="sex"
               value={formData.sex}
               onChange={onChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               <option value="">เลือกเพศ</option>
               <option value="Male">ชาย</option>

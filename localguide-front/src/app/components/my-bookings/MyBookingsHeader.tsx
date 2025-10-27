@@ -9,9 +9,10 @@ export default function MyBookingsHeader() {
       </div>
       <Link
         href="/dashboard"
-        className="border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors"
+        className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-full hover:bg-gray-50 transition-all font-medium shadow-sm"
       >
-        ← กลับไป Dashboard
+        <span>←</span>
+        <span>กลับไป Dashboard</span>
       </Link>
     </div>
   );

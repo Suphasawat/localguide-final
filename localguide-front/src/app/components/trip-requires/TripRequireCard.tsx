@@ -31,14 +31,14 @@ export default function TripRequireCard({
   deleteLoading,
 }: TripRequireCardProps) {
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md hover:border-emerald-200 transition-all">
       <div className="p-6">
-        <div className="flex justify-between items-start mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
+        <div className="flex justify-between items-start gap-3 mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 flex-1">
             {trip.Title}
           </h3>
           <span
-            className={`px-2 py-1 text-xs rounded-full whitespace-nowrap ml-2 ${getStatusColor(
+            className={`shrink-0 px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap ${getStatusColor(
               trip.Status
             )}`}
           >
@@ -46,40 +46,64 @@ export default function TripRequireCard({
           </span>
         </div>
 
-        <p className="text-gray-600 mb-4 line-clamp-3">{trip.Description}</p>
+        <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+          {trip.Description}
+        </p>
 
-        <div className="space-y-2 text-sm text-gray-500">
-          <div>📍 {trip.province_name || "ไม่ระบุจังหวัด"}</div>
-          <div>👥 {trip.GroupSize} คน</div>
-          <div>📅 {trip.Days} วัน</div>
-          <div>
-            💰 {trip.MinPrice.toLocaleString()} -{" "}
-            {trip.MaxPrice.toLocaleString()} บาท
+        <div className="space-y-2 text-sm text-gray-600">
+          <div className="flex items-center gap-2">
+            <span>📍</span>
+            <span>{trip.province_name || "ไม่ระบุจังหวัด"}</span>
           </div>
-          <div>
-            📆 {new Date(trip.StartDate).toLocaleDateString("th-TH")} -{" "}
-            {new Date(trip.EndDate).toLocaleDateString("th-TH")}
+          <div className="flex items-center gap-2">
+            <span>👥</span>
+            <span>{trip.GroupSize} คน</span>
           </div>
-          <div>
-            📝 โพสต์เมื่อ: {new Date(trip.PostedAt).toLocaleDateString("th-TH")}
+          <div className="flex items-center gap-2">
+            <span>📅</span>
+            <span>{trip.Days} วัน</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span>💰</span>
+            <span>
+              {trip.MinPrice.toLocaleString()} -{" "}
+              {trip.MaxPrice.toLocaleString()} บาท
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span>📆</span>
+            <span>
+              {new Date(trip.StartDate).toLocaleDateString("th-TH")} -{" "}
+              {new Date(trip.EndDate).toLocaleDateString("th-TH")}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <span>📝</span>
+            <span>
+              โพสต์เมื่อ: {new Date(trip.PostedAt).toLocaleDateString("th-TH")}
+            </span>
           </div>
           {trip.ExpiresAt && (
-            <div>
-              ⏰ หมดอายุ: {new Date(trip.ExpiresAt).toLocaleDateString("th-TH")}
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <span>⏰</span>
+              <span>
+                หมดอายุ: {new Date(trip.ExpiresAt).toLocaleDateString("th-TH")}
+              </span>
             </div>
           )}
           {trip.total_offers > 0 && (
-            <div className="text-blue-600 font-medium">
-              📥 มีข้อเสนอ {trip.total_offers} รายการ
+            <div className="flex items-center gap-2 text-emerald-600 font-medium">
+              <span>📥</span>
+              <span>มีข้อเสนอ {trip.total_offers} รายการ</span>
             </div>
           )}
         </div>
 
         <div className="mt-6 space-y-2">
-          <div className="flex space-x-2">
+          <div className="flex gap-2">
             <Link
               href={`/user/trip-requires/${trip.ID}`}
-              className="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+              className="flex-1 bg-emerald-600 text-white text-center py-2.5 px-4 rounded-full hover:bg-emerald-700 transition-all font-medium shadow-sm"
             >
               ดูรายละเอียด
             </Link>
@@ -87,7 +111,7 @@ export default function TripRequireCard({
             {trip.total_offers > 0 && (
               <Link
                 href={`/user/trip-requires/${trip.ID}/offers`}
-                className="flex-1 bg-green-600 text-white text-center py-2 px-4 rounded-md hover:bg-green-700 transition-colors"
+                className="flex-1 bg-blue-600 text-white text-center py-2.5 px-4 rounded-full hover:bg-blue-700 transition-all font-medium shadow-sm"
               >
                 ดูข้อเสนอ ({trip.total_offers})
               </Link>
@@ -95,10 +119,10 @@ export default function TripRequireCard({
           </div>
 
           {trip.Status === "open" && (
-            <div className="flex space-x-2">
+            <div className="flex gap-2">
               <Link
                 href={`/user/trip-requires/${trip.ID}/edit`}
-                className="flex-1 bg-gray-600 text-white text-center py-2 px-4 rounded-md hover:bg-gray-700 transition-colors"
+                className="flex-1 border border-gray-300 text-gray-700 text-center py-2.5 px-4 rounded-full hover:bg-gray-50 transition-all font-medium"
               >
                 แก้ไข
               </Link>
@@ -106,7 +130,7 @@ export default function TripRequireCard({
                 type="button"
                 onClick={() => onDelete(trip.ID, trip.Title)}
                 disabled={deleteLoading !== null}
-                className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-red-600 text-white py-2.5 px-4 rounded-full hover:bg-red-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ลบ
               </button>

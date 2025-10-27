@@ -30,7 +30,7 @@ export default function ProfileHeader({ profile }: ProfileHeaderProps) {
   };
 
   return (
-    <div className="bg-blue-600 px-6 py-8">
+    <div className="bg-emerald-600 px-6 py-8">
       <div className="flex items-center space-x-4">
         <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center">
           {profile.Avatar ? (
@@ -40,7 +40,7 @@ export default function ProfileHeader({ profile }: ProfileHeaderProps) {
               className="w-20 h-20 rounded-full object-cover"
             />
           ) : (
-            <span className="text-blue-600 text-2xl font-bold">
+            <span className="text-emerald-600 text-2xl font-bold">
               {profile.FirstName?.charAt(0) ||
                 profile.AuthUser?.Email?.charAt(0) ||
                 "U"}
@@ -53,8 +53,8 @@ export default function ProfileHeader({ profile }: ProfileHeaderProps) {
               ? `${profile.FirstName} ${profile.LastName}`
               : profile.Nickname || "ผู้ใช้งาน"}
           </h2>
-          <p className="text-blue-100">{profile.AuthUser?.Email}</p>
-          <p className="text-blue-100">{getRoleName(profile.Role?.Name)}</p>
+          <p className="text-emerald-100">{profile.AuthUser?.Email}</p>
+          <p className="text-emerald-100">{getRoleName(profile.Role?.Name)}</p>
         </div>
       </div>
     </div>

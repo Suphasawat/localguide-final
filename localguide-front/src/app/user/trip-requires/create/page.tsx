@@ -123,19 +123,29 @@ export default function CreateTripRequirePage() {
     <>
       <Navbar />
 
-      <div className="min-h-[calc(100dvh-150px)] bg-gray-100 px-4 py-10">
+      <div className="min-h-[calc(100vh-200px)] bg-white px-4 py-10">
         <div className="mx-auto w-full max-w-4xl">
-          <div className="overflow-hidden rounded-[24px] border border-gray-300 bg-white shadow-sm">
-            <div className="flex items-center justify-between px-8 py-6 border-b border-gray-300">
-              <h1 className="text-3xl font-extrabold text-blue-900">
-                สร้างความต้องการเที่ยวใหม่
-              </h1>
-              <Link
-                href="/dashboard"
-                className="rounded-full border-2 border-gray-300 px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 transition"
-              >
-                ← กลับไป Dashboard
-              </Link>
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="bg-emerald-600 px-8 py-8 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-emerald-100 text-sm font-medium uppercase tracking-wide">
+                    สร้างใหม่
+                  </p>
+                  <h1 className="mt-1 text-3xl font-extrabold">
+                    สร้างความต้องการเที่ยวใหม่
+                  </h1>
+                  <p className="mt-2 text-emerald-50">
+                    กรอกรายละเอียดเพื่อค้นหาไกด์ที่เหมาะสม
+                  </p>
+                </div>
+                <Link
+                  href="/dashboard"
+                  className="hidden sm:inline-flex rounded-full bg-white/90 hover:bg-white px-5 py-2.5 text-sm font-semibold text-emerald-700 transition shadow-sm"
+                >
+                  ← กลับ
+                </Link>
+              </div>
             </div>
 
             <div className="px-8 py-8">

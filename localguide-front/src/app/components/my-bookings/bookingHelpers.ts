@@ -7,9 +7,9 @@ export function getStatusColor(status: string) {
     case "paid":
       return "bg-blue-100 text-blue-800";
     case "trip_started":
-      return "bg-green-100 text-green-800";
+      return "bg-emerald-100 text-emerald-800";
     case "trip_completed":
-      return "bg-green-100 text-green-800";
+      return "bg-emerald-100 text-emerald-800";
     case "cancelled":
       return "bg-red-100 text-red-800";
     case "no_show":

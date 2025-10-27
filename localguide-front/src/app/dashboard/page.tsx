@@ -128,7 +128,7 @@ export default function DashboardPage() {
     <>
       <Navbar />
 
-      {/* HERO with Stats */}
+      {/* HERO with Stats - Emerald Gradient like About page */}
       <DashboardStats
         displayName={displayName}
         dashboardTitle={dashboardTitle}
@@ -139,23 +139,26 @@ export default function DashboardPage() {
         isUser={isUser}
       />
 
-      <div className="container mx-auto px-4 mt-4 pb-10">
-        {/* Quick Actions */}
-        <QuickActions isUser={isUser} isGuide={isGuide} isAdmin={isAdmin} />
+      {/* Main Content - White background */}
+      <div className="bg-white">
+        <div className="container mx-auto px-4 py-10">
+          {/* Quick Actions */}
+          <QuickActions isUser={isUser} isGuide={isGuide} isAdmin={isAdmin} />
 
-        {/* Recent History Sections */}
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* User: Recent Trip Requires */}
-          {isUser && (
-            <RecentTripRequires
-              tripRequires={myTripRequires}
-              getProvince={getProvince}
-              getDateRange={getDateRange}
-            />
-          )}
+          {/* Recent History Sections */}
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* User: Recent Trip Requires */}
+            {isUser && (
+              <RecentTripRequires
+                tripRequires={myTripRequires}
+                getProvince={getProvince}
+                getDateRange={getDateRange}
+              />
+            )}
 
-          {/* All Roles: Recent Bookings */}
-          <RecentBookings bookings={myBookings} isGuide={isGuide} />
+            {/* All Roles: Recent Bookings */}
+            <RecentBookings bookings={myBookings} isGuide={isGuide} />
+          </div>
         </div>
       </div>
 

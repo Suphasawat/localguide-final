@@ -16,19 +16,21 @@ export default function RecentTripRequires({
   const displayRequires = tripRequires.slice(0, 3);
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold">ความต้องการเที่ยวล่าสุด</h2>
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-gray-900">
+          ความต้องการเที่ยวล่าสุด
+        </h2>
         <Link
           href="/user/trip-requires"
-          className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm"
+          className="inline-flex items-center text-emerald-600 hover:text-emerald-700 text-sm font-semibold transition"
         >
-          ดูทั้งหมด
+          ดูทั้งหมด →
         </Link>
       </div>
 
       {hasRequires ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {displayRequires.map((require) => (
             <TripRequireCard
               key={require.ID}
@@ -39,12 +41,12 @@ export default function RecentTripRequires({
           ))}
         </div>
       ) : (
-        <div className="text-center py-10">
-          <div className="text-5xl mb-2">🗺️</div>
-          <p className="text-gray-500">ยังไม่มีความต้องการเที่ยว</p>
+        <div className="text-center py-12">
+          <div className="text-6xl mb-3">🗺️</div>
+          <p className="text-gray-600 mb-4">ยังไม่มีความต้องการเที่ยว</p>
           <Link
             href="/user/trip-requires/create"
-            className="inline-block mt-3 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 text-sm"
+            className="inline-flex items-center justify-center px-5 py-2.5 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 text-sm font-semibold shadow-sm transition"
           >
             สร้างความต้องการแรก
           </Link>

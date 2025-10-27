@@ -5,7 +5,7 @@ interface BrowseTripsHeroProps {
 export default function BrowseTripsHero({ onRefresh }: BrowseTripsHeroProps) {
   return (
     <section className="relative overflow-hidden">
-      <div className="bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600">
+      <div className="bg-emerald-600">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:py-12">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div>

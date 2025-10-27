@@ -7,7 +7,8 @@ import EmptyBookingsState from "../components/my-bookings/EmptyBookingsState";
 import { useMyBookings } from "../components/my-bookings/useMyBookings";
 
 export default function TripBookingsPage() {
-  const { bookings, loading, error, payingId, userRole, handlePayFromList } = useMyBookings();
+  const { bookings, loading, error, payingId, userRole, handlePayFromList } =
+    useMyBookings();
 
   if (loading) {
     return (
@@ -23,12 +24,12 @@ export default function TripBookingsPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gray-50 pt-8 pb-8">
+      <div className="min-h-screen bg-white pt-10 pb-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <MyBookingsHeader />
 
           {error && (
-            <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {error}
             </div>
           )}
