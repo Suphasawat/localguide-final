@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { guideAPI, provinceAPI, languageAPI, attractionAPI } from "../lib/api";
+import GuideFormFields from "../components/become-guide/GuideFormFields";
+import GuideFormNotice from "../components/become-guide/GuideFormNotice";
+import GuideFormActions from "../components/become-guide/GuideFormActions";
 
 interface Province {
   ID: number;
@@ -157,6 +160,14 @@ export default function BecomeGuidePage() {
     }));
   };
 
+  const isFormValid =
+    formData.bio &&
+    formData.description &&
+    formData.price > 0 &&
+    formData.provinceId > 0 &&
+    formData.selectedLanguages.length > 0 &&
+    formData.selectedAttractions.length > 0;
+
   if (loadingData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -193,207 +204,23 @@ export default function BecomeGuidePage() {
           onSubmit={handleSubmit}
           className="bg-white rounded-lg shadow-md p-6 space-y-6"
         >
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              แนะนำตัว (Bio) *
-            </label>
-            <textarea
-              name="bio"
-              value={formData.bio}
-              onChange={handleChange}
-              required
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="แนะนำตัวสั้นๆ เช่น ไกด์ผู้เชี่ยวชาญการท่องเที่ยวภาคเหนือ..."
-            />
-          </div>
+          <GuideFormFields
+            formData={formData}
+            provinces={provinces}
+            languages={languages}
+            filteredAttractions={filteredAttractions}
+            onFormChange={handleChange}
+            onLanguageToggle={handleLanguageToggle}
+            onAttractionToggle={handleAttractionToggle}
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              รายละเอียดการให้บริการ *
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              required
-              rows={5}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="อธิบายรายละเอียดการให้บริการ เช่น สถานที่ที่เชี่ยวชาญ ประสบการณ์ การบริการ..."
-            />
-          </div>
+          <GuideFormNotice />
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                ราคาค่าบริการ (บาท/วัน) *
-              </label>
-              <input
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                required
-                min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="3000"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                จังหวัด *
-              </label>
-              <select
-                name="provinceId"
-                value={formData.provinceId}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">เลือกจังหวัด</option>
-                {provinces.map((province) => (
-                  <option key={province.ID} value={province.ID}>
-                    {province.Name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              ภาษาที่สามารถใช้ได้ *
-            </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-40 overflow-y-auto border border-gray-300 rounded-md p-3">
-              {languages.map((language) => (
-                <label
-                  key={language.ID}
-                  className="flex items-center space-x-2"
-                >
-                  <input
-                    type="checkbox"
-                    checked={formData.selectedLanguages.includes(language.ID)}
-                    onChange={() => handleLanguageToggle(language.ID)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm">{language.Name}</span>
-                </label>
-              ))}
-            </div>
-            {formData.selectedLanguages.length === 0 && (
-              <p className="text-sm text-red-500 mt-1">
-                กรุณาเลือกภาษาอย่างน้อย 1 ภาษา
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              สถานที่ท่องเที่ยวที่เชี่ยวชาญ *
-            </label>
-            {formData.provinceId === 0 && (
-              <p className="text-sm text-gray-500 mb-2">
-                กรุณาเลือกจังหวัดก่อนเพื่อดูสถานที่ท่องเที่ยว
-              </p>
-            )}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto border border-gray-300 rounded-md p-3">
-              {filteredAttractions.map((attraction) => (
-                <label
-                  key={attraction.ID}
-                  className="flex items-center space-x-2"
-                >
-                  <input
-                    type="checkbox"
-                    checked={formData.selectedAttractions.includes(
-                      attraction.ID
-                    )}
-                    onChange={() => handleAttractionToggle(attraction.ID)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm">{attraction.Name}</span>
-                </label>
-              ))}
-            </div>
-            {filteredAttractions.length === 0 && formData.provinceId > 0 && (
-              <p className="text-sm text-gray-500 mt-1">
-                ไม่มีสถานที่ท่องเที่ยวในจังหวัดนี้
-              </p>
-            )}
-            {formData.selectedAttractions.length === 0 && (
-              <p className="text-sm text-red-500 mt-1">
-                กรุณาเลือกสถานที่ท่องเที่ยวอย่างน้อย 1 แห่ง
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              หมายเลขใบอนุญาตไกด์ (ถ้ามี)
-            </label>
-            <input
-              type="text"
-              name="certificationNumber"
-              value={formData.certificationNumber}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="GD-2024-001234"
-            />
-          </div>
-
-          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-5 w-5 text-yellow-400"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-yellow-800">
-                  หมายเหตุ
-                </h3>
-                <div className="mt-2 text-sm text-yellow-700">
-                  <p>
-                    คำขอจะต้องผ่านการอนุมัติจากผู้ดูแลระบบก่อน
-                    คุณจะได้รับการแจ้งเตือนผ่านอีเมลเมื่อมีการอัปเดตสถานะ
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex space-x-4">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="flex-1 py-3 px-4 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              ยกเลิก
-            </button>
-            <button
-              type="submit"
-              disabled={
-                loading ||
-                !formData.bio ||
-                !formData.description ||
-                formData.price <= 0 ||
-                formData.provinceId === 0 ||
-                formData.selectedLanguages.length === 0 ||
-                formData.selectedAttractions.length === 0
-              }
-              className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? "กำลังส่ง..." : "ส่งคำขอ"}
-            </button>
-          </div>
+          <GuideFormActions
+            loading={loading}
+            isFormValid={!!isFormValid}
+            onCancel={() => router.back()}
+          />
         </form>
       </div>
     </div>

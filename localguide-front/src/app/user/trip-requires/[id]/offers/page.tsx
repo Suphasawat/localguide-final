@@ -6,6 +6,15 @@ import { useRouter, useParams } from "next/navigation";
 import { tripOfferAPI, tripRequireAPI } from "../../../../lib/api";
 import { TripRequire, TripOffer } from "../../../../types";
 import Navbar from "@/app/components/Navbar";
+import TripRequireInfo from "@/app/components/offers/TripRequireInfo";
+import OffersFilterControls from "@/app/components/offers/OffersFilterControls";
+import OfferCard from "@/app/components/offers/OfferCard";
+import AcceptOfferModal from "@/app/components/offers/AcceptOfferModal";
+import RejectOfferModal from "@/app/components/offers/RejectOfferModal";
+import { useOfferHelpers } from "@/app/components/offers/useOfferHelpers";
+import { useOfferFilters } from "@/app/components/offers/useOfferFilters";
+import EmptyOffersState from "@/app/components/offers/EmptyOffersState";
+import AcceptedOfferAlert from "@/app/components/offers/AcceptedOfferAlert";
 
 export default function TripOffersPage() {
   const { user, isAuthenticated } = useAuth();
@@ -36,22 +45,15 @@ export default function TripOffersPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [rejectLoading, setRejectLoading] = useState<number | null>(null);
 
-  // Helpers to read optional fields safely
-  const getOfferPrice = (o: any) => {
-    const q =
-      o?.Quotation ||
-      (Array.isArray(o?.TripOfferQuotation)
-        ? o.TripOfferQuotation[o.TripOfferQuotation.length - 1]
-        : undefined);
-    return q?.TotalPrice ?? o?.TotalPrice ?? null;
-  };
-  const getGuideName = (o: any) => {
-    const u = o?.Guide?.User;
-    if (u?.FirstName || u?.LastName)
-      return `${u?.FirstName || ""} ${u?.LastName || ""}`.trim();
-    return o?.GuideName || o?.guide_name || "ไกด์ไม่ระบุชื่อ";
-  };
-  const getGuideRating = (o: any) => o?.Guide?.Rating ?? null;
+  // Use custom hooks
+  const helpers = useOfferHelpers();
+  const { counts, filtered, sorted, hasAccepted } = useOfferFilters(
+    offers,
+    statusFilter,
+    sortBy,
+    helpers.getOfferPrice,
+    helpers.getGuideRating
+  );
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -160,40 +162,6 @@ export default function TripOffersPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "sent":
-        return "bg-blue-100 text-blue-800";
-      case "accepted":
-        return "bg-green-100 text-green-800";
-      case "rejected":
-        return "bg-red-100 text-red-800";
-      case "expired":
-        return "bg-gray-100 text-gray-600";
-      case "withdrawn":
-        return "bg-gray-100 text-gray-600";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "sent":
-        return "รอการตอบรับ";
-      case "accepted":
-        return "ยอมรับแล้ว";
-      case "rejected":
-        return "ปฏิเสธแล้ว";
-      case "expired":
-        return "หมดอายุ";
-      case "withdrawn":
-        return "ถอนข้อเสนอ";
-      default:
-        return status;
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -225,53 +193,13 @@ export default function TripOffersPage() {
           <p className="mt-2 text-gray-600">สำหรับ: {tripRequire.Title}</p>
         </div>
 
-        {/* Trip Require Info */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">ความต้องการของคุณ</h2>
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="font-medium text-lg">{tripRequire.Title}</h3>
-              <p className="text-gray-600 mt-2">{tripRequire.Description}</p>
-            </div>
-            <span
-              className={`px-3 py-1 text-sm rounded-full ${getStatusColor(
-                tripRequire.Status
-              )}`}
-            >
-              {getStatusText(tripRequire.Status)}
-            </span>
-          </div>
-
-          {/* Statistics */}
-          {offers.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-4 border-t border-gray-200">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">
-                  {offers.length}
-                </div>
-                <div className="text-sm text-gray-600">ข้อเสนอทั้งหมด</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {offers.filter((offer) => offer.Status === "sent").length}
-                </div>
-                <div className="text-sm text-gray-600">รอการตอบรับ</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {offers.filter((offer) => offer.Status === "accepted").length}
-                </div>
-                <div className="text-sm text-gray-600">ยอมรับแล้ว</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-red-600">
-                  {offers.filter((offer) => offer.Status === "rejected").length}
-                </div>
-                <div className="text-sm text-gray-600">ปฏิเสธแล้ว</div>
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Trip Require Info Component */}
+        <TripRequireInfo
+          tripRequire={tripRequire}
+          offers={offers}
+          getStatusColor={helpers.getStatusColor}
+          getStatusText={helpers.getStatusText}
+        />
 
         {error && (
           <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
@@ -285,556 +213,60 @@ export default function TripOffersPage() {
           </div>
         )}
 
-        {offers.length === 0 ? (
-          // Empty state
-          <div className="text-center py-12 bg-white rounded-lg shadow-md">
-            <div className="text-gray-400 text-6xl mb-4">📋</div>
-            <p className="text-gray-500 text-lg mb-2">
-              ยังไม่มีข้อเสนอสำหรับความต้องการนี้
-            </p>
-            <p className="text-gray-400">โปรดรอไกด์ส่งข้อเสนอมาให้</p>
+        <EmptyOffersState hasOffers={offers.length > 0} />
+
+        {offers.length > 0 && (
+          <div className="space-y-6">
+            <OffersFilterControls
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              filteredCount={filtered.length}
+              totalCount={offers.length}
+              counts={counts}
+            />
+
+            <AcceptedOfferAlert show={hasAccepted} />
+
+            {sorted.map((offer) => (
+              <OfferCard
+                key={offer.ID}
+                offer={offer}
+                tripRequire={tripRequire}
+                getGuideName={helpers.getGuideName}
+                getOfferPrice={helpers.getOfferPrice}
+                getGuideRating={helpers.getGuideRating}
+                getStatusColor={helpers.getStatusColor}
+                getStatusText={helpers.getStatusText}
+                onAccept={openAccept}
+                onReject={openReject}
+              />
+            ))}
           </div>
-        ) : (
-          (() => {
-            const counts = {
-              sent: offers.filter((o) => o.Status === "sent").length,
-              accepted: offers.filter((o) => o.Status === "accepted").length,
-              rejected: offers.filter((o) => o.Status === "rejected").length,
-              expired: offers.filter((o) => o.Status === "expired").length,
-              withdrawn: offers.filter((o) => o.Status === "withdrawn").length,
-            };
-
-            const filtered =
-              statusFilter === "all"
-                ? offers
-                : offers.filter((o) => o.Status === statusFilter);
-
-            const sorted = [...filtered].sort((a, b) => {
-              if (sortBy === "price_low" || sortBy === "price_high") {
-                const pa = getOfferPrice(a) ?? Number.POSITIVE_INFINITY;
-                const pb = getOfferPrice(b) ?? Number.POSITIVE_INFINITY;
-                return sortBy === "price_low" ? pa - pb : pb - pa;
-              }
-              if (sortBy === "rating_high") {
-                const ra = getGuideRating(a) ?? -1;
-                const rb = getGuideRating(b) ?? -1;
-                return rb - ra;
-              }
-              // latest by SentAt desc as default
-              return (
-                new Date(b.SentAt || 0).getTime() -
-                new Date(a.SentAt || 0).getTime()
-              );
-            });
-
-            const hasAccepted = counts.accepted > 0;
-
-            return (
-              <div className="space-y-6">
-                {/* Controls: filter chips + sort */}
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    ข้อเสนอทั้งหมด ({filtered.length} จาก {offers.length})
-                  </h3>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {(
-                      [
-                        { key: "all", label: "ทั้งหมด", count: offers.length },
-                        {
-                          key: "sent",
-                          label: "รอการตอบรับ",
-                          count: counts.sent,
-                        },
-                        {
-                          key: "accepted",
-                          label: "ยอมรับแล้ว",
-                          count: counts.accepted,
-                        },
-                        {
-                          key: "rejected",
-                          label: "ปฏิเสธแล้ว",
-                          count: counts.rejected,
-                        },
-                      ] as const
-                    ).map((f) => (
-                      <button
-                        key={f.key}
-                        onClick={() => setStatusFilter(f.key as any)}
-                        className={`px-3 py-1 rounded-full text-sm border transition ${
-                          statusFilter === f.key
-                            ? "bg-blue-600 text-white border-blue-600"
-                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                        }`}
-                      >
-                        {f.label}{" "}
-                        <span className="ml-1 opacity-80">({f.count})</span>
-                      </button>
-                    ))}
-
-                    <div className="ml-auto flex items-center gap-2">
-                      <label className="text-sm text-gray-600">เรียงตาม</label>
-                      <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as any)}
-                        className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white"
-                      >
-                        <option value="latest">วันที่ส่งล่าสุด</option>
-                        <option value="price_low">ราคาต่ำสุด</option>
-                        <option value="price_high">ราคาสูงสุด</option>
-                        <option value="rating_high">เรตติ้งไกด์สูงสุด</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Accepted highlight */}
-                {hasAccepted && (
-                  <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md">
-                    ✅ คุณได้ยอมรับข้อเสนอแล้ว สามารถตรวจสอบการจองได้ที่หน้า
-                    "การจองทริป"
-                  </div>
-                )}
-
-                {sorted.map((offer) => (
-                  <div
-                    key={offer.ID}
-                    className={`bg-white rounded-lg shadow-md overflow-hidden border-l-4 ${
-                      offer.Status === "accepted"
-                        ? "border-green-500"
-                        : offer.Status === "rejected"
-                        ? "border-red-500"
-                        : offer.Status === "expired"
-                        ? "border-gray-400"
-                        : "border-blue-500"
-                    }`}
-                  >
-                    <div className="p-6">
-                      <div className="flex justify-between items-start mb-4 gap-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {offer.Title}
-                          </h3>
-                          <p className="text-gray-600 mt-1">
-                            จาก: {getGuideName(offer)}
-                          </p>
-                        </div>
-                        <div className="text-right space-y-1">
-                          <span
-                            className={`inline-block px-3 py-1 text-sm rounded-full ${getStatusColor(
-                              offer.Status
-                            )}`}
-                          >
-                            {getStatusText(offer.Status)}
-                          </span>
-                          {getOfferPrice(offer) !== null && (
-                            <div>
-                              <div className="text-xs text-gray-500">
-                                ราคารวม
-                              </div>
-                              <div className="text-base font-bold text-gray-900">
-                                ฿{Number(getOfferPrice(offer)).toLocaleString()}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="mb-4">
-                        <p className="text-gray-700">{offer.Description}</p>
-                      </div>
-
-                      {/* Guide Info */}
-                      <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                        <h4 className="font-medium mb-2">ข้อมูลไกด์</h4>
-                        <div className="grid md:grid-cols-2 gap-4 text-sm">
-                          <div>
-                            ⭐ คะแนน: {getGuideRating(offer) ?? "ยังไม่มี"}/5
-                          </div>
-                          <div>
-                            💰 ราคาไกด์: {offer.Guide?.Price?.toLocaleString()}{" "}
-                            บาท/วัน
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Quotation */}
-                      {(offer.Quotation || offer.TripOfferQuotation?.[0]) && (
-                        <div className="border border-gray-200 rounded-lg p-4 mb-4">
-                          <h4 className="font-medium mb-3">💰 ใบเสนอราคา</h4>
-                          {(() => {
-                            const quotation =
-                              offer.Quotation || offer.TripOfferQuotation?.[0];
-                            if (!quotation) return null;
-
-                            return (
-                              <div className="space-y-3">
-                                <div className="flex justify-between items-center">
-                                  <span className="font-medium">ราคารวม:</span>
-                                  <span className="text-xl font-bold text-green-600">
-                                    {quotation.TotalPrice?.toLocaleString()} บาท
-                                  </span>
-                                </div>
-
-                                <div className="text-sm text-gray-600">
-                                  <strong>มีผลถึง:</strong>{" "}
-                                  {new Date(
-                                    quotation.ValidUntil
-                                  ).toLocaleDateString("th-TH")}
-                                </div>
-
-                                {quotation.PriceBreakdown && (
-                                  <div>
-                                    <strong className="text-sm">
-                                      📊 รายละเอียดค่าใช้จ่าย:
-                                    </strong>
-                                    <div className="text-sm text-gray-600 mt-1 bg-gray-50 p-3 rounded">
-                                      <pre className="whitespace-pre-wrap font-sans">
-                                        {quotation.PriceBreakdown}
-                                      </pre>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {quotation.Terms && (
-                                  <div>
-                                    <strong className="text-sm">
-                                      📋 เงื่อนไขการให้บริการ:
-                                    </strong>
-                                    <div className="text-sm text-gray-600 mt-1 bg-gray-50 p-3 rounded">
-                                      <pre className="whitespace-pre-wrap font-sans">
-                                        {quotation.Terms}
-                                      </pre>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {quotation.PaymentTerms && (
-                                  <div>
-                                    <strong className="text-sm">
-                                      💳 เงื่อนไขการชำระเงิน:
-                                    </strong>
-                                    <div className="text-sm text-gray-600 mt-1 bg-gray-50 p-3 rounded">
-                                      <pre className="whitespace-pre-wrap font-sans">
-                                        {quotation.PaymentTerms}
-                                      </pre>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })()}
-                        </div>
-                      )}
-
-                      {offer.OfferNotes && (
-                        <div className="mb-4 bg-blue-50 p-4 rounded-lg">
-                          <strong className="text-sm text-blue-900">
-                            หมายเหตุจากไกด์:
-                          </strong>
-                          <p className="text-sm text-blue-700 mt-2 whitespace-pre-wrap">
-                            {offer.OfferNotes}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Itinerary */}
-                      {offer.Itinerary && (
-                        <div className="mb-4">
-                          <strong className="text-sm">
-                            กำหนดการท่องเที่ยว:
-                          </strong>
-                          <div className="text-sm text-gray-600 mt-2 bg-gray-50 p-4 rounded-lg">
-                            <pre className="whitespace-pre-wrap font-sans">
-                              {offer.Itinerary}
-                            </pre>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Services */}
-                      <div className="grid md:grid-cols-2 gap-4 mb-4">
-                        {offer.IncludedServices && (
-                          <div>
-                            <strong className="text-sm text-green-700">
-                              ✅ บริการที่รวมอยู่:
-                            </strong>
-                            <div className="text-sm text-gray-600 mt-2 bg-green-50 p-3 rounded-lg">
-                              <pre className="whitespace-pre-wrap font-sans">
-                                {offer.IncludedServices}
-                              </pre>
-                            </div>
-                          </div>
-                        )}
-                        {offer.ExcludedServices && (
-                          <div>
-                            <strong className="text-sm text-red-700">
-                              ❌ บริการที่ไม่รวม:
-                            </strong>
-                            <div className="text-sm text-gray-600 mt-2 bg-red-50 p-3 rounded-lg">
-                              <pre className="whitespace-pre-wrap font-sans">
-                                {offer.ExcludedServices}
-                              </pre>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {offer.SentAt && (
-                        <div className="text-sm text-gray-500 mb-4">
-                          ส่งเมื่อ:{" "}
-                          {new Date(offer.SentAt).toLocaleDateString("th-TH")}{" "}
-                          {new Date(offer.SentAt).toLocaleTimeString("th-TH")}
-                        </div>
-                      )}
-
-                      {/* Actions */}
-                      {offer.Status === "sent" &&
-                        (tripRequire.Status === "open" ||
-                          tripRequire.Status === "in_review") && (
-                          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                            <button
-                              onClick={() => openAccept(offer)}
-                              disabled={acceptLoading !== null}
-                              className="flex-1 bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                            >
-                              <>✅ ยอมรับข้อเสนอ</>
-                            </button>
-                            <button
-                              className="flex-1 bg-gray-400 text-white py-3 px-4 rounded-md hover:bg-gray-500 transition-colors"
-                              onClick={() => openReject(offer)}
-                            >
-                              ❌ ปฏิเสธ
-                            </button>
-                          </div>
-                        )}
-
-                      {offer.Status === "sent" &&
-                        tripRequire.Status !== "open" &&
-                        tripRequire.Status !== "in_review" && (
-                          <div className="bg-gray-50 border border-gray-200 text-gray-700 px-4 py-3 rounded-md">
-                            <span className="mr-2">🔒</span>
-                            ความต้องการนี้ปิดรับข้อเสนอแล้ว (Status:{" "}
-                            {tripRequire.Status})
-                          </div>
-                        )}
-
-                      {offer.Status === "accepted" && (
-                        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md flex items-center">
-                          <span className="mr-2">✅</span>
-                          คุณได้ยอมรับข้อเสนอนี้แล้ว
-                        </div>
-                      )}
-
-                      {offer.Status === "rejected" && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center">
-                          <span className="mr-2">❌</span>
-                          ข้อเสนอนี้ถูกปฏิเสธแล้ว
-                          {offer.RejectionReason && (
-                            <span className="ml-2 text-sm">
-                              ({offer.RejectionReason})
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {offer.Status === "expired" && (
-                        <div className="bg-gray-50 border border-gray-200 text-gray-700 px-4 py-3 rounded-md flex items-center">
-                          <span className="mr-2">⏰</span>
-                          ข้อเสนอนี้หมดอายุแล้ว
-                        </div>
-                      )}
-
-                      {offer.Status === "withdrawn" && (
-                        <div className="bg-gray-50 border border-gray-200 text-gray-700 px-4 py-3 rounded-md flex items-center">
-                          <span className="mr-2">🚫</span>
-                          ไกด์ได้ถอนข้อเสนอนี้แล้ว
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            );
-          })()
         )}
       </div>
 
-      {/* Accept Confirm Modal */}
-      {showAcceptModal && acceptTarget && (
-        <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-xl w-full shadow-xl">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-xl font-semibold">
-                  ✅ ยืนยันการยอมรับข้อเสนอ
-                </h3>
-                <button
-                  onClick={() =>
-                    acceptLoading ? null : setShowAcceptModal(false)
-                  }
-                  className="text-gray-400 hover:text-gray-600 text-2xl"
-                  aria-label="close"
-                >
-                  ×
-                </button>
-              </div>
+      <AcceptOfferModal
+        show={showAcceptModal}
+        offer={acceptTarget}
+        onClose={() => setShowAcceptModal(false)}
+        onConfirm={handleAcceptOffer}
+        loading={acceptLoading === acceptTarget?.ID}
+        getGuideName={helpers.getGuideName}
+        getOfferPrice={helpers.getOfferPrice}
+      />
 
-              <div className="space-y-3 text-sm">
-                <div>
-                  <div className="text-gray-500">ชื่อข้อเสนอ</div>
-                  <div className="font-medium text-gray-900">
-                    {acceptTarget.Title}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-gray-500">ไกด์</div>
-                  <div className="font-medium text-gray-900">
-                    {getGuideName(acceptTarget)}
-                  </div>
-                </div>
-                {(() => {
-                  const q =
-                    acceptTarget.Quotation ||
-                    acceptTarget.TripOfferQuotation?.[0];
-                  return (
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <div className="text-gray-500">ราคารวม</div>
-                        <div className="text-lg font-bold text-green-700">
-                          ฿
-                          {(
-                            q?.TotalPrice ??
-                            getOfferPrice(acceptTarget) ??
-                            0
-                          ).toLocaleString()}
-                        </div>
-                      </div>
-                      {q?.ValidUntil && (
-                        <div>
-                          <div className="text-gray-500">มีผลถึง</div>
-                          <div className="font-medium text-gray-900">
-                            {new Date(q.ValidUntil).toLocaleDateString("th-TH")}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-                <div className="mt-2 text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-md p-3">
-                  การยอมรับข้อเสนอนี้จะปฏิเสธข้อเสนออื่นๆ โดยอัตโนมัติ
-                  และจะพาไปยังหน้าการจอง
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-end gap-3">
-                <button
-                  onClick={() =>
-                    acceptLoading ? null : setShowAcceptModal(false)
-                  }
-                  className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
-                  disabled={acceptLoading !== null}
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  onClick={() => handleAcceptOffer(acceptTarget.ID)}
-                  className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 flex items-center"
-                  disabled={acceptLoading === acceptTarget.ID}
-                >
-                  {acceptLoading === acceptTarget.ID ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      กำลังยอมรับ...
-                    </>
-                  ) : (
-                    <>ยืนยันยอมรับ</>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Reject Confirm Modal */}
-      {showRejectModal && rejectTarget && (
-        <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-xl w-full shadow-xl">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-xl font-semibold">
-                  ❌ ยืนยันการปฏิเสธข้อเสนอ
-                </h3>
-                <button
-                  onClick={() =>
-                    rejectLoading ? null : setShowRejectModal(false)
-                  }
-                  className="text-gray-400 hover:text-gray-600 text-2xl"
-                  aria-label="close"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="space-y-3 text-sm">
-                <div>
-                  <div className="text-gray-500">ชื่อข้อเสนอ</div>
-                  <div className="font-medium text-gray-900">
-                    {rejectTarget.Title}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-gray-500">ไกด์</div>
-                  <div className="font-medium text-gray-900">
-                    {getGuideName(rejectTarget)}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-gray-500 mb-1">
-                    เหตุผล (ไม่บังคับ)
-                  </label>
-                  <textarea
-                    className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                    rows={3}
-                    placeholder="เช่น ราคาเกินงบ ประเภททริปไม่ตรงความต้องการ ฯลฯ"
-                    value={rejectReason}
-                    onChange={(e) => setRejectReason(e.target.value)}
-                  />
-                </div>
-                <div className="mt-2 text-gray-700 bg-gray-50 border border-gray-200 rounded-md p-3">
-                  เมื่อปฏิเสธแล้ว คุณยังสามารถยอมรับข้อเสนออื่นได้ในภายหลัง
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-end gap-3">
-                <button
-                  onClick={() =>
-                    rejectLoading ? null : setShowRejectModal(false)
-                  }
-                  className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
-                  disabled={rejectLoading !== null}
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  onClick={() => handleRejectOffer(rejectTarget.ID)}
-                  className="px-4 py-2 rounded-md bg-gray-600 text-white hover:bg-gray-700 disabled:opacity-50 flex items-center"
-                  disabled={rejectLoading === rejectTarget.ID}
-                >
-                  {rejectLoading === rejectTarget.ID ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      กำลังปฏิเสธ...
-                    </>
-                  ) : (
-                    <>ยืนยันปฏิเสธ</>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <RejectOfferModal
+        show={showRejectModal}
+        offer={rejectTarget}
+        onClose={() => setShowRejectModal(false)}
+        onConfirm={handleRejectOffer}
+        loading={rejectLoading === rejectTarget?.ID}
+        reason={rejectReason}
+        setReason={setRejectReason}
+        getGuideName={helpers.getGuideName}
+      />
     </div>
   );
 }

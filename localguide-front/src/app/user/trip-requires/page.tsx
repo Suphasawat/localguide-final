@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation";
 import { tripRequireAPI } from "../../lib/api";
 import Link from "next/link";
 import Navbar from "@/app/components/Navbar";
+import TripRequiresHeader from "@/app/components/trip-requires/TripRequiresHeader";
+import TripRequireCard from "@/app/components/trip-requires/TripRequireCard";
+import EmptyTripRequires from "@/app/components/trip-requires/EmptyTripRequires";
+import DeleteConfirmModal from "@/app/components/trip-requires/DeleteConfirmModal";
 
 // Interface สำหรับ response จาก API
 interface TripRequireResponse {
@@ -136,29 +140,14 @@ export default function MyTripRequiresPage() {
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              ความต้องการทริปของฉัน
-            </h1>
-            <p className="mt-2 text-gray-600">
-              จัดการความต้องการทริปและดูข้อเสนอที่ได้รับ
-            </p>
-            {tripRequires.length > 0 && (
-              <div className="mt-2 flex space-x-4 text-sm text-gray-500">
-                <span>📝 ทั้งหมด {tripRequires.length} รายการ</span>
-                <span>
-                  💼 เปิดรับ{" "}
-                  {tripRequires.filter((t) => t.Status === "open").length}{" "}
-                  รายการ
-                </span>
-                <span>
-                  📩 รวมข้อเสนอ{" "}
-                  {tripRequires.reduce((sum, t) => sum + t.total_offers, 0)}{" "}
-                  รายการ
-                </span>
-              </div>
+          <TripRequiresHeader
+            tripRequiresCount={tripRequires.length}
+            openCount={tripRequires.filter((t) => t.Status === "open").length}
+            totalOffers={tripRequires.reduce(
+              (sum, t) => sum + t.total_offers,
+              0
             )}
-          </div>
+          />
           <div className="flex items-center space-x-3">
             <Link
               href="/dashboard"
@@ -188,168 +177,29 @@ export default function MyTripRequiresPage() {
         )}
 
         {tripRequires.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="max-w-md mx-auto">
-              <div className="text-6xl mb-4">🏝️</div>
-              <p className="text-gray-500 text-lg mb-4">
-                คุณยังไม่มีความต้องการทริป
-              </p>
-              <p className="text-gray-400 text-sm mb-6">
-                เริ่มต้นโพสต์ความต้องการทริปแรกของคุณเพื่อให้ไกด์ท้องถิ่นมาเสนอข้อเสนอ
-              </p>
-              <div className="flex justify-center gap-3">
-                <Link
-                  href="/user/trip-requires/create"
-                  className="inline-block bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  โพสต์ความต้องการแรก
-                </Link>
-                <Link
-                  href="/dashboard"
-                  className="inline-block border border-gray-300 text-gray-700 px-6 py-3 rounded-md hover:bg-gray-50 transition-colors"
-                >
-                  กลับไป Dashboard
-                </Link>
-              </div>
-            </div>
-          </div>
+          <EmptyTripRequires />
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {tripRequires.map((trip) => (
-              <div
+              <TripRequireCard
                 key={trip.ID}
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-              >
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
-                      {trip.Title}
-                    </h3>
-                    <span
-                      className={`px-2 py-1 text-xs rounded-full whitespace-nowrap ml-2 ${getStatusColor(
-                        trip.Status
-                      )}`}
-                    >
-                      {getStatusText(trip.Status)}
-                    </span>
-                  </div>
-
-                  <p className="text-gray-600 mb-4 line-clamp-3">
-                    {trip.Description}
-                  </p>
-
-                  <div className="space-y-2 text-sm text-gray-500">
-                    <div>📍 {trip.province_name || "ไม่ระบุจังหวัด"}</div>
-                    <div>👥 {trip.GroupSize} คน</div>
-                    <div>📅 {trip.Days} วัน</div>
-                    <div>
-                      💰 {trip.MinPrice.toLocaleString()} -{" "}
-                      {trip.MaxPrice.toLocaleString()} บาท
-                    </div>
-                    <div>
-                      📆 {new Date(trip.StartDate).toLocaleDateString("th-TH")}{" "}
-                      - {new Date(trip.EndDate).toLocaleDateString("th-TH")}
-                    </div>
-                    <div>
-                      📝 โพสต์เมื่อ:{" "}
-                      {new Date(trip.PostedAt).toLocaleDateString("th-TH")}
-                    </div>
-                    {trip.ExpiresAt && (
-                      <div>
-                        ⏰ หมดอายุ:{" "}
-                        {new Date(trip.ExpiresAt).toLocaleDateString("th-TH")}
-                      </div>
-                    )}
-                    {trip.total_offers > 0 && (
-                      <div className="text-blue-600 font-medium">
-                        📥 มีข้อเสนอ {trip.total_offers} รายการ
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mt-6 space-y-2">
-                    <div className="flex space-x-2">
-                      <Link
-                        href={`/user/trip-requires/${trip.ID}`}
-                        className="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
-                      >
-                        ดูรายละเอียด
-                      </Link>
-
-                      {trip.total_offers > 0 && (
-                        <Link
-                          href={`/user/trip-requires/${trip.ID}/offers`}
-                          className="flex-1 bg-green-600 text-white text-center py-2 px-4 rounded-md hover:bg-green-700 transition-colors"
-                        >
-                          ดูข้อเสนอ ({trip.total_offers})
-                        </Link>
-                      )}
-                    </div>
-
-                    {trip.Status === "open" && (
-                      <div className="flex space-x-2">
-                        <Link
-                          href={`/user/trip-requires/${trip.ID}/edit`}
-                          className="flex-1 bg-gray-600 text-white text-center py-2 px-4 rounded-md hover:bg-gray-700 transition-colors"
-                        >
-                          แก้ไข
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setDeleteTarget({ id: trip.ID, title: trip.Title })
-                          }
-                          disabled={deleteLoading !== null}
-                          className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          ลบ
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+                trip={trip}
+                getStatusColor={getStatusColor}
+                getStatusText={getStatusText}
+                onDelete={(id, title) => setDeleteTarget({ id, title })}
+                deleteLoading={deleteLoading}
+              />
             ))}
           </div>
         )}
 
-        {/* Delete confirm modal */}
-        {deleteTarget && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div
-              className="absolute inset-0 bg-black/50"
-              onClick={() => (deleteLoading ? null : setDeleteTarget(null))}
-            />
-            <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-              <h3 className="text-lg font-semibold text-gray-900">
-                ยืนยันการลบ
-              </h3>
-              <p className="mt-2 text-sm text-gray-600">
-                คุณต้องการลบ{" "}
-                <span className="font-medium">"{deleteTarget.title}"</span>{" "}
-                หรือไม่? การดำเนินการนี้ไม่สามารถย้อนคืนได้
-              </p>
-              <div className="mt-6 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => (deleteLoading ? null : setDeleteTarget(null))}
-                  className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
-                  disabled={deleteLoading !== null}
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(deleteTarget.id)}
-                  className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
-                  disabled={deleteLoading === deleteTarget.id}
-                >
-                  {deleteLoading === deleteTarget.id ? "กำลังลบ..." : "ลบ"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <DeleteConfirmModal
+          show={deleteTarget !== null}
+          title={deleteTarget?.title || ""}
+          loading={deleteLoading === deleteTarget?.id}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={() => deleteTarget && handleDelete(deleteTarget.id)}
+        />
       </div>
     </div>
   );

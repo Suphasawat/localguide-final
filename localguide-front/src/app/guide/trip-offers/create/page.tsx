@@ -6,6 +6,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { tripOfferAPI, tripRequireAPI } from "../../../lib/api";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
+import TripRequireInfoCard from "@/app/components/trip-offer-create/TripRequireInfoCard";
+import CreateOfferForm from "@/app/components/trip-offer-create/CreateOfferForm";
+import OfferConfirmModal from "@/app/components/trip-offer-create/OfferConfirmModal";
+import SuccessOverlay from "@/app/components/trip-offer-create/SuccessOverlay";
 
 interface TripRequire {
   ID: number;
@@ -14,7 +18,7 @@ interface TripRequire {
   MinPrice: number;
   MaxPrice: number;
   StartDate: string; // ISO string
-  EndDate: string;   // ISO string
+  EndDate: string; // ISO string
   Days: number;
   GroupSize: number;
   Province?: { Name: string };
@@ -132,7 +136,9 @@ export default function CreateTripOfferPage() {
       setTripRequire(data);
 
       // ตั้งค่าเริ่มต้นให้ title / totalPrice / validUntil
-      const defaultTitle = `แพ็กเกจทัวร์ ${data.Province?.Name || ""} ${data.Days} วัน`;
+      const defaultTitle = `แพ็กเกจทัวร์ ${data.Province?.Name || ""} ${
+        data.Days
+      } วัน`;
 
       // default validUntil = วันนี้+7 แต่ต้องไม่เกินวันเริ่มทริป
       const sevenDaysLater = new Date();
@@ -140,7 +146,9 @@ export default function CreateTripOfferPage() {
       sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
       const sevenISO = sevenDaysLater.toISOString().slice(0, 10);
       const computedValidUntil = toDateOnly(data.StartDate)
-        ? (sevenISO <= toDateOnly(data.StartDate) ? sevenISO : toDateOnly(data.StartDate))
+        ? sevenISO <= toDateOnly(data.StartDate)
+          ? sevenISO
+          : toDateOnly(data.StartDate)
         : sevenISO;
 
       setFormData((prev) => ({
@@ -182,11 +190,12 @@ export default function CreateTripOfferPage() {
     !!formData.validUntil && formData.validUntil < todayISO;
 
   const validUntilAfterTripStart =
-    !!formData.validUntil && !!maxValidUntilISO && formData.validUntil > maxValidUntilISO;
+    !!formData.validUntil &&
+    !!maxValidUntilISO &&
+    formData.validUntil > maxValidUntilISO;
 
   // ตรวจว่าทริปนี้เริ่มไปแล้วหรือยัง (ถ้าเริ่มแล้ว ไม่ควรรับข้อเสนอใหม่)
-  const tripAlreadyStarted =
-    !!tripStartDate && tripStartDate < todayISO;
+  const tripAlreadyStarted = !!tripStartDate && tripStartDate < todayISO;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -342,26 +351,12 @@ export default function CreateTripOfferPage() {
       {/* BODY */}
       <div className="bg-emerald-50/40 py-10">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          {/* Trip Require Info */}
-          <div className="mb-6 rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-emerald-800">
-              ข้อมูลความต้องการ
-            </h2>
-            <div className="mt-3 grid gap-4 text-sm text-gray-700 md:grid-cols-2">
-              <div>📍 จังหวัด: {tripRequire.Province?.Name || "-"}</div>
-              <div>👥 จำนวนคน: {tripRequire.GroupSize} คน</div>
-              <div>📅 ระยะเวลา: {tripRequire.Days} วัน</div>
-              <div>
-                💰 งบประมาณ: {tripRequire.MinPrice.toLocaleString()} -{" "}
-                {tripRequire.MaxPrice.toLocaleString()} บาท
-              </div>
-              <div>🧭 เริ่มทริป: {tripStartDate || "-"}</div>
-              <div>🏁 สิ้นสุด: {tripEndDate || "-"}</div>
-              <div className="md:col-span-2">
-                📝 รายละเอียด: {tripRequire.Description}
-              </div>
-            </div>
-          </div>
+          {/* Trip Require Info Card Component */}
+          <TripRequireInfoCard
+            tripRequire={tripRequire}
+            tripStartDate={tripStartDate}
+            tripEndDate={tripEndDate}
+          />
 
           {error && (
             <div className="mb-6 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 whitespace-pre-line">
@@ -369,318 +364,35 @@ export default function CreateTripOfferPage() {
             </div>
           )}
 
-          {/* FORM */}
-          <form
+          {/* Create Offer Form Component */}
+          <CreateOfferForm
+            formData={formData}
+            tripRequire={tripRequire}
+            todayISO={todayISO}
+            maxValidUntilISO={maxValidUntilISO}
+            priceOutOfRange={priceOutOfRange}
+            validUntilTooEarly={validUntilTooEarly}
+            validUntilAfterTripStart={validUntilAfterTripStart}
+            onChange={handleChange}
             onSubmit={handleSubmit}
-            className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm space-y-6"
-          >
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                ชื่อแพ็กเกจ *
-              </label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                required
-                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                รายละเอียดแพ็กเกจ *
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                required
-                rows={4}
-                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                placeholder="อธิบายรายละเอียดที่ลูกค้าจะได้รับ..."
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                กำหนดการเที่ยว (Itinerary)
-              </label>
-              <textarea
-                name="itinerary"
-                value={formData.itinerary}
-                onChange={handleChange}
-                rows={6}
-                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                placeholder={`วันที่ 1: ...\nวันที่ 2: ...`}
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                แยกแต่ละวันด้วยการเว้นบรรทัด
-              </p>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  บริการที่รวมในแพ็กเกจ
-                </label>
-                <textarea
-                  name="includedServices"
-                  value={formData.includedServices}
-                  onChange={handleChange}
-                  rows={4}
-                  className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                  placeholder={`- รถรับส่ง\n- ค่าน้ำมัน\n- ไกด์นำเที่ยว\n- ประกันภัย ...`}
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  แยกแต่ละบริการด้วยการเว้นบรรทัด
-                </p>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  บริการที่ไม่รวมในแพ็กเกจ
-                </label>
-                <textarea
-                  name="excludedServices"
-                  value={formData.excludedServices}
-                  onChange={handleChange}
-                  rows={4}
-                  className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                  placeholder={`- ค่าอาหาร\n- ค่าที่พัก\n- ค่าเข้าสถานที่ ...`}
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  แยกแต่ละบริการด้วยการเว้นบรรทัด
-                </p>
-              </div>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  ราคารวม (บาท) *
-                </label>
-                {tripRequire && (
-                  <p className="mb-1 text-xs text-gray-500">
-                    งบประมาณที่ลูกค้าต้องการ:{" "}
-                    {tripRequire.MinPrice.toLocaleString()} -{" "}
-                    {tripRequire.MaxPrice.toLocaleString()} บาท
-                  </p>
-                )}
-                <input
-                  type="number"
-                  name="totalPrice"
-                  value={formData.totalPrice}
-                  onChange={handleChange}
-                  required
-                  className={`w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
-                    priceOutOfRange
-                      ? "border-rose-300 focus:ring-rose-200"
-                      : "border-gray-300 focus:border-emerald-500 focus:ring-emerald-200"
-                  }`}
-                />
-                {priceOutOfRange && (
-                  <p className="mt-1 text-xs text-rose-600">
-                    ราคารวมต้องอยู่ในช่วงงบประมาณของลูกค้า
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  ข้อเสนอมีผลถึง *
-                </label>
-                <input
-                  type="date"
-                  name="validUntil"
-                  value={formData.validUntil}
-                  min={todayISO}
-                  max={maxValidUntilISO || undefined}
-                  onChange={handleChange}
-                  required
-                  className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                />
-                {validUntilTooEarly && (
-                  <p className="mt-1 text-xs text-rose-600">
-                    วันที่ข้อเสนอมีผลถึง ต้องไม่น้อยกว่าวันนี้
-                  </p>
-                )}
-                {validUntilAfterTripStart && (
-                  <p className="mt-1 text-xs text-rose-600">
-                    วันที่ข้อเสนอมีผลถึง ต้องไม่เกินวันเริ่มทริปของลูกค้า
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                รายละเอียดค่าใช้จ่าย
-              </label>
-              <textarea
-                name="priceBreakdown"
-                value={formData.priceBreakdown}
-                onChange={handleChange}
-                rows={3}
-                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                placeholder={`- ค่าน้ำมัน: 2,000 บาท\n- ค่าไกด์: 3,000 บาท\n- อื่น ๆ: 1,000 บาท`}
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                เงื่อนไขการให้บริการ
-              </label>
-              <textarea
-                name="terms"
-                value={formData.terms}
-                onChange={handleChange}
-                rows={3}
-                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                placeholder={`- ชำระเงินล่วงหน้า ...\n- ยกเลิกก่อน ...`}
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                เงื่อนไขการชำระเงิน
-              </label>
-              <textarea
-                name="paymentTerms"
-                value={formData.paymentTerms}
-                onChange={handleChange}
-                rows={3}
-                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                placeholder={`- วางมัดจำ ...\n- ชำระส่วนที่เหลือ ...`}
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                หมายเหตุเพิ่มเติม
-              </label>
-              <textarea
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-                rows={3}
-                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                placeholder="ข้อมูลเพิ่มเติมที่อยากแจ้งลูกค้า..."
-              />
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="flex-1 rounded-full border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
-              >
-                ยกเลิก
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="flex-1 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
-              >
-                {submitting ? "กำลังส่ง..." : "ตรวจสอบและส่ง"}
-              </button>
-            </div>
-          </form>
+            onCancel={() => router.back()}
+            submitting={submitting}
+          />
         </div>
       </div>
 
-      {/* Confirm Modal */}
-      {showConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => { if (!submitting) { setShowConfirm(false); } }}
-          />
-          <div className="relative z-10 w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="text-xl font-semibold text-gray-900">
-              ยืนยันการส่งข้อเสนอ
-            </h3>
-            <p className="mt-1 text-sm text-gray-600">
-              ตรวจสอบรายละเอียดก่อนส่งไปยังลูกค้า
-            </p>
+      {/* Confirm Modal Component */}
+      <OfferConfirmModal
+        show={showConfirm}
+        formData={formData}
+        tripRequire={tripRequire}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={confirmSubmit}
+        submitting={submitting}
+      />
 
-            <div className="mt-4 grid gap-4 sm:grid-cols-2 text-sm">
-              <div>
-                <div className="text-gray-500">ชื่อแพ็กเกจ</div>
-                <div className="font-medium text-gray-900">
-                  {formData.title || "-"}
-                </div>
-              </div>
-              <div>
-                <div className="text-gray-500">จังหวัด / วัน / คน</div>
-                <div className="font-medium text-gray-900">
-                  {tripRequire.Province?.Name || "-"} / {tripRequire.Days} วัน /{" "}
-                  {tripRequire.GroupSize} คน
-                </div>
-              </div>
-              <div>
-                <div className="text-gray-500">ราคารวม</div>
-                <div className="font-semibold text-gray-900">
-                  ฿{formData.totalPrice.toLocaleString()}
-                </div>
-              </div>
-              <div>
-                <div className="text-gray-500">ข้อเสนอมีผลถึง</div>
-                <div className="font-medium text-gray-900">
-                  {formData.validUntil || "-"}
-                </div>
-              </div>
-            </div>
-
-            {formData.description && (
-              <div className="mt-4">
-                <div className="text-gray-500 text-sm">รายละเอียดแพ็กเกจ</div>
-                <div className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded-md border border-gray-200 p-3 text-gray-800">
-                  {formData.description}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => { if (!submitting) { setShowConfirm(false); } }}
-                className="rounded-full border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                disabled={submitting}
-              >
-                แก้ไขต่อ
-              </button>
-              <button
-                type="button"
-                onClick={confirmSubmit}
-                className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-extrabold text-white hover:bg-emerald-700 disabled:opacity-50"
-                disabled={submitting}
-              >
-                {submitting ? "กำลังส่ง..." : "ยืนยันส่งข้อเสนอ"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Success Overlay */}
-      {showSuccess && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" />
-          <div className="relative z-10 w-[92%] max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-center h-14 w-14 rounded-full bg-emerald-100 mx-auto">
-              <div className="h-7 w-7 rounded-full bg-emerald-500" />
-            </div>
-            <h4 className="mt-4 text-center text-lg font-semibold text-gray-900">
-              เสนอราคาเรียบร้อยแล้ว
-            </h4>
-            <p className="mt-1 text-center text-sm text-gray-600">
-              กำลังพาไปยังหน้ารายการข้อเสนอของคุณ...
-            </p>
-          </div>
-        </div>
-      )}
+      {/* Success Overlay Component */}
+      <SuccessOverlay show={showSuccess} />
 
       <Footer />
     </>
