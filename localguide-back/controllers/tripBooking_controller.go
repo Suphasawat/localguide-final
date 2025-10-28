@@ -179,6 +179,14 @@ func GetTripBookings(c *fiber.Ctx) error {
 			config.DB.Where("trip_payment_id = ?", payment.ID).Find(&releases)
 		}
 
+		// Check if user has reviewed this booking
+		hasReview := false
+		if user.Role.Name != "guide" {
+			var reviewCount int64
+			config.DB.Model(&models.TripReview{}).Where("trip_booking_id = ? AND user_id = ?", booking.ID, userID).Count(&reviewCount)
+			hasReview = reviewCount > 0
+		}
+
 		enriched := fiber.Map{
 			"id":               booking.ID,
 			"trip_offer_id":    booking.TripOfferID,
@@ -197,6 +205,7 @@ func GetTripBookings(c *fiber.Ctx) error {
 			"notes":           booking.Notes,
 			"created_at":      booking.CreatedAt,
 			"updated_at":      booking.UpdatedAt,
+			"has_review":      hasReview,
 		}
 
 		// Add trip require info
@@ -307,6 +316,14 @@ func GetTripBookingByID(c *fiber.Ctx) error {
 	var reviews []models.TripReview
 	config.DB.Where("trip_booking_id = ?", booking.ID).Find(&reviews)
 
+	// Check if the current user has reviewed this booking
+	hasReview := false
+	if isOwner {
+		var reviewCount int64
+		config.DB.Model(&models.TripReview{}).Where("trip_booking_id = ? AND user_id = ?", booking.ID, userID).Count(&reviewCount)
+		hasReview = reviewCount > 0
+	}
+
 	// Get trip reports
 	var reports []models.TripReport
 	config.DB.Where("trip_booking_id = ?", booking.ID).Find(&reports)
@@ -330,6 +347,7 @@ func GetTripBookingByID(c *fiber.Ctx) error {
 		"notes":           booking.Notes,
 		"created_at":      booking.CreatedAt,
 		"updated_at":      booking.UpdatedAt,
+		"has_review":      hasReview,
 
 		// Trip info
 		"trip_title":       booking.TripOffer.TripRequire.Title,

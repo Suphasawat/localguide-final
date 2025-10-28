@@ -119,6 +119,16 @@ func main() {
     api.Put("/trip-bookings/:id/report-user-no-show", middleware.AuthRequired(), controllers.ReportUserNoShow) // Guide รีพอร์ต user ไม่มา -> ไกด์ได้ 50% + คืนเงินส่วนที่เหลือให้ user
     api.Put("/trip-bookings/:id/confirm-user-no-show", middleware.AuthRequired(), controllers.ConfirmUserNoShow) // User ยืนยันตัวเองไม่มา -> ไกด์ได้ 50% + คืนเงิน 50%
 
+    // 7. Review system routes (for guides only)
+    api.Post("/reviews", middleware.AuthRequired(), controllers.CreateReview) // User สร้างรีวิวให้ไกด์
+    api.Get("/guides/:id/reviews", controllers.GetGuideReviews) // ดูรีวิวทั้งหมดของไกด์ (public)
+    api.Get("/my-reviews", middleware.AuthRequired(), controllers.GetMyReviews) // ดูรีวิวของตัวเอง
+    api.Put("/reviews/:id", middleware.AuthRequired(), controllers.UpdateReview) // แก้ไขรีวิว (เฉพาะเจ้าของ)
+    api.Delete("/reviews/:id", middleware.AuthRequired(), controllers.DeleteReview) // ลบรีวิว (เฉพาะเจ้าของ)
+    api.Post("/reviews/:id/response", middleware.AuthRequired(), controllers.GuideRespondToReview) // ไกด์ตอบกลับรีวิว
+    api.Post("/reviews/:id/helpful", middleware.AuthRequired(), controllers.MarkReviewHelpful) // ทำเครื่องหมายรีวิวว่าเป็นประโยชน์
+    api.Get("/trip-bookings/reviewable", middleware.AuthRequired(), controllers.GetReviewableBookings) // ดู bookings ที่รีวิวได้
+
     // User profile routes
     api.Get("/users/profile", middleware.AuthRequired(), controllers.GetUserProfile)
     api.Put("/users/profile", middleware.AuthRequired(), controllers.UpdateUserProfile)

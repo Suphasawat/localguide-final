@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 interface BookingStatusProps {
   booking: any;
   user: any;
@@ -50,6 +52,8 @@ export default function BookingStatus({
   getTotal,
   getId,
 }: BookingStatusProps) {
+  const router = useRouter();
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <h2 className="text-xl font-semibold mb-4">สถานะการจอง</h2>
@@ -194,6 +198,23 @@ export default function BookingStatus({
           >
             ยืนยันว่าฉันไม่มา
           </button>
+        )}
+
+        {/* Review Button - Show after trip is completed */}
+        {isOwner && status === "trip_completed" && !booking.has_review && (
+          <button
+            onClick={() => router.push(`/reviews/create/${getId(booking)}`)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700"
+          >
+            ⭐ เขียนรีวิว
+          </button>
+        )}
+
+        {/* View Review Button */}
+        {isOwner && status === "trip_completed" && booking.has_review && (
+          <div className="inline-flex items-center px-4 py-2 text-sm text-emerald-600 bg-emerald-50 rounded-md">
+            ✓ คุณได้เขียนรีวิวแล้ว
+          </div>
         )}
       </div>
     </div>

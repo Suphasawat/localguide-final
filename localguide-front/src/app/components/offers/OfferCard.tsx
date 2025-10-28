@@ -1,4 +1,5 @@
 import { TripOffer, TripRequire } from "@/app/types";
+import { useRouter } from "next/navigation";
 
 interface OfferCardProps {
   offer: TripOffer;
@@ -23,6 +24,7 @@ export default function OfferCard({
   onAccept,
   onReject,
 }: OfferCardProps) {
+  const router = useRouter();
   const canTakeAction =
     offer.Status === "sent" &&
     (tripRequire.Status === "open" || tripRequire.Status === "in_review");
@@ -74,7 +76,20 @@ export default function OfferCard({
 
         {/* Guide Info */}
         <div className="bg-gray-50 rounded-lg p-4 mb-4">
-          <h4 className="font-medium mb-2">ข้อมูลไกด์</h4>
+          <div className="flex justify-between items-start mb-2">
+            <h4 className="font-medium">ข้อมูลไกด์</h4>
+            {(offer as any).Guide?.ID && (
+              <button
+                onClick={() =>
+                  router.push(`/guides/${(offer as any).Guide.ID}`)
+                }
+                className="text-sm text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1"
+              >
+                <span>⭐</span>
+                ดูรีวิว
+              </button>
+            )}
+          </div>
           <div className="grid md:grid-cols-2 gap-4 text-sm">
             <div>⭐ คะแนน: {getGuideRating(offer) ?? "ยังไม่มี"}/5</div>
             <div>

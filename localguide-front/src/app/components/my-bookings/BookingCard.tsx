@@ -55,6 +55,19 @@ export default function BookingCard({
           <div className="font-medium">฿{getTotal(booking)}</div>
         </div>
 
+        {/* Review Button for completed trips */}
+        {status === "completed" &&
+          userRole === 1 &&
+          !(booking as any).has_review && (
+            <Link
+              href={`/reviews/create/${id}`}
+              className="px-4 py-2 rounded-md bg-yellow-500 text-white hover:bg-yellow-600 transition flex items-center gap-1"
+            >
+              <span>⭐</span>
+              เขียนรีวิว
+            </Link>
+          )}
+
         {(["paid", "trip_started", "trip_completed"] as const).includes(
           status as any
         ) && (

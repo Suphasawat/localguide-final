@@ -119,4 +119,17 @@ export const userAPI = {
   update: (id: number, data: any) => api.put(`/users/${id}`, data),
 };
 
+// Review API
+export const reviewAPI = {
+  create: (data: any) => api.post("/reviews", data),
+  getGuideReviews: (guideId: number) => api.get(`/guides/${guideId}/reviews`),
+  getMyReviews: () => api.get("/my-reviews"),
+  update: (id: number, data: any) => api.put(`/reviews/${id}`, data),
+  delete: (id: number) => api.delete(`/reviews/${id}`),
+  respond: (id: number, response: string) =>
+    api.post(`/reviews/${id}/response`, { response }),
+  markHelpful: (id: number) => api.post(`/reviews/${id}/helpful`),
+  getReviewableBookings: () => api.get("/trip-bookings/reviewable"),
+};
+
 export default api;
