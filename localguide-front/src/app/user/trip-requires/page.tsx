@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { useNotification } from "../../contexts/NotificationContext";
 import { useRouter } from "next/navigation";
 import { tripRequireAPI } from "../../lib/api";
 import Link from "next/link";
@@ -36,7 +35,6 @@ interface TripRequireResponse {
 
 export default function MyTripRequiresPage() {
   const { user, isAuthenticated } = useAuth();
-  const { showNotification } = useNotification();
   const router = useRouter();
   const [tripRequires, setTripRequires] = useState<TripRequireResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +65,7 @@ export default function MyTripRequiresPage() {
       setTripRequires(response.data?.tripRequires || []);
     } catch (error) {
       console.error("Failed to load trip requires:", error);
-      showNotification("ไม่สามารถโหลดข้อมูลได้", "error");
+      alert("ไม่สามารถโหลดข้อมูลได้");
     } finally {
       setLoading(false);
     }
@@ -77,12 +75,12 @@ export default function MyTripRequiresPage() {
     setDeleteLoading(id);
     try {
       await tripRequireAPI.delete(id);
-      showNotification("ลบความต้องการทริปเรียบร้อยแล้ว", "success");
+      alert("ลบความต้องการทริปเรียบร้อยแล้ว");
       setDeleteTarget(null);
       loadTripRequires(); // Reload data
     } catch (error) {
       console.error("Failed to delete trip require:", error);
-      showNotification("ไม่สามารถลบได้ กรุณาลองใหม่อีกครั้ง", "error");
+      alert("ไม่สามารถลบได้ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setDeleteLoading(null);
     }

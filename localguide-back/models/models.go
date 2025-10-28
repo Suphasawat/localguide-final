@@ -332,36 +332,3 @@ type PaymentRelease struct {
 	TransactionRef   string       // อ้างอิงธุรกรรมการโอนเงิน
 	Notes            string       // หมายเหตุ
 }
-
-// TripNotification - อัปเดต notification ให้รองรับระบบใหม่
-type TripNotification struct {
-	gorm.Model
-	UserID         uint        `gorm:"not null"`
-	User           User        `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:UserID"`
-	TripBookingID  *uint       // อ้างอิงถึง trip booking (optional)
-	TripBooking    *TripBooking `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:TripBookingID"`
-	Type           string      `gorm:"not null"` // offer_received, offer_accepted, payment_confirmed, trip_started, trip_completed, first_payment_released, second_payment_released, user_no_show, refund_processed
-	Title          string      `gorm:"not null"`
-	Message        string      `gorm:"not null"`
-	Data           string      `gorm:"type:json"` // ข้อมูลเพิ่มเติม
-	IsRead         bool        `gorm:"default:false"`
-	ActionRequired bool        `gorm:"default:false"` // ต้องการ action จาก user หรือไม่
-	ActionType     string      // make_payment, confirm_trip_start, confirm_trip_complete, report_no_show
-	ExpiresAt      *time.Time  // วันหมดอายุของ notification
-}
-
-// Notification - ระบบ notification ทั่วไปสำหรับ user และ guide
-type Notification struct {
-	gorm.Model
-	UserID         uint      `gorm:"not null;index"` // ผู้รับ notification
-	User           User      `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:UserID"`
-	Type           string    `gorm:"not null;index"` // notification type: offer_accepted, booking_created, payment_confirmed, trip_started, etc.
-	Title          string    `gorm:"not null"`
-	Message        string    `gorm:"type:text;not null"`
-	RelatedID      *uint     // ID ที่เกี่ยวข้อง (trip booking, offer, etc.)
-	RelatedType    string    // ประเภทของ related entity: trip_booking, trip_offer, trip_require
-	IsRead         bool      `gorm:"default:false;index"`
-	ReadAt         *time.Time
-	ActionURL      string    // URL สำหรับการ action (optional)
-	Data           string    `gorm:"type:json"` // ข้อมูลเพิ่มเติมในรูปแบบ JSON
-}

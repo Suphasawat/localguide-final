@@ -36,9 +36,7 @@ func main() {
         &models.TripReview{}, 
         &models.TripReport{}, 
 		&models.GuidePerformance{}, 
-        &models.TripNotification{}, 
         &models.PaymentRelease{},
-		&models.Notification{},
 	); err != nil {
 		log.Printf("Migration error: %v", err)
 	} else {
@@ -128,15 +126,6 @@ func main() {
     api.Get("/users/:id", middleware.AuthRequired(), middleware.OwnerOrAdminRequired(), controllers.GetUserByID)
     api.Put("/users/:id", middleware.AuthRequired(), middleware.OwnerOrAdminRequired(), controllers.EditUser)
     api.Get("/me", middleware.AuthRequired(), controllers.Me)
-
-    // Notification routes
-    api.Get("/notifications", middleware.AuthRequired(), controllers.GetUserNotifications)
-    api.Get("/notifications/unread-count", middleware.AuthRequired(), controllers.GetUnreadCount)
-    api.Get("/notifications/:id", middleware.AuthRequired(), controllers.GetNotificationByID)
-    api.Put("/notifications/:id/read", middleware.AuthRequired(), controllers.MarkNotificationAsRead)
-    api.Put("/notifications/read-all", middleware.AuthRequired(), controllers.MarkAllNotificationsAsRead)
-    api.Delete("/notifications/:id", middleware.AuthRequired(), controllers.DeleteNotification)
-    api.Delete("/notifications", middleware.AuthRequired(), controllers.DeleteAllNotifications)
 
     // Admin routes
     admin := api.Group("/admin", middleware.AuthRequired(), middleware.AdminRequired())

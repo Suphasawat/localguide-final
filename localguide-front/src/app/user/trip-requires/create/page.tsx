@@ -9,14 +9,12 @@ import Loading from "@/app/components/Loading";
 import TripRequireForm from "@/app/components/trip-require-form/TripRequireForm";
 import { useTripRequireForm } from "@/app/components/trip-require-form/useTripRequireForm";
 import { useAuth } from "../../../contexts/AuthContext";
-import { useNotification } from "../../../contexts/NotificationContext";
 import { provinceAPI, tripRequireAPI } from "../../../lib/api";
 import { Province } from "../../../types";
 
 export default function CreateTripRequirePage() {
   const router = useRouter();
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const { showNotification } = useNotification();
 
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [loading, setLoading] = useState(false);
@@ -61,22 +59,19 @@ export default function CreateTripRequirePage() {
       !formData.start_date ||
       !formData.end_date
     ) {
-      showNotification("กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน", "warning");
+      alert("กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน");
       return;
     }
     if (formData.province_id === 0) {
-      showNotification("กรุณาเลือกจังหวัด", "warning");
+      alert("กรุณาเลือกจังหวัด");
       return;
     }
     if (formData.min_price >= formData.max_price) {
-      showNotification("ราคาสูงสุดต้องมากกว่าราคาต่ำสุด", "warning");
+      alert("ราคาสูงสุดต้องมากกว่าราคาต่ำสุด");
       return;
     }
     if (isExpireAfterStart) {
-      showNotification(
-        "วันหมดอายุโพสต์ต้องไม่ช้ากว่าวันเริ่มต้นทริป",
-        "warning"
-      );
+      alert("วันหมดอายุโพสต์ต้องไม่ช้ากว่าวันเริ่มต้นทริป");
       return;
     }
 
@@ -99,20 +94,19 @@ export default function CreateTripRequirePage() {
     try {
       const res = await tripRequireAPI.create(payload);
       if (res.data) {
-        showNotification("สร้างความต้องการทริปสำเร็จ!", "success");
+        alert("สร้างความต้องการทริปสำเร็จ!");
         router.push("/user/trip-requires");
       } else {
-        showNotification("ไม่สามารถสร้างความต้องการได้", "error");
+        alert("ไม่สามารถสร้างความต้องการได้");
       }
     } catch (error: unknown) {
       const err = error as {
         response?: { data?: { error?: string; message?: string } };
       };
-      showNotification(
+      alert(
         err?.response?.data?.error ||
           err?.response?.data?.message ||
-          "เกิดข้อผิดพลาดในการสร้างความต้องการ",
-        "error"
+          "เกิดข้อผิดพลาดในการสร้างความต้องการ"
       );
     } finally {
       setLoading(false);

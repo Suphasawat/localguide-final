@@ -123,22 +123,6 @@ func CreateTripOffer(c *fiber.Ctx) error {
 	// อัปเดตสถานะ TripRequire เป็น in_review
 	config.DB.Model(&tripRequire).Update("status", "in_review")
 
-	// สร้างการแจ้งเตือนให้กับ user (tourist)
-	offerID := offer.ID
-	CreateNotification(
-		tripRequire.UserID,
-		"trip_offer_received",
-		"New Offer Received",
-		"You have received a new offer for your trip requirement: " + tripRequire.Title,
-		&offerID,
-		"trip_offer",
-		map[string]interface{}{
-			"trip_require_id": tripRequire.ID,
-			"guide_id":        guide.ID,
-			"offer_id":        offer.ID,
-		},
-	)
-
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message":   "Offer created successfully",
 		"offer":     offer,
@@ -372,46 +356,6 @@ func AcceptTripOffer(c *fiber.Ctx) error {
 		})
 	}
 
-	// แจ้งเตือน guides ที่ offer ถูก auto-reject
-	for _, rejectedOffer := range rejectedOffers {
-		rejectedOfferID := rejectedOffer.ID
-		CreateNotification(
-			rejectedOffer.GuideID,
-			"offer_rejected",
-			"Offer Not Selected",
-			"Unfortunately, another guide was selected for \"" + tripRequire.Title + "\".",
-			&rejectedOfferID,
-			"trip_offer",
-			map[string]interface{}{
-				"trip_require_id": tripRequire.ID,
-				"offer_id":        rejectedOffer.ID,
-				"reason":          "auto_selection",
-			},
-		)
-	}
-
-	// สร้าง notification สำหรับ guide (นอก transaction)
-	var guide models.Guide
-	if err := config.DB.Preload("User").First(&guide, offer.GuideID).Error; err == nil {
-		// Notification สำหรับ guide
-		notificationData := map[string]interface{}{
-			"booking_id":   booking.ID,
-			"offer_id":     offer.ID,
-			"trip_title":   tripRequire.Title,
-			"total_amount": quotation.TotalPrice,
-		}
-		
-		_ = CreateNotification(
-			guide.UserID,
-			"offer_accepted",
-			"Your offer has been accepted! 🎉",
-			"User has accepted your offer for "+tripRequire.Title+". Please wait for payment confirmation.",
-			&booking.ID,
-			"trip_booking",
-			notificationData,
-		)
-	}
-
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message":   "Offer accepted successfully",
 		"offer":     offer,
@@ -485,22 +429,6 @@ func RejectTripOffer(c *fiber.Ctx) error {
 	if err := tx.Commit().Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to complete rejection"})
 	}
-
-	// สร้างการแจ้งเตือนให้กับ guide ว่า offer ถูกปฏิเสธ
-	offerID := offer.ID
-	CreateNotification(
-		offer.GuideID,
-		"offer_rejected",
-		"Offer Rejected",
-		"Your offer for \"" + tripRequire.Title + "\" has been declined.",
-		&offerID,
-		"trip_offer",
-		map[string]interface{}{
-			"trip_require_id": tripRequire.ID,
-			"offer_id":        offer.ID,
-			"reason":          updates["rejection_reason"],
-		},
-	)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Offer rejected successfully",

@@ -36,7 +36,6 @@ func SetupTestDB() *gorm.DB {
 		&models.TripReview{}, 
 		&models.TripReport{},
 		&models.GuidePerformance{}, 
-		&models.TripNotification{}, 
 		&models.PaymentRelease{},
 	)
 

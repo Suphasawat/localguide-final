@@ -98,35 +98,6 @@ func handlePaymentSuccess(paymentIntent *stripe.PaymentIntent) error {
 		return fmt.Errorf("failed to update booking: %w", err)
 	}
 
-	// สร้างการแจ้งเตือนให้กับ guide ว่ามีการชำระเงินแล้ว
-	bookingID := booking.ID
-	CreateNotification(
-		booking.GuideID,
-		"payment_received",
-		"Payment Received",
-		"Payment confirmed for booking. Get ready for the trip!",
-		&bookingID,
-		"trip_booking",
-		map[string]interface{}{
-			"booking_id": booking.ID,
-			"amount":     payment.TotalAmount,
-		},
-	)
-
-	// สร้างการแจ้งเตือนให้กับ user (tourist) ยืนยันการจอง
-	CreateNotification(
-		booking.UserID,
-		"booking_confirmed",
-		"Booking Confirmed",
-		"Your payment has been received. Your trip is confirmed!",
-		&bookingID,
-		"trip_booking",
-		map[string]interface{}{
-			"booking_id": booking.ID,
-			"amount":     payment.TotalAmount,
-		},
-	)
-
 	return nil
 }
 

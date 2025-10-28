@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import NotificationBell from "./NotificationBell";
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -152,9 +151,6 @@ export default function Navbar() {
             </>
           ) : authed ? (
             <>
-              {/* Notification Bell */}
-              <NotificationBell />
-
               <div className="text-right">
                 <Link
                   href="/profile"
