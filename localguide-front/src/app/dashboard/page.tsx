@@ -137,6 +137,7 @@ export default function DashboardPage() {
         totalRequires={myTripRequires.length}
         openRequires={openRequires}
         isUser={isUser}
+        isGuide={isGuide}
       />
 
       {/* Main Content - White background */}

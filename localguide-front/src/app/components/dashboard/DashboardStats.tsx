@@ -10,6 +10,7 @@ interface DashboardStatsProps {
   totalRequires: number;
   openRequires: number;
   isUser: boolean;
+  isGuide: boolean;
 }
 
 export default function DashboardStats({
@@ -20,12 +21,13 @@ export default function DashboardStats({
   totalRequires,
   openRequires,
   isUser,
+  isGuide,
 }: DashboardStatsProps) {
   return (
     <section className="relative overflow-hidden bg-emerald-600">
       {/* ✅ รูปพื้นหลังแบบจาง + เบลอ (มาจาก public) */}
       <Image
-        src="/dashboard/bg4.jpg"  // เปลี่ยนพาธได้ตามไฟล์ของคุณ
+        src="/dashboard/bg4.jpg" // เปลี่ยนพาธได้ตามไฟล์ของคุณ
         alt=""
         fill
         priority
@@ -47,45 +49,49 @@ export default function DashboardStats({
             <p className="mt-3 text-white/90 text-lg">{dashboardTitle}</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            <div className="rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 p-4 sm:p-5 hover:bg-white/20 transition">
-              <div className="text-white/70 text-xs font-medium uppercase tracking-wide">
-                การจองของฉัน
-              </div>
-              <div className="mt-2 text-3xl font-bold text-white">
-                {totalBookings}
-              </div>
-            </div>
-            <div className="rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 p-4 sm:p-5 hover:bg-white/20 transition">
-              <div className="text-white/70 text-xs font-medium uppercase tracking-wide">
-                รอชำระเงิน
-              </div>
-              <div className="mt-2 text-3xl font-bold text-white">
-                {pendingPayments}
-              </div>
-            </div>
+          {/* ✅ แสดงเฉพาะ User หรือ Guide */}
 
-            {isUser && (
-              <>
-                <div className="rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 p-4 sm:p-5 hover:bg-white/20 transition">
-                  <div className="text-white/70 text-xs font-medium uppercase tracking-wide">
-                    ความต้องการ
-                  </div>
-                  <div className="mt-2 text-3xl font-bold text-white">
-                    {totalRequires}
-                  </div>
+          {(isUser || isGuide) && (
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 p-4 sm:p-5 hover:bg-white/20 transition">
+                <div className="text-white/70 text-xs font-medium uppercase tracking-wide">
+                  การจองของฉัน
                 </div>
-                <div className="rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 p-4 sm:p-5 hover:bg-white/20 transition">
-                  <div className="text-white/70 text-xs font-medium uppercase tracking-wide">
-                    เปิดรับ
-                  </div>
-                  <div className="mt-2 text-3xl font-bold text-white">
-                    {openRequires}
-                  </div>
+                <div className="mt-2 text-3xl font-bold text-white">
+                  {totalBookings}
                 </div>
-              </>
-            )}
-          </div>
+              </div>
+              <div className="rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 p-4 sm:p-5 hover:bg-white/20 transition">
+                <div className="text-white/70 text-xs font-medium uppercase tracking-wide">
+                  รอชำระเงิน
+                </div>
+                <div className="mt-2 text-3xl font-bold text-white">
+                  {pendingPayments}
+                </div>
+              </div>
+
+              {isUser && (
+                <>
+                  <div className="rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 p-4 sm:p-5 hover:bg-white/20 transition">
+                    <div className="text-white/70 text-xs font-medium uppercase tracking-wide">
+                      ความต้องการ
+                    </div>
+                    <div className="mt-2 text-3xl font-bold text-white">
+                      {totalRequires}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 p-4 sm:p-5 hover:bg-white/20 transition">
+                    <div className="text-white/70 text-xs font-medium uppercase tracking-wide">
+                      เปิดรับ
+                    </div>
+                    <div className="mt-2 text-3xl font-bold text-white">
+                      {openRequires}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </section>
