@@ -167,8 +167,6 @@ type TripOfferQuotation struct {
 	Version          int         `gorm:"default:1"`  // เวอร์ชันของใบเสนอราคา
 	TotalPrice       float64     `gorm:"not null"`   // ราคารวมที่เสนอ
 	PriceBreakdown   string      `gorm:"type:text"` // รายละเอียดราคา (ใช้ text แทน json)
-	Terms            string      `gorm:"type:text"` // เงื่อนไขการให้บริการ (ใช้ text แทน json)
-	PaymentTerms     string      `gorm:"type:text"` // เงื่อนไขการชำระเงิน (ใช้ text แทน json)
 	QuotationNumber  string      // เลขที่ใบเสนอราคา (optional)
 	Status           string      `gorm:"default:'draft'"` // draft, sent, accepted, rejected, expired
 	SentAt           *time.Time  // วันที่ส่งใบเสนอราคา

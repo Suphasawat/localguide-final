@@ -105,8 +105,6 @@ func CreateTripOffer(c *fiber.Ctx) error {
 		Version:         1,
 		TotalPrice:      req.TotalPrice,
 		PriceBreakdown:  req.PriceBreakdown,
-		Terms:           req.Terms,
-		PaymentTerms:    req.PaymentTerms,
 		QuotationNumber: "QT" + strconv.Itoa(int(offer.ID)) + "-" + strconv.Itoa(int(now.Unix())),
 		Status:          "sent",
 		SentAt:          &now,
