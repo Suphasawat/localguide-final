@@ -15,7 +15,6 @@ interface TripRequireFormProps {
   submitButtonText: string;
   isPriceInvalid: boolean;
   isDateRangeInvalid: boolean;
-  isExpireAfterStart: boolean;
 }
 
 export default function TripRequireForm({
@@ -29,7 +28,7 @@ export default function TripRequireForm({
   submitButtonText,
   isPriceInvalid,
   isDateRangeInvalid,
-  isExpireAfterStart,
+
 }: TripRequireFormProps) {
   return (
     <form onSubmit={onSubmit} className="space-y-7">
@@ -218,25 +217,6 @@ export default function TripRequireForm({
         />
       </div>
 
-      <div>
-        <p className="mb-2 text-sm font-extrabold text-gray-900">
-          วันหมดอายุโพสต์
-        </p>
-        <input
-          type="date"
-          name="expires_at"
-          max={formData.start_date || undefined}
-          className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-          value={formData.expires_at}
-          onChange={onChange}
-        />
-        {isExpireAfterStart && (
-          <p className="mt-1 text-xs text-red-600">
-            วันหมดอายุโพสต์ต้องไม่ช้ากว่าวันเริ่มต้นทริป
-          </p>
-        )}
-      </div>
-
       <div className="flex gap-4 pt-4">
         <button
           type="submit"
@@ -244,7 +224,6 @@ export default function TripRequireForm({
             loading ||
             isPriceInvalid ||
             isDateRangeInvalid ||
-            isExpireAfterStart ||
             !formData.title ||
             !formData.description ||
             !formData.province_id

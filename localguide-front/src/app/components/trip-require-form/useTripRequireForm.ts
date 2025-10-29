@@ -158,36 +158,12 @@ export function useTripRequireForm(initialData?: CreateTripRequireData) {
     );
   })();
 
-  // Validation: Expiration date shouldn't be after start date
-  const isExpireAfterStart = (() => {
-    const expireISO = formData.expires_at;
-    const startISO = formData.start_date;
-
-    if (!expireISO || !isISODate(expireISO) || !isISODate(startISO)) {
-      return false;
-    }
-
-    const ex = toLocalDate(
-      Number(expireISO.slice(0, 4)),
-      Number(expireISO.slice(5, 7)),
-      Number(expireISO.slice(8, 10))
-    );
-    const st = toLocalDate(
-      Number(startISO.slice(0, 4)),
-      Number(startISO.slice(5, 7)),
-      Number(startISO.slice(8, 10))
-    );
-
-    return ex.getTime() > st.getTime();
-  })();
-
   return {
     formData,
     setFormData,
     handleChange,
     isPriceInvalid,
     isDateRangeInvalid,
-    isExpireAfterStart,
     toBackendDate,
     toInputDate,
   };
