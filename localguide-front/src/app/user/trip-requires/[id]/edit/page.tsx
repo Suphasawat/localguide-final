@@ -152,22 +152,21 @@ export default function EditTripRequirePage() {
   return (
     <>
       <Navbar />
-
       <div className="min-h-[calc(100dvh-150px)] bg-gray-100 px-4 py-10">
         <div className="mx-auto w-full max-w-4xl">
           <div className="overflow-hidden rounded-[24px] border border-gray-300 bg-white shadow-sm">
-            <div className="flex items-center justify-between px-8 py-6 border-b border-gray-300">
-              <h1 className="text-3xl font-extrabold text-blue-900">
+            {/* Header Section */}
+            <div className="bg-emerald-600 px-8 py-8 text-white flex items-center justify-between">
+              <h1 className="text-3xl font-extrabold">
                 แก้ไขโพสต์ความต้องการเที่ยว
               </h1>
               <Link
                 href="/dashboard"
-                className="rounded-full border-2 border-gray-300 px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 transition"
+                className="rounded-full bg-white/90 hover:bg-white px-5 py-2.5 text-sm font-semibold text-emerald-700 transition"
               >
                 ← กลับไป Dashboard
               </Link>
             </div>
-
             <div className="px-8 py-8">
               <TripRequireForm
                 formData={formData}
