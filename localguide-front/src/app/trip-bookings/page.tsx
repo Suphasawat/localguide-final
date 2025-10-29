@@ -1,6 +1,7 @@
 "use client";
 
 import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 import MyBookingsHeader from "../components/my-bookings/MyBookingsHeader";
 import BookingCard from "../components/my-bookings/BookingCard";
 import EmptyBookingsState from "../components/my-bookings/EmptyBookingsState";
@@ -51,6 +52,7 @@ export default function TripBookingsPage() {
           )}
         </div>
       </div>
+      <Footer />
     </>
   );
 }
