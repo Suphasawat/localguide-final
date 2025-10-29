@@ -13,7 +13,9 @@ export default function QuickActions({
 }: QuickActionsProps) {
   return (
     <div className="mb-10">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">เริ่มต้นการเดินทาง</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        เริ่มต้นการเดินทาง
+      </h2>
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* เมนูของไกด์ */}
         {isGuide && (
@@ -83,15 +85,19 @@ export default function QuickActions({
           </>
         )}
 
-        {/* ปุ่มที่ใช้ร่วมกันทุก role */}
-        <Link
-          href="/trip-bookings"
-          className="group bg-white border-2 border-emerald-200 hover:border-emerald-400 p-6 rounded-2xl text-center shadow-sm hover:shadow-md transition-all duration-200"
-        >
-          <div className="text-4xl mb-3">🧳</div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">การจองของฉัน</h3>
-          <p className="text-sm text-gray-600">ดูและจัดการการจอง</p>
-        </Link>
+        {/* ปุ่มที่ใช้ร่วมกันสำหรับ User และ Guide เท่านั้น */}
+        {(isUser || isGuide) && (
+          <Link
+            href="/trip-bookings"
+            className="group bg-white border-2 border-emerald-200 hover:border-emerald-400 p-6 rounded-2xl text-center shadow-sm hover:shadow-md transition-all duration-200"
+          >
+            <div className="text-4xl mb-3">🧳</div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              การจองของฉัน
+            </h3>
+            <p className="text-sm text-gray-600">ดูและจัดการการจอง</p>
+          </Link>
+        )}
 
         <Link
           href="/profile"
