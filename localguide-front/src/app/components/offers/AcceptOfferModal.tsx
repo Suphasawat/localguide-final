@@ -49,7 +49,7 @@ export default function AcceptOfferModal({
                 {getGuideName(offer)}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <div>
                 <div className="text-gray-500">ราคารวม</div>
                 <div className="text-lg font-bold text-green-700">
@@ -61,15 +61,8 @@ export default function AcceptOfferModal({
                   ).toLocaleString()}
                 </div>
               </div>
-              {q?.ValidUntil && (
-                <div>
-                  <div className="text-gray-500">มีผลถึง</div>
-                  <div className="font-medium text-gray-900">
-                    {new Date(q.ValidUntil).toLocaleDateString("th-TH")}
-                  </div>
-                </div>
-              )}
             </div>
+
             <div className="mt-2 text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-md p-3">
               การยอมรับข้อเสนอนี้จะปฏิเสธข้อเสนออื่นๆ โดยอัตโนมัติ
               และจะพาไปยังหน้าการจอง

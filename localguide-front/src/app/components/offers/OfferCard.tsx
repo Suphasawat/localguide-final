@@ -115,11 +115,6 @@ export default function OfferCard({
                     </span>
                   </div>
 
-                  <div className="text-sm text-gray-600">
-                    <strong>มีผลถึง:</strong>{" "}
-                    {new Date(quotation.ValidUntil).toLocaleDateString("th-TH")}
-                  </div>
-
                   {quotation.PriceBreakdown && (
                     <div>
                       <strong className="text-sm">

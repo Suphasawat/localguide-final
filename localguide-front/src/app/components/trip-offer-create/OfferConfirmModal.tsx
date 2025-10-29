@@ -15,7 +15,6 @@ type FormState = {
   title: string;
   description: string;
   totalPrice: number;
-  validUntil: string;
 };
 
 interface OfferConfirmModalProps {
@@ -77,9 +76,6 @@ export default function OfferConfirmModal({
           </div>
           <div>
             <div className="text-gray-500">ข้อเสนอมีผลถึง</div>
-            <div className="font-medium text-gray-900">
-              {formData.validUntil || "-"}
-            </div>
           </div>
         </div>
 
