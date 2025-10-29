@@ -13,7 +13,7 @@ export default function QuickActions({
 }: QuickActionsProps) {
   return (
     <div className="mb-10">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">เมนูด่วน</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">เริ่มต้นการเดินทาง</h2>
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* เมนูของไกด์ */}
         {isGuide && (
