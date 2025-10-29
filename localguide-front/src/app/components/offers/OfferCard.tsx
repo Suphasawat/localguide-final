@@ -92,10 +92,6 @@ export default function OfferCard({
           </div>
           <div className="grid md:grid-cols-2 gap-4 text-sm">
             <div>⭐ คะแนน: {getGuideRating(offer) ?? "ยังไม่มี"}/5</div>
-            <div>
-              💰 ราคาไกด์:{" "}
-              {(offer as any).Guide?.Price?.toLocaleString() ?? "-"} บาท/วัน
-            </div>
           </div>
         </div>
 
