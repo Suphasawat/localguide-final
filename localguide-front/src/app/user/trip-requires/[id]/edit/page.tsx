@@ -29,7 +29,6 @@ export default function EditTripRequirePage() {
     handleChange,
     isPriceInvalid,
     isDateRangeInvalid,
-    isExpireAfterStart,
     toBackendDate,
     toInputDate,
   } = useTripRequireForm();
@@ -105,10 +104,6 @@ export default function EditTripRequirePage() {
       setError("ราคาสูงสุดต้องมากกว่าราคาต่ำสุด");
       return;
     }
-    if (isExpireAfterStart) {
-      setError("วันหมดอายุโพสต์ต้องไม่ช้ากว่าวันเริ่มต้นทริป");
-      return;
-    }
 
     const payload = {
       province_id: formData.province_id,
@@ -179,7 +174,6 @@ export default function EditTripRequirePage() {
                 submitButtonText="บันทึกการแก้ไข"
                 isPriceInvalid={isPriceInvalid}
                 isDateRangeInvalid={isDateRangeInvalid}
-                isExpireAfterStart={isExpireAfterStart}
               />
             </div>
           </div>
