@@ -143,7 +143,7 @@ export default function TripBookingDetailPage() {
   const submitReportNoShow = async () => {
     if (!booking) return;
     if (!noShowReason.trim()) {
-      setError("โปรดระบุเหตุผลในการรายงานลูกค้าไม่มา");
+      setError("โปรดระบุเหตุผลในการรายงานไกด์ไม่มา");
       return;
     }
     setActionLoading("report-no-show");
@@ -154,11 +154,11 @@ export default function TripBookingDetailPage() {
         reason: noShowReason,
       });
       setShowNoShowModal(false);
-      setInfoMessage("รายงานลูกค้าไม่มาเรียบร้อย");
+      setInfoMessage("รายงานไกด์ไม่มาเรียบร้อย");
       await loadBooking();
     } catch (e) {
       console.error(e);
-      setError("ไม่สามารถรายงานลูกค้าไม่มาได้");
+      setError("ไม่สามารถรายงานไกด์ไม่มาได้");
     } finally {
       setActionLoading(null);
     }

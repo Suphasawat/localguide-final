@@ -186,7 +186,7 @@ export default function BookingStatus({
             disabled={actionLoading === "report-no-show"}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-60"
           >
-            รายงานลูกค้าไม่มา
+            รายงานไกด์ไม่มา
           </button>
         )}
 
