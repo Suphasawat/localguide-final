@@ -156,8 +156,9 @@ export default function DashboardPage() {
               />
             )}
 
-            {/* All Roles: Recent Bookings */}
-            <RecentBookings bookings={myBookings} isGuide={isGuide} />
+            {(isUser || isGuide) && (
+              <RecentBookings bookings={myBookings} isGuide={isGuide} />
+            )}
           </div>
         </div>
       </div>
