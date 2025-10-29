@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { tripRequireAPI } from "../../lib/api";
 import Link from "next/link";
 import Navbar from "@/app/components/Navbar";
+import Footer from "@/app/components/Footer";
 import TripRequiresHeader from "@/app/components/trip-requires/TripRequiresHeader";
 import TripRequireCard from "@/app/components/trip-requires/TripRequireCard";
 import EmptyTripRequires from "@/app/components/trip-requires/EmptyTripRequires";
@@ -132,18 +133,19 @@ export default function MyTripRequiresPage() {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-white py-8">
       <Navbar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <TripRequiresHeader
-            tripRequiresCount={tripRequires.length}
-            openCount={tripRequires.filter((t) => t.Status === "open").length}
-            totalOffers={tripRequires.reduce(
-              (sum, t) => sum + t.total_offers,
-              0
-            )}
-          />
+      
+    {/* ✅ แถบสีเขียวเต็มความกว้าง จัดตรงนี้ */}
+    <div className="w-full h-24 bg-emerald-600" />
+<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-5">
+  <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <TripRequiresHeader
+      tripRequiresCount={tripRequires.length}
+      openCount={tripRequires.filter((t) => t.Status === "open").length}
+      totalOffers={tripRequires.reduce((sum, t) => sum + t.total_offers, 0)}
+    />
           <div className="flex items-center gap-3">
             <Link
               href="/dashboard"
@@ -188,5 +190,7 @@ export default function MyTripRequiresPage() {
         />
       </div>
     </div>
+    <Footer />
+    </>
   );
 }
