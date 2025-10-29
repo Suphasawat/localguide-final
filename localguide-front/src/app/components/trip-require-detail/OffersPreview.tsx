@@ -24,12 +24,6 @@ export default function OffersPreview({
     <div className="mb-6">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">ข้อเสนอล่าสุด</h3>
-        <Link
-          href={`/user/trip-requires/${tripRequire.ID}/offers`}
-          className="text-sm text-blue-600 hover:text-blue-700"
-        >
-          ดูทั้งหมด →
-        </Link>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {offersPreview.map((o) => (

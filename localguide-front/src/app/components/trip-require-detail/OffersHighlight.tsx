@@ -36,7 +36,7 @@ export default function OffersHighlight({
             href={`/user/trip-requires/${tripRequire.ID}/offers`}
             className="shrink-0 inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
           >
-            ดูข้อเสนอทั้งหมด
+            ดูข้อเสนอที่ได้รับ
             <svg
               className="w-4 h-4"
               viewBox="0 0 24 24"
