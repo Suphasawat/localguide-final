@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { userAPI } from "../lib/api";
 import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 import ProfileHeader from "../components/profile/ProfileHeader";
 import ProfileForm from "../components/profile/ProfileForm";
 import QuickActions from "../components/profile/QuickActions";
@@ -194,6 +195,7 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+      <Footer />
     </>
   );
 }
