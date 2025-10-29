@@ -7,6 +7,8 @@ import { guideAPI, provinceAPI, languageAPI, attractionAPI } from "../lib/api";
 import GuideFormFields from "../components/become-guide/GuideFormFields";
 import GuideFormNotice from "../components/become-guide/GuideFormNotice";
 import GuideFormActions from "../components/become-guide/GuideFormActions";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 
 interface Province {
   ID: number;
@@ -30,9 +32,7 @@ export default function BecomeGuidePage() {
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [languages, setLanguages] = useState<Language[]>([]);
   const [attractions, setAttractions] = useState<Attraction[]>([]);
-  const [filteredAttractions, setFilteredAttractions] = useState<Attraction[]>(
-    []
-  );
+  const [filteredAttractions, setFilteredAttractions] = useState<Attraction[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState("");
@@ -53,13 +53,11 @@ export default function BecomeGuidePage() {
       router.push("/auth/login");
       return;
     }
-
-    // Check if user is already a guide
+    // ถ้าเป็นไกด์อยู่แล้วให้ไปหน้า browse-trips
     if (user?.role === 2) {
       router.push("/guide/browse-trips");
       return;
     }
-
     loadAllData();
   }, [user, isAuthenticated, router]);
 
@@ -82,14 +80,11 @@ export default function BecomeGuidePage() {
     }
   };
 
-  // Filter attractions when province changes
+  // เปลี่ยนรายการสถานที่ตามจังหวัด
   useEffect(() => {
     if (formData.provinceId > 0) {
-      const filtered = attractions.filter(
-        (attraction) => attraction.ProvinceID === formData.provinceId
-      );
+      const filtered = attractions.filter((a) => a.ProvinceID === formData.provinceId);
       setFilteredAttractions(filtered);
-      // Clear selected attractions when province changes
       setFormData((prev) => ({ ...prev, selectedAttractions: [] }));
     } else {
       setFilteredAttractions(attractions);
@@ -114,26 +109,21 @@ export default function BecomeGuidePage() {
       };
 
       await guideAPI.create(guideData);
-      setSuccess(
-        "ส่งคำขอสมัครเป็นไกด์เรียบร้อยแล้ว รอการอนุมัติจากผู้ดูแลระบบ"
-      );
+      setSuccess("ส่งคำขอสมัครเป็นไกด์เรียบร้อยแล้ว รอการอนุมัติจากผู้ดูแลระบบ");
 
-      // Redirect after success
       setTimeout(() => {
         router.push("/dashboard");
       }, 3000);
     } catch (error: any) {
       console.error("Failed to create guide application:", error);
-      setError(error.response?.data?.message || "ไม่สามารถส่งคำขอได้");
+      setError(error?.response?.data?.message || "ไม่สามารถส่งคำขอได้");
     } finally {
       setLoading(false);
     }
   };
 
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -143,21 +133,23 @@ export default function BecomeGuidePage() {
   };
 
   const handleLanguageToggle = (languageId: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      selectedLanguages: prev.selectedLanguages.includes(languageId)
-        ? prev.selectedLanguages.filter((id) => id !== languageId)
-        : [...prev.selectedLanguages, languageId],
-    }));
+    setFormData((prev) => {
+      if (prev.selectedLanguages.includes(languageId)) {
+        return { ...prev, selectedLanguages: prev.selectedLanguages.filter((id) => id !== languageId) };
+      } else {
+        return { ...prev, selectedLanguages: [...prev.selectedLanguages, languageId] };
+      }
+    });
   };
 
   const handleAttractionToggle = (attractionId: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      selectedAttractions: prev.selectedAttractions.includes(attractionId)
-        ? prev.selectedAttractions.filter((id) => id !== attractionId)
-        : [...prev.selectedAttractions, attractionId],
-    }));
+    setFormData((prev) => {
+      if (prev.selectedAttractions.includes(attractionId)) {
+        return { ...prev, selectedAttractions: prev.selectedAttractions.filter((id) => id !== attractionId) };
+      } else {
+        return { ...prev, selectedAttractions: [...prev.selectedAttractions, attractionId] };
+      }
+    });
   };
 
   const isFormValid =
@@ -170,39 +162,50 @@ export default function BecomeGuidePage() {
 
   if (loadingData) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">กำลังโหลด...</div>
+      <div className="min-h-screen flex items-center justify-center bg-emerald-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 rounded-full border-4 border-emerald-600 border-t-transparent animate-spin" />
+          <p className="text-emerald-800 font-medium">กำลังโหลด...</p>
+        </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            สมัครเป็นไกด์นำเที่ยว
-          </h1>
-          <p className="mt-2 text-gray-600">
-            กรอกข้อมูลเพื่อสมัครเป็นไกด์นำเที่ยวพื้นที่ของคุณ
-          </p>
-        </div>
+return (
+  <>
+    <Navbar />
 
+    {/* ✅ Header สีเขียว (จัดให้ตรงกับฟอร์ม) */}
+    <div className="bg-emerald-600 text-white pb-24">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">
+        <p className="text-emerald-100 text-sm font-medium uppercase tracking-wide">
+          สำหรับไกด์
+        </p>
+        <h1 className="mt-1 text-4xl font-extrabold">สมัครเป็นไกด์นำเที่ยว</h1>
+        <p className="mt-2 text-emerald-50">
+          กรอกข้อมูลเพื่อสมัครเป็นไกด์นำเที่ยวพื้นที่ของคุณ
+        </p>
+      </div>
+    </div>
+
+    {/* ✅ เนื้อหา (ฟอร์ม) */}
+    <div className="bg-gray-50 -mt-15 pb-12 min-h-screen">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {error && (
-          <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-800">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+          <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800">
             {success}
           </div>
         )}
 
         <form
           onSubmit={handleSubmit}
-          className="bg-white rounded-lg shadow-md p-6 space-y-6"
+          className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8 space-y-6"
         >
           <GuideFormFields
             formData={formData}
@@ -224,5 +227,8 @@ export default function BecomeGuidePage() {
         </form>
       </div>
     </div>
-  );
+
+    <Footer />
+  </>
+);
 }
