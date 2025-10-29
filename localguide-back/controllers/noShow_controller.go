@@ -33,7 +33,7 @@ func ConfirmUserNoShow(c *fiber.Ctx) error {
 	}
 
 	// ตรวจสอบว่าเป็นเจ้าของ booking หรือไม่
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("user_id").(uint)
 	if booking.UserID != userID {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"error":   "You can only confirm no-show for your own bookings",
@@ -156,7 +156,7 @@ func ReportUserNoShow(c *fiber.Ctx) error {
 	}
 
 	// ตรวจสอบว่าเป็นไกด์ของ booking นี้หรือไม่
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("user_id").(uint)
 	if booking.GuideID != userID {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"error":   "You can only report no-show for your own bookings",
@@ -231,7 +231,7 @@ func DisputeNoShowReport(c *fiber.Ctx) error {
 	}
 
 	// ตรวจสอบว่าเป็นเจ้าของ booking หรือไม่
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("user_id").(uint)
 	if booking.UserID != userID {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"error":   "You can only dispute reports for your own bookings",

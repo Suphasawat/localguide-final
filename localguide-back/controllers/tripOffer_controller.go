@@ -35,7 +35,7 @@ func CreateTripOffer(c *fiber.Ctx) error {
 	}
 
 	// ตรวจสอบว่าเป็น Guide
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("user_id").(uint)
 	var guide models.Guide
 	if err := config.DB.Where("user_id = ?", userID).First(&guide).Error; err != nil {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
@@ -224,7 +224,7 @@ func AcceptTripOffer(c *fiber.Ctx) error {
 		})
 	}
 
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("user_id").(uint)
 
 	// เริ่ม transaction
 	tx := config.DB.Begin()
@@ -376,7 +376,7 @@ func RejectTripOffer(c *fiber.Ctx) error {
 	}
 	_ = c.BodyParser(&body)
 
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("user_id").(uint)
 
 	// Start transaction for consistency
 	tx := config.DB.Begin()
@@ -438,7 +438,7 @@ func RejectTripOffer(c *fiber.Ctx) error {
 
 // GetGuideOffers - ดึงข้อเสนอทั้งหมดของ Guide ที่ login อยู่
 func GetGuideOffers(c *fiber.Ctx) error {
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("user_id").(uint)
 	
 	// ตรวจสอบว่าเป็น Guide
 	var guide models.Guide

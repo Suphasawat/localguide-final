@@ -122,7 +122,7 @@ func GetTripPayment(c *fiber.Ctx) error {
 
 // GetTripBookings - ดู bookings ของตัวเอง (enrich response)
 func GetTripBookings(c *fiber.Ctx) error {
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("user_id").(uint)
 
 	// ดู role ว่าเป็น user หรือ guide
 	var user models.User
@@ -260,7 +260,7 @@ func GetTripBookingByID(c *fiber.Ctx) error {
 		})
 	}
 
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("user_id").(uint)
 
 	var booking models.TripBooking
 	if err := config.DB.Preload("TripOffer.TripRequire.Province").

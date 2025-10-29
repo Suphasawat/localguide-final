@@ -140,7 +140,7 @@ func Login(c *fiber.Ctx) error {
 }
 
 func Me(c *fiber.Ctx) error {
-    userID := c.Locals("userID") 
+    userID := c.Locals("user_id") 
     if userID == nil {
         return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
     }

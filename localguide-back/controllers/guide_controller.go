@@ -55,7 +55,7 @@ func GetGuideByID(c *fiber.Ctx) error {
 
 func CreateGuide(c *fiber.Ctx) error {
     // ดึง UserID จาก JWT token แทนจากข้อมูลที่ส่งมา
-    userID := c.Locals("userID")
+    userID := c.Locals("user_id")
     if userID == nil {
         return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
             "error": "Unauthorized",

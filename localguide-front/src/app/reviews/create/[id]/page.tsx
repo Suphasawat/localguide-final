@@ -120,7 +120,7 @@ export default function CreateReviewPage() {
 
       if (response.ok) {
         alert("✅ ส่งรีวิวเรียบร้อยแล้ว ขอบคุณสำหรับรีวิวของคุณ!");
-        router.push("/bookings");
+        router.push(`/trip-bookings/${bookingId}`);
       } else {
         const errorData = await response.json();
         setError(errorData.error || "เกิดข้อผิดพลาดในการส่งรีวิว");

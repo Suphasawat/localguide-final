@@ -10,7 +10,7 @@ import (
 
 // GetUserProfile - ดึงข้อมูล profile ของผู้ใช้ที่ login อยู่
 func GetUserProfile(c *fiber.Ctx) error {
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("user_id").(uint)
 	var user models.User
 
 	if err := config.DB.
@@ -25,7 +25,7 @@ func GetUserProfile(c *fiber.Ctx) error {
 
 // UpdateUserProfile - อัปเดตข้อมูล profile ของผู้ใช้ที่ login อยู่
 func UpdateUserProfile(c *fiber.Ctx) error {
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("user_id").(uint)
 	
 	var req struct {
 		FirstName   string `json:"first_name"`

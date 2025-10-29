@@ -33,7 +33,7 @@ func AdminResolveNoShowDispute(c *fiber.Ctx) error {
 	}
 
 	// ตรวจสอบว่าเป็น admin หรือไม่
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("user_id").(uint)
 	var user models.User
 	if err := config.DB.First(&user, userID).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
