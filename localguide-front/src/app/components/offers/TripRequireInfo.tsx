@@ -14,6 +14,7 @@ export default function TripRequireInfo({
   getStatusText,
 }: TripRequireInfoProps) {
   return (
+    <>
     <div className="bg-white rounded-lg shadow-md p-6 mb-8">
       <h2 className="text-xl font-semibold mb-4">ความต้องการของคุณ</h2>
       <div className="flex justify-between items-start mb-4">
@@ -60,5 +61,6 @@ export default function TripRequireInfo({
         </div>
       )}
     </div>
+    </>
   );
 }
