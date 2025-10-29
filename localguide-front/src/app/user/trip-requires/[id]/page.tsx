@@ -13,6 +13,7 @@ import OffersPreview from "@/app/components/trip-require-detail/OffersPreview";
 import TripRequireDetails from "@/app/components/trip-require-detail/TripRequireDetails";
 import TripRequireSidebar from "@/app/components/trip-require-detail/TripRequireSidebar";
 import MobileActionButtons from "@/app/components/trip-require-detail/MobileActionButtons";
+import Footer from "@/app/components/Footer";
 
 export default function TripRequireDetailPage() {
   const params = useParams();
@@ -195,6 +196,7 @@ export default function TripRequireDetailPage() {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-gray-50 py-8">
       <Navbar />
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -248,5 +250,7 @@ export default function TripRequireDetailPage() {
         />
       </div>
     </div>
+    <Footer />
+    </>
   );
 }
