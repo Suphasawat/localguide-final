@@ -55,7 +55,7 @@ export default function BookingCard({ booking, isGuide }: BookingCardProps) {
           href={`/trip-bookings/${String(booking.id || booking.ID)}`}
           className="text-emerald-600 hover:text-emerald-700 text-sm font-semibold transition"
         >
-          ดูรายละเอียด →
+          ดูรายละเอียด
         </Link>
       </div>
     </div>

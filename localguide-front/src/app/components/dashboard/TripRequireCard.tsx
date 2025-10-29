@@ -91,7 +91,7 @@ export default function TripRequireCard({
           href={`/user/trip-requires/${require.ID}`}
           className="text-emerald-600 hover:text-emerald-700 text-sm font-semibold transition"
         >
-          ดูรายละเอียด →
+          ดูรายละเอียด
         </Link>
       </div>
     </div>
