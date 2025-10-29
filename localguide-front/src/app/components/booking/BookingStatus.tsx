@@ -54,6 +54,26 @@ export default function BookingStatus({
 }: BookingStatusProps) {
   const router = useRouter();
 
+  // 🔹 แปลง ISO datetime -> YYYY-MM-DD (เช่น 2025-10-29T07:00:00+07:00 -> 2025-10-29)
+  const toYMD = (raw?: string) => {
+    if (!raw) {
+      return "-";
+    }
+    // ถ้าเป็นรูปแบบ YYYY-MM-DD... ตัด 10 ตัวแรกได้เลย
+    if (raw.length >= 10 && raw[4] === "-" && raw[7] === "-") {
+      return raw.slice(0, 10);
+    }
+    // เผื่อกรณีรูปแบบอื่น
+    const d = new Date(raw);
+    if (!Number.isNaN(d.getTime())) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+    return raw;
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <h2 className="text-xl font-semibold mb-4">สถานะการจอง</h2>
@@ -78,7 +98,8 @@ export default function BookingStatus({
         </div>
         <div>
           <div className="text-sm text-gray-500">วันที่เริ่ม</div>
-          <div className="mt-1">{getStartDate(booking) || "-"}</div>
+          {/* 🔹 ใช้ตัวแปลงที่นี่ */}
+          <div className="mt-1">{toYMD(getStartDate(booking))}</div>
         </div>
         <div>
           <div className="text-sm text-gray-500">ยอดรวม</div>
