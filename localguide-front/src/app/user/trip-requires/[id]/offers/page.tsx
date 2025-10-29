@@ -16,6 +16,7 @@ import { useOfferHelpers } from "@/app/components/offers/useOfferHelpers";
 import { useOfferFilters } from "@/app/components/offers/useOfferFilters";
 import EmptyOffersState from "@/app/components/offers/EmptyOffersState";
 import AcceptedOfferAlert from "@/app/components/offers/AcceptedOfferAlert";
+import Link from "next/dist/client/link";
 
 export default function TripOffersPage() {
   const { user, isAuthenticated } = useAuth();
@@ -33,7 +34,9 @@ export default function TripOffersPage() {
   const [statusFilter, setStatusFilter] = useState<
     "all" | "sent" | "accepted" | "rejected" | "expired" | "withdrawn"
   >("all");
-  const [sortBy, setSortBy] = useState<"latest" | "price_low" | "price_high" | "rating_high">("latest");
+  const [sortBy, setSortBy] = useState<
+    "latest" | "price_low" | "price_high" | "rating_high"
+  >("latest");
 
   const [acceptTarget, setAcceptTarget] = useState<TripOffer | null>(null);
   const [showAcceptModal, setShowAcceptModal] = useState(false);
@@ -77,13 +80,17 @@ export default function TripOffersPage() {
       ]);
 
       const requireData = requireResponse.data?.data || requireResponse.data;
-      const offersData = offersResponse.data?.offers || offersResponse.data?.data || [];
+      const offersData =
+        offersResponse.data?.offers || offersResponse.data?.data || [];
 
       setTripRequire(requireData);
       setOffers(offersData);
     } catch (error: any) {
       console.error("Failed to load data:", error);
-      setError(error.response?.data?.error || "ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
+      setError(
+        error.response?.data?.error ||
+          "ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง"
+      );
     } finally {
       setLoading(false);
     }
@@ -114,7 +121,10 @@ export default function TripOffersPage() {
       }, 1500);
     } catch (error: any) {
       console.error("Failed to accept offer:", error);
-      setError(error.response?.data?.error || "ไม่สามารถยอมรับข้อเสนอได้ กรุณาลองใหม่อีกครั้ง");
+      setError(
+        error.response?.data?.error ||
+          "ไม่สามารถยอมรับข้อเสนอได้ กรุณาลองใหม่อีกครั้ง"
+      );
     } finally {
       setAcceptLoading(null);
     }
@@ -125,14 +135,20 @@ export default function TripOffersPage() {
     setError("");
     setSuccess("");
     try {
-      await tripOfferAPI.reject(offerId, rejectReason ? { reason: rejectReason } : undefined);
+      await tripOfferAPI.reject(
+        offerId,
+        rejectReason ? { reason: rejectReason } : undefined
+      );
       setShowRejectModal(false);
       setRejectTarget(null);
       setSuccess("ปฏิเสธข้อเสนอเรียบร้อยแล้ว");
       await loadData();
     } catch (error: any) {
       console.error("Failed to reject offer:", error);
-      setError(error.response?.data?.error || "ไม่สามารถปฏิเสธข้อเสนอได้ กรุณาลองใหม่อีกครั้ง");
+      setError(
+        error.response?.data?.error ||
+          "ไม่สามารถปฏิเสธข้อเสนอได้ กรุณาลองใหม่อีกครั้ง"
+      );
     } finally {
       setRejectLoading(null);
     }
@@ -163,9 +179,15 @@ export default function TripOffersPage() {
         <div className="w-full bg-emerald-600 text-white rounded-b-2xl shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <p className="text-white/80 text-sm uppercase tracking-wide">รายการข้อเสนอ</p>
-              <h1 className="text-3xl font-extrabold leading-tight">ข้อเสนอที่ได้รับ</h1>
-              <p className="mt-1 text-white/90 text-sm">สำหรับ: {tripRequire.Title}</p>
+              <p className="text-white/80 text-sm uppercase tracking-wide">
+                รายการข้อเสนอ
+              </p>
+              <h1 className="text-3xl font-extrabold leading-tight">
+                ข้อเสนอที่ได้รับ
+              </h1>
+              <p className="mt-1 text-white/90 text-sm">
+                สำหรับ: {tripRequire.Title}
+              </p>
             </div>
 
             <button
@@ -252,7 +274,16 @@ export default function TripOffersPage() {
           setReason={setRejectReason}
           getGuideName={helpers.getGuideName}
         />
+        <div className="mt-1 flex justify-center pb-10">
+          <Link
+            href="/trip-bookings"
+            className="px-8 py-3.5 rounded-full bg-emerald-600 text-white font-extrabold shadow-md hover:bg-emerald-700 transition-all"
+          >
+            การจองทริปของฉัน
+          </Link>
+        </div>
       </div>
+
       <Footer />
     </>
   );
