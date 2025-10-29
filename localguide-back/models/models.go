@@ -35,7 +35,6 @@ type Guide struct {
 	Bio               string  
 	Description       string              `gorm:"not null"` 
 	Available         bool                
-	Price             float64             `gorm:"not null"` 
 	Rating            float64             
 	ProvinceID        uint                `gorm:"not null"` // เพิ่ม ProvinceID
 	Province          Province            `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:ProvinceID"`

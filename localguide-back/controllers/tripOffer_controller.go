@@ -51,6 +51,7 @@ func CreateTripOffer(c *fiber.Ctx) error {
 		})
 	}
 
+	// ให้ TripRequire รับ offer ได้ทั้ง open และ in_review
 	if tripRequire.Status == "assigned" || tripRequire.Status == "completed" || tripRequire.Status == "cancelled" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Trip requirement is no longer accepting offers",
@@ -120,8 +121,10 @@ func CreateTripOffer(c *fiber.Ctx) error {
 		})
 	}
 
-	// อัปเดตสถานะ TripRequire เป็น in_review
-	config.DB.Model(&tripRequire).Update("status", "in_review")
+	// ไม่ต้องเปลี่ยนสถานะ TripRequire เป็น in_review ถ้ายังเป็น open
+	if tripRequire.Status == "open" {
+		config.DB.Model(&tripRequire).Update("status", "in_review")
+	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message":   "Offer created successfully",

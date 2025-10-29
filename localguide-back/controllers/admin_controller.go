@@ -48,7 +48,6 @@ func ApproveGuide(c *fiber.Ctx) error {
 			UserID:      verification.UserID,
 			Bio:         verification.Bio,
 			Description: verification.Description,
-			Price:       verification.Price,
 			ProvinceID:  verification.ProvinceID, // ใช้ ProvinceID จาก verification
 			Available:   true, // ตั้งค่าเป็น available
 			Rating:      0,    // เริ่มต้นที่ 0

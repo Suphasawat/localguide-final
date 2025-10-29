@@ -175,7 +175,14 @@ func BrowseTripRequires(c *fiber.Ctx) error {
 	maxPrice := c.Query("max_price")
 	status := c.Query("status", "open")
 
-	query := config.DB.Where("status = ?", status)
+	// ให้แสดงทั้ง open และ in_review
+	var statuses []string
+	if status == "open" {
+		statuses = []string{"open", "in_review"}
+	} else {
+		statuses = []string{status}
+	}
+	query := config.DB.Where("status IN ?", statuses)
 
 	// Filter by province if specified
 	if provinceID != "" {
