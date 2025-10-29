@@ -21,8 +21,6 @@ type FormState = {
   excludedServices: string;
   totalPrice: number;
   priceBreakdown: string;
-  terms: string;
-  paymentTerms: string;
   validUntil: string;
   notes: string;
 };
@@ -122,7 +120,7 @@ export default function CreateOfferForm({
             onChange={onChange}
             rows={4}
             className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-            placeholder={`- รถรับส่ง\n- ค่าน้ำมัน\n- ไกด์นำเที่ยว\n- ประกันภัย ...`}
+            placeholder={`- รถรับส่ง\n- ค่าน้ำมัน\n- ไกด์นำเที่ยว...`}
           />
           <p className="mt-1 text-xs text-gray-500">
             แยกแต่ละบริการด้วยการเว้นบรรทัด
@@ -216,37 +214,7 @@ export default function CreateOfferForm({
           onChange={onChange}
           rows={3}
           className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-          placeholder={`- ค่าน้ำมัน: 2,000 บาท\n- ค่าไกด์: 3,000 บาท\n- อื่น ๆ: 1,000 บาท`}
-        />
-      </div>
-
-      {/* เงื่อนไขการให้บริการ */}
-      <div>
-        <label className="mb-2 block text-sm font-medium text-gray-700">
-          เงื่อนไขการให้บริการ
-        </label>
-        <textarea
-          name="terms"
-          value={formData.terms}
-          onChange={onChange}
-          rows={3}
-          className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-          placeholder={`- ชำระเงินล่วงหน้า ...\n- ยกเลิกก่อน ...`}
-        />
-      </div>
-
-      {/* เงื่อนไขการชำระเงิน */}
-      <div>
-        <label className="mb-2 block text-sm font-medium text-gray-700">
-          เงื่อนไขการชำระเงิน
-        </label>
-        <textarea
-          name="paymentTerms"
-          value={formData.paymentTerms}
-          onChange={onChange}
-          rows={3}
-          className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-          placeholder={`- วางมัดจำ ...\n- ชำระส่วนที่เหลือ ...`}
+          placeholder={`- ค่ารถ: 500 บาท\n- ค่าน้ำมัน: 300 บาท\n`}
         />
       </div>
 
