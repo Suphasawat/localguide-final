@@ -170,7 +170,6 @@ type TripOfferQuotation struct {
 	Terms            string      `gorm:"type:text"` // เงื่อนไขการให้บริการ (ใช้ text แทน json)
 	PaymentTerms     string      `gorm:"type:text"` // เงื่อนไขการชำระเงิน (ใช้ text แทน json)
 	QuotationNumber  string      // เลขที่ใบเสนอราคา (optional)
-	ValidUntil       time.Time   `gorm:"not null"`   // วันหมดอายุของใบเสนอราคา
 	Status           string      `gorm:"default:'draft'"` // draft, sent, accepted, rejected, expired
 	SentAt           *time.Time  // วันที่ส่งใบเสนอราคา
 	AcceptedAt       *time.Time  // วันที่ยอมรับ

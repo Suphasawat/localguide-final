@@ -100,7 +100,6 @@ func CreateTripOffer(c *fiber.Ctx) error {
 	}
 
 	// สร้าง TripOfferQuotation
-	validUntil := now.AddDate(0, 0, req.ValidDays)
 	quotation := models.TripOfferQuotation{
 		TripOfferID:     offer.ID,
 		Version:         1,
@@ -109,7 +108,6 @@ func CreateTripOffer(c *fiber.Ctx) error {
 		Terms:           req.Terms,
 		PaymentTerms:    req.PaymentTerms,
 		QuotationNumber: "QT" + strconv.Itoa(int(offer.ID)) + "-" + strconv.Itoa(int(now.Unix())),
-		ValidUntil:      validUntil,
 		Status:          "sent",
 		SentAt:          &now,
 	}
@@ -278,12 +276,6 @@ func AcceptTripOffer(c *fiber.Ctx) error {
 		})
 	}
 
-	// ตรวจสอบว่า quotation หมดอายุหรือยัง
-	if time.Now().After(quotation.ValidUntil) {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Offer quotation has expired",
-		})
-	}
 
 	// อัปเดตสถานะ offer ที่ถูกเลือก
 	now := time.Now()
