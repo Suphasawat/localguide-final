@@ -274,14 +274,6 @@ export default function TripOffersPage() {
           setReason={setRejectReason}
           getGuideName={helpers.getGuideName}
         />
-        <div className="mt-1 flex justify-center pb-10">
-          <Link
-            href="/trip-bookings"
-            className="px-8 py-3.5 rounded-full bg-emerald-600 text-white font-extrabold shadow-md hover:bg-emerald-700 transition-all"
-          >
-            การจองทริปของฉัน
-          </Link>
-        </div>
       </div>
 
       <Footer />
