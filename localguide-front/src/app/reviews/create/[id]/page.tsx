@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
+import Cookies from "js-cookie";
 import Navbar from "@/app/components/Navbar";
 
 export default function CreateReviewPage() {
@@ -40,7 +41,7 @@ export default function CreateReviewPage() {
 
   const fetchBookingDetails = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = Cookies.get("token");
       if (!token) {
         router.push("/auth/login");
         return;
@@ -56,7 +57,7 @@ export default function CreateReviewPage() {
       );
 
       if (response.status === 401) {
-        localStorage.removeItem("token");
+        Cookies.remove("token");
         router.push("/auth/login");
         return;
       }
@@ -97,7 +98,7 @@ export default function CreateReviewPage() {
     setError("");
 
     try {
-      const token = localStorage.getItem("token");
+      const token = Cookies.get("token");
       const response = await fetch("http://localhost:8080/api/reviews", {
         method: "POST",
         headers: {

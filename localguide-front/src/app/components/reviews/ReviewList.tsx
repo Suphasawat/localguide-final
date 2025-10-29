@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Cookies from "js-cookie";
 import ReviewCard from "./ReviewCard";
 import ReviewStats from "./ReviewStats";
 
@@ -117,7 +118,7 @@ export default function ReviewList({
 
   const handleMarkHelpful = async (reviewId: number) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = Cookies.get("token");
       const response = await fetch(
         `http://localhost:8080/api/reviews/${reviewId}/helpful`,
         {
@@ -139,7 +140,7 @@ export default function ReviewList({
 
   const handleRespond = async (reviewId: number, responseText: string) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = Cookies.get("token");
       const response = await fetch(
         `http://localhost:8080/api/reviews/${reviewId}/response`,
         {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
 import ReviewCard from "@/app/components/reviews/ReviewCard";
 
 export default function MyReviewsPage() {
@@ -15,7 +16,7 @@ export default function MyReviewsPage() {
 
   const fetchMyReviews = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = Cookies.get("token");
       const response = await fetch("http://localhost:8080/api/my-reviews", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -39,7 +40,7 @@ export default function MyReviewsPage() {
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const token = Cookies.get("token");
       const response = await fetch(
         `http://localhost:8080/api/reviews/${reviewId}`,
         {

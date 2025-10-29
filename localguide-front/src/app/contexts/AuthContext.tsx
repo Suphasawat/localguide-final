@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import Cookies from "js-cookie";
 import { User, LoginData, RegisterData, LoginResponse } from "../types";
 import { authAPI } from "../lib/api";
 
@@ -20,8 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const token = Cookies.get("token");
     if (token) {
       fetchUser();
     } else {
@@ -35,9 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(response.data);
     } catch (error) {
       console.error("Failed to fetch user:", error);
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("token");
-      }
+      Cookies.remove("token");
     } finally {
       setLoading(false);
     }
@@ -55,9 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         (response as any).data;
 
       if (token) {
-        if (typeof window !== "undefined") {
-          localStorage.setItem("token", token);
-        }
+        Cookies.set("token", token, { expires: 7 });
         if (userData && (userData.id || (userData as any).ID)) {
           setUser(userData as any);
         } else {
@@ -82,9 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("token");
-    }
+    Cookies.remove("token");
     setUser(null);
   };
 
@@ -95,9 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     register,
     logout,
     // Consider token during loading to avoid flicker redirects
-    isAuthenticated:
-      !!user ||
-      (typeof window !== "undefined" && !!localStorage.getItem("token")),
+    isAuthenticated: !!user || !!Cookies.get("token"),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
