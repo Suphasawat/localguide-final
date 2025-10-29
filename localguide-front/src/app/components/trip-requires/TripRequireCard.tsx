@@ -16,6 +16,9 @@ interface TripRequireCardProps {
     ExpiresAt?: string;
     total_offers: number;
     province_name: string;
+    // ถ้า backend มี field เหล่านี้ ให้ปล่อยไว้ไม่เป็นไร
+    BookingID?: number | null;
+    AcceptedOfferID?: number | null;
   };
   getStatusColor: (status: string) => string;
   getStatusText: (status: string) => string;
@@ -30,6 +33,48 @@ export default function TripRequireCard({
   onDelete,
   deleteLoading,
 }: TripRequireCardProps) {
+  // ✅ ครอบคลุมชื่อสถานะที่เป็นไปได้หลายแบบ
+  const normalized = (trip.Status || "").toLowerCase().trim();
+  const selectedStatuses = new Set([
+    "selected",
+    "guide_selected",
+    "accepted",
+    "booked",
+    "booking_created",
+    "confirmed",
+    "paid",
+    "closed", // บางระบบปิดทริปหลังเลือกไกด์
+  ]);
+
+  const hasSelectedGuide =
+    selectedStatuses.has(normalized) ||
+    !!trip.BookingID ||
+    !!trip.AcceptedOfferID ||
+    getStatusText(trip.Status).includes("เลือกไกด์");
+
+  // ✅ เตรียมปุ่มขวาตามสถานะ
+  let rightAction: React.ReactNode = null;
+
+  if (hasSelectedGuide) {
+    rightAction = (
+      <Link
+        href="/trip-bookings"
+        className="flex-1 bg-blue-600 text-white text-center py-2.5 px-4 rounded-full hover:bg-blue-700 transition-all font-medium shadow-sm"
+      >
+        ดูการจองของฉัน
+      </Link>
+    );
+  } else if (trip.total_offers > 0) {
+    rightAction = (
+      <Link
+        href={`/user/trip-requires/${trip.ID}/offers`}
+        className="flex-1 bg-blue-600 text-white text-center py-2.5 px-4 rounded-full hover:bg-blue-700 transition-all font-medium shadow-sm"
+      >
+        ดูข้อเสนอ ({trip.total_offers})
+      </Link>
+    );
+  }
+
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md hover:border-emerald-200 transition-all">
       <div className="p-6">
@@ -91,7 +136,7 @@ export default function TripRequireCard({
               </span>
             </div>
           )}
-          {trip.total_offers > 0 && (
+          {trip.total_offers > 0 && !hasSelectedGuide && (
             <div className="flex items-center gap-2 text-emerald-600 font-medium">
               <span>📥</span>
               <span>มีข้อเสนอ {trip.total_offers} รายการ</span>
@@ -108,17 +153,11 @@ export default function TripRequireCard({
               ดูรายละเอียด
             </Link>
 
-            {trip.total_offers > 0 && (
-              <Link
-                href={`/user/trip-requires/${trip.ID}/offers`}
-                className="flex-1 bg-blue-600 text-white text-center py-2.5 px-4 rounded-full hover:bg-blue-700 transition-all font-medium shadow-sm"
-              >
-                ดูข้อเสนอ ({trip.total_offers})
-              </Link>
-            )}
+            {/* ✅ ปุ่มขวาเปลี่ยนตามสถานะ */}
+            {rightAction}
           </div>
 
-          {trip.Status === "open" && (
+          {normalized === "open" && (
             <div className="flex gap-2">
               <Link
                 href={`/user/trip-requires/${trip.ID}/edit`}
