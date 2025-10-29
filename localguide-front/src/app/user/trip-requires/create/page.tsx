@@ -157,7 +157,6 @@ export default function CreateTripRequirePage() {
                 submitButtonText="สร้างความต้องการ"
                 isPriceInvalid={isPriceInvalid}
                 isDateRangeInvalid={isDateRangeInvalid}
-                isExpireAfterStart={isExpireAfterStart}
               />
             </div>
           </div>

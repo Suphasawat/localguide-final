@@ -21,7 +21,6 @@ type FormState = {
   excludedServices: string;
   totalPrice: number;
   priceBreakdown: string;
-  validUntil: string;
   notes: string;
 };
 
@@ -29,10 +28,7 @@ interface CreateOfferFormProps {
   formData: FormState;
   tripRequire: TripRequire;
   todayISO: string;
-  maxValidUntilISO: string;
   priceOutOfRange: boolean;
-  validUntilTooEarly: boolean;
-  validUntilAfterTripStart: boolean;
   onChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => void;
@@ -45,10 +41,7 @@ export default function CreateOfferForm({
   formData,
   tripRequire,
   todayISO,
-  maxValidUntilISO,
   priceOutOfRange,
-  validUntilTooEarly,
-  validUntilAfterTripStart,
   onChange,
   onSubmit,
   onCancel,
@@ -172,32 +165,6 @@ export default function CreateOfferForm({
           {priceOutOfRange && (
             <p className="mt-1 text-xs text-rose-600">
               ราคารวมต้องอยู่ในช่วงงบประมาณของลูกค้า
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700">
-            ข้อเสนอมีผลถึง *
-          </label>
-          <input
-            type="date"
-            name="validUntil"
-            value={formData.validUntil}
-            min={todayISO}
-            max={maxValidUntilISO || undefined}
-            onChange={onChange}
-            required
-            className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-          />
-          {validUntilTooEarly && (
-            <p className="mt-1 text-xs text-rose-600">
-              วันที่ข้อเสนอมีผลถึง ต้องไม่น้อยกว่าวันนี้
-            </p>
-          )}
-          {validUntilAfterTripStart && (
-            <p className="mt-1 text-xs text-rose-600">
-              วันที่ข้อเสนอมีผลถึง ต้องไม่เกินวันเริ่มทริปของลูกค้า
             </p>
           )}
         </div>

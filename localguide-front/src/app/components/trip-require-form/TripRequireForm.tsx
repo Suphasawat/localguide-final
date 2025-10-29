@@ -28,8 +28,16 @@ export default function TripRequireForm({
   submitButtonText,
   isPriceInvalid,
   isDateRangeInvalid,
-
 }: TripRequireFormProps) {
+  // ✅ คำนวณวันที่วันนี้เป็นรูปแบบ YYYY-MM-DD ตาม "เวลาท้องถิ่น"
+  // ใช้ 'en-CA' เพื่อให้ได้ฟอร์แมต 2025-10-30 โดยไม่โดน timezone เลื่อนวัน
+  const todayStr = new Date().toLocaleDateString("en-CA");
+
+  // endDate ต้องไม่น้อยกว่าวันเริ่มต้น ถ้าไม่มีวันเริ่มต้น ให้ไม่น้อยกว่าวันนี้
+  const endDateMin = formData.start_date && formData.start_date.length > 0
+    ? formData.start_date
+    : todayStr;
+
   return (
     <form onSubmit={onSubmit} className="space-y-7">
       {error && (
@@ -131,6 +139,8 @@ export default function TripRequireForm({
             type="date"
             name="start_date"
             required
+            // ✅ ห้ามเลือกวันที่ก่อนวันนี้
+            min={todayStr}
             className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
             value={formData.start_date}
             onChange={onChange}
@@ -144,7 +154,9 @@ export default function TripRequireForm({
             type="date"
             name="end_date"
             required
-            min={formData.start_date || undefined}
+            // ✅ อย่างน้อยต้องไม่ก่อน start_date ถ้ามี
+            // ถ้าไม่มี start_date ให้ไม่ก่อน "วันนี้"
+            min={endDateMin}
             className="w-full h-12 rounded-full border-2 border-gray-300 px-5 text-[15px] focus:outline-none focus:ring-0 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
             value={formData.end_date}
             onChange={onChange}
