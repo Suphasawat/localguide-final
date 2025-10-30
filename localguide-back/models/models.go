@@ -94,7 +94,6 @@ type GuideVertification struct {
 	// --- Data from application form ---
 	Bio               string
 	Description       string
-	Price             float64
 	ProvinceID        uint
 	Province         Province `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:ProvinceID"`
 	Language         []Language `gorm:"many2many:guide_verification_languages"`

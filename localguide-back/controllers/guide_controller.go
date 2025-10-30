@@ -112,7 +112,6 @@ func CreateGuide(c *fiber.Ctx) error {
         UserID:              userID.(uint),
         Bio:                 req.Bio,
         Description:         req.Description,
-        Price:               req.Price,
         ProvinceID:          req.ProvinceID,
         CertificationData:   req.CertificationNumber,
         Status:              "pending",

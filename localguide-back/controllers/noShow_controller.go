@@ -16,7 +16,7 @@ func ConfirmUserNoShow(c *fiber.Ctx) error {
 	bookingID, err := strconv.Atoi(c.Params("id"))
 	if err != nil || bookingID <= 0 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "Booking ID must be a positive integer",
+			"error": "Booking ID must be a positive integer",
 		})
 	}
 
@@ -24,35 +24,34 @@ func ConfirmUserNoShow(c *fiber.Ctx) error {
 	if err := config.DB.First(&booking, bookingID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"error":   "Booking not found",
+				"error": "Booking not found",
 			})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   "Failed to get booking",
+			"error": "Failed to get booking",
 		})
 	}
 
-	// ตรวจสอบว่าเป็นเจ้าของ booking หรือไม่
+	// ตรวจสอบสิทธิ์
 	userID := c.Locals("user_id").(uint)
 	if booking.UserID != userID {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"error":   "You can only confirm no-show for your own bookings",
+			"error": "You can only confirm no-show for your own bookings",
 		})
 	}
 
-	if booking.Status != "paid" {
+	// Validate status
+	if booking.Status != "paid" && booking.Status != "user_no_show_reported" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "Invalid booking status for no-show confirmation",
+			"error": "Invalid booking status for no-show confirmation",
 		})
 	}
 
-	// Update booking status
+	// Validate timeline - ต้องอยู่ในช่วงวันทริป
 	now := time.Now()
-	booking.Status = "no_show_confirmed"
-	booking.NoShowAt = &now
-	if err := config.DB.Save(&booking).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   "Failed to update booking",
+	if now.Before(booking.StartDate) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Cannot confirm no-show before trip start date",
 		})
 	}
 
@@ -60,74 +59,87 @@ func ConfirmUserNoShow(c *fiber.Ctx) error {
 	var payment models.TripPayment
 	if err := config.DB.Where("trip_booking_id = ?", bookingID).First(&payment).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   "Payment not found",
+			"error": "Payment not found",
 		})
 	}
+
+	// คำนวณเงิน: Guide ได้ 50%, User refund 50%
+	guideAmount := payment.TotalAmount * 0.5
+	userRefundAmount := payment.TotalAmount * 0.5
 
 	// Release 50% payment to guide
 	guideRelease := models.PaymentRelease{
 		TripPaymentID: payment.ID,
-		ReleaseType:   "first_payment",
-		Amount:        payment.FirstPayment,
+		ReleaseType:   "partial_release",
+		Amount:        guideAmount,
 		RecipientType: "guide",
 		RecipientID:   booking.GuideID,
 		Reason:        "user_confirmed_no_show",
 		ScheduledAt:   now,
 		ProcessedAt:   &now,
 		Status:        "processed",
+		Notes:         "Guide compensation for user no-show (50%)",
 	}
-	
+
 	if err := config.DB.Create(&guideRelease).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   "Failed to create guide payment release",
+			"error": "Failed to create guide payment release",
 		})
 	}
 
-	// Refund remaining 50% to user via Stripe
+	// Refund 50% to user via Stripe
 	stripeService := services.NewStripeService()
-	refundAmount := int64(payment.SecondPayment * 100) // Convert to cents
-	
-	stripeRefund, err := stripeService.RefundPayment(payment.StripePaymentIntentID, refundAmount, "user_confirmed_no_show")
+	refundAmountCents := int64(userRefundAmount * 100)
+
+	stripeRefund, err := stripeService.RefundPayment(payment.StripePaymentIntentID, refundAmountCents, "user_confirmed_no_show")
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"error":   "Failed to process Stripe refund: " + err.Error(),
+			"error": "Failed to process Stripe refund: " + err.Error(),
 		})
 	}
 
 	userRefund := models.PaymentRelease{
 		TripPaymentID:  payment.ID,
 		ReleaseType:    "refund",
-		Amount:         payment.SecondPayment,
+		Amount:         userRefundAmount,
 		RecipientType:  "user",
 		RecipientID:    booking.UserID,
 		Reason:         "user_confirmed_no_show",
 		ScheduledAt:    now,
 		ProcessedAt:    &now,
 		Status:         "processed",
-		TransactionRef: stripeRefund.ID, // Stripe refund ID
-		Notes:          "User confirmed no-show, refunded via Stripe",
+		TransactionRef: stripeRefund.ID,
+		Notes:          "50% refund - user confirmed no-show",
 	}
-	
+
 	if err := config.DB.Create(&userRefund).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   "Failed to create user refund record",
+			"error": "Failed to create user refund record",
 		})
 	}
 
 	// Update payment status
 	payment.Status = "partially_refunded"
 	payment.RefundedAt = &now
-	payment.RefundAmount = payment.SecondPayment
+	payment.RefundAmount = userRefundAmount
 	payment.RefundReason = "user_confirmed_no_show"
 	if err := config.DB.Save(&payment).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   "Failed to update payment status",
+			"error": "Failed to update payment status",
+		})
+	}
+
+	// Update booking status
+	booking.Status = "user_no_show_confirmed"
+	booking.NoShowAt = &now
+	if err := config.DB.Save(&booking).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to update booking",
 		})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message":       "No-show confirmed by user: 50% paid to guide, 50% refunded to user",
+		"message":       "No-show confirmed: Guide receives 50%, User refunded 50%",
 		"booking":       booking,
 		"guide_release": guideRelease,
 		"user_refund":   userRefund,
@@ -139,7 +151,7 @@ func ReportUserNoShow(c *fiber.Ctx) error {
 	bookingID, err := strconv.Atoi(c.Params("id"))
 	if err != nil || bookingID <= 0 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "Booking ID must be a positive integer",
+			"error": "Booking ID must be a positive integer",
 		})
 	}
 
@@ -147,53 +159,79 @@ func ReportUserNoShow(c *fiber.Ctx) error {
 	if err := config.DB.First(&booking, bookingID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"error":   "Booking not found",
+				"error": "Booking not found",
 			})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   "Failed to get booking",
+			"error": "Failed to get booking",
 		})
 	}
 
-	// ตรวจสอบว่าเป็นไกด์ของ booking นี้หรือไม่
+	// ตรวจสอบสิทธิ์ - ต้องเป็นไกด์ของ booking นี้
 	userID := c.Locals("user_id").(uint)
-	if booking.GuideID != userID {
+	
+	// หา guide_id จาก user_id
+	var guide models.Guide
+	if err := config.DB.Where("user_id = ?", userID).First(&guide).Error; err != nil {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"error":   "You can only report no-show for your own bookings",
+			"error": "Guide profile not found",
+		})
+	}
+	
+	if booking.GuideID != guide.ID {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "You can only report no-show for your own bookings",
 		})
 	}
 
+	// Validate status
 	if booking.Status != "paid" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "Invalid booking status for no-show report",
+			"error": "Invalid booking status for no-show report",
 		})
 	}
 
-	// ตรวจสอบว่า user ยืนยันแล้วหรือยัง (ใช้สถานะแทน)
-	if booking.Status == "no_show_confirmed" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "User has already confirmed no-show. Use admin process or wait for auto-process.",
-		})
-	}
-
-	// Update booking status to reported (รอ user ยืนยัน)
+	// Validate timeline - ต้องอยู่ในช่วงวันทริป หรือหลังวันทริป
 	now := time.Now()
-	booking.Status = "no_show_reported"
+	if now.Before(booking.StartDate) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Cannot report no-show before trip start date",
+		})
+	}
+
+	// อัปเดต booking status
+	booking.Status = "user_no_show_reported"
 	booking.NoShowAt = &now
 	if err := config.DB.Save(&booking).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   "Failed to update booking",
+			"error": "Failed to update booking",
 		})
 	}
 
-	// TODO: ส่ง notification ให้ user ให้ยืนยันหรือคัดค้าน
-	// TODO: ตั้ง timer ให้ auto-process หลังจาก 24-48 ชั่วโมง ถ้า user ไม่ตอบสนอง
+	// สร้าง TripReport
+	report := models.TripReport{
+		TripBookingID:  uint(bookingID),
+		ReporterID:     userID,
+		ReportedUserID: booking.UserID,
+		ReportType:     "user_no_show",
+		Title:          "Guide reports user no-show",
+		Description:    "Guide reported that user did not show up for the trip.",
+		Severity:       "high",
+		Status:         "pending",
+	}
+
+	if err := config.DB.Create(&report).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to create no-show report",
+		})
+	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "No-show reported. Waiting for user confirmation or admin review.",
+		"message": "User no-show reported. User has 24 hours to respond, or admin will review.",
 		"booking": booking,
+		"report":  report,
 		"status":  "reported",
-		"note":    "User has 24 hours to respond. After that, admin will review the case.",
+		"note":    "User can confirm or dispute this report within 24 hours",
 	})
 }
 
@@ -238,14 +276,14 @@ func DisputeNoShowReport(c *fiber.Ctx) error {
 		})
 	}
 
-	if booking.Status != "no_show_reported" {
+	if booking.Status != "user_no_show_reported" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "No active no-show report to dispute",
 		})
 	}
 
 	// Update booking status to disputed (รอ admin ตัดสิน)
-	booking.Status = "no_show_disputed"
+	booking.Status = "user_no_show_disputed"
 	if err := config.DB.Save(&booking).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   "Failed to update booking",
@@ -278,6 +316,136 @@ func DisputeNoShowReport(c *fiber.Ctx) error {
 		"booking": booking,
 		"report":  report,
 		"status":  "disputed",
+	})
+}
+
+// ReportGuideNoShow - User รีพอร์ตว่าไกด์ไม่มา -> คืนเงินเต็มจำนวนทันที
+func ReportGuideNoShow(c *fiber.Ctx) error {
+	bookingID, err := strconv.Atoi(c.Params("id"))
+	if err != nil || bookingID <= 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Booking ID must be a positive integer",
+		})
+	}
+
+	var booking models.TripBooking
+	if err := config.DB.First(&booking, bookingID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "Booking not found",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to get booking",
+		})
+	}
+
+	// ตรวจสอบสิทธิ์
+	userID := c.Locals("user_id").(uint)
+	if booking.UserID != userID {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "You can only report guide no-show for your own bookings",
+		})
+	}
+
+	// Validate status
+	if booking.Status != "paid" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid booking status for guide no-show report",
+		})
+	}
+
+	// Validate timeline - ต้องอยู่ในช่วงวันทริป
+	now := time.Now()
+	if now.Before(booking.StartDate) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Cannot report guide no-show before trip start date",
+		})
+	}
+
+	// อัปเดต booking status
+	booking.Status = "guide_no_show_confirmed"
+	booking.NoShowAt = &now
+	booking.CancellationReason = "guide_no_show"
+	if err := config.DB.Save(&booking).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to update booking",
+		})
+	}
+
+	// สร้าง TripReport
+	report := models.TripReport{
+		TripBookingID:  uint(bookingID),
+		ReporterID:     userID,
+		ReportedUserID: booking.GuideID,
+		ReportType:     "guide_no_show",
+		Title:          "User reports guide no-show",
+		Description:    "User reported that guide did not show up for the trip.",
+		Severity:       "critical",
+		Status:         "pending",
+	}
+
+	if err := config.DB.Create(&report).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to create guide no-show report",
+		})
+	}
+
+	// คืนเงินเต็มจำนวนให้ลูกค้าทันที
+	var payment models.TripPayment
+	if err := config.DB.Where("trip_booking_id = ?", bookingID).First(&payment).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Payment not found",
+		})
+	}
+
+	stripeService := services.NewStripeService()
+	refundAmountCents := int64(payment.TotalAmount * 100)
+	
+	stripeRefund, err := stripeService.RefundPayment(payment.StripePaymentIntentID, refundAmountCents, "guide_no_show")
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to process Stripe refund: " + err.Error(),
+		})
+	}
+
+	userRefund := models.PaymentRelease{
+		TripPaymentID:  payment.ID,
+		ReleaseType:    "refund",
+		Amount:         payment.TotalAmount,
+		RecipientType:  "user",
+		RecipientID:    booking.UserID,
+		Reason:         "guide_no_show",
+		ScheduledAt:    now,
+		ProcessedAt:    &now,
+		Status:         "processed",
+		TransactionRef: stripeRefund.ID,
+		Notes:          "Full refund - guide no-show",
+	}
+	
+	if err := config.DB.Create(&userRefund).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to create refund record",
+		})
+	}
+
+	// อัปเดต payment status
+	payment.Status = "refunded"
+	payment.RefundedAt = &now
+	payment.RefundAmount = payment.TotalAmount
+	payment.RefundReason = "guide_no_show"
+	if err := config.DB.Save(&payment).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to update payment status",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message":     "Guide no-show reported. Full refund issued immediately.",
+		"booking":     booking,
+		"report":      report,
+		"user_refund": userRefund,
+		"status":      "refunded",
 	})
 }
 
