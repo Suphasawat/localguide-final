@@ -4,7 +4,7 @@ interface NoShowModalProps {
   show: boolean;
   reason: string;
   actionLoading: string | null;
-  onReasonChange: (reason: string) => void;
+  onReasonChange: (v: string) => void;
   onClose: () => void;
   onSubmit: () => void;
 }
@@ -17,36 +17,55 @@ export default function NoShowModal({
   onClose,
   onSubmit,
 }: NoShowModalProps) {
-  if (!show) return null;
+  if (!show) {
+    return null;
+  }
+
+  const submitting = actionLoading === "report-no-show";
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-        <h3 className="text-lg font-semibold mb-3">รายงานไกด์ไม่มา</h3>
-        <p className="text-sm text-gray-600 mb-3">
-          โปรดระบุเหตุผลหรือรายละเอียดเพิ่มเติม
-        </p>
-        <textarea
-          className="w-full border border-gray-300 rounded-md p-2 mb-4"
-          rows={4}
-          value={reason}
-          onChange={(e) => onReasonChange(e.target.value)}
-          placeholder="รายละเอียด..."
-        />
-        <div className="flex justify-end space-x-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm rounded-md border"
-          >
-            ยกเลิก
-          </button>
-          <button
-            onClick={onSubmit}
-            disabled={actionLoading === "report-no-show"}
-            className="px-4 py-2 text-sm rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-60"
-          >
-            {actionLoading === "report-no-show" ? "กำลังส่ง..." : "ส่งรายงาน"}
-          </button>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+      {/* ⭐ เปลี่ยน overlay จากดำทึบ เป็นโปร่ง/เบลอ */}
+      <div
+        className="absolute inset-0 bg-emerald-950/40 backdrop-blur-[1px]"
+        onClick={onClose}
+      />
+
+      <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-xl">
+        {/* แถบโทนด้านบน */}
+        <div className="h-2 rounded-t-2xl bg-red-600" />
+        <div className="p-6">
+          <h3 className="text-lg font-semibold text-gray-900">รายงานไกด์ไม่มา</h3>
+          <p className="mt-2 text-sm text-gray-600">
+            โปรดระบุเหตุผลหรือรายละเอียดเพิ่มเติม
+          </p>
+
+          <textarea
+            value={reason}
+            onChange={(e) => onReasonChange(e.target.value)}
+            rows={5}
+            placeholder="รายละเอียด..."
+            className="mt-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          />
+
+          <div className="mt-6 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={submitting}
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              ยกเลิก
+            </button>
+            <button
+              type="button"
+              onClick={onSubmit}
+              disabled={submitting || reason.trim().length === 0}
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+            >
+              {submitting ? "กำลังส่ง..." : "ส่งรายงาน"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

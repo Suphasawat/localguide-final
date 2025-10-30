@@ -16,6 +16,8 @@ import BookingMessages from "@/app/components/trip-booking-detail/BookingMessage
 import { useBookingHelpers } from "@/app/components/trip-booking-detail/useBookingHelpers";
 import { useBookingTimeline } from "@/app/components/trip-booking-detail/useBookingTimeline";
 
+type ConfirmActionKey = "arrival" | "complete" | "user_no_show" | null;
+
 export default function TripBookingDetailPage() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
@@ -27,13 +29,18 @@ export default function TripBookingDetailPage() {
   const [error, setError] = useState("");
   const [paying, setPaying] = useState(false);
 
-  // Trip status management state
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showNoShowModal, setShowNoShowModal] = useState(false);
   const [noShowReason, setNoShowReason] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
 
-  // Use custom hooks
+  // ===== Confirm Modal State (inline)
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTitle, setConfirmTitle] = useState("");
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [confirmTone, setConfirmTone] = useState<"info" | "success" | "error">("info");
+  const [confirmAction, setConfirmAction] = useState<ConfirmActionKey>(null);
+
   const helpers = useBookingHelpers();
   const { buildTimeline } = useBookingTimeline(helpers.getStatusText);
 
@@ -42,12 +49,10 @@ export default function TripBookingDetailPage() {
       router.push("/auth/login");
       return;
     }
-
     if (!bookingId) {
       router.push("/trip-bookings");
       return;
     }
-
     loadBooking();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, bookingId]);
@@ -55,10 +60,10 @@ export default function TripBookingDetailPage() {
   const loadBooking = async () => {
     try {
       const response = await tripBookingAPI.getById(Number(bookingId));
-      const data = response.data?.booking ?? response.data; // support both shapes
+      const data = response.data?.booking ?? response.data;
       setBooking(data || null);
-    } catch (error) {
-      console.error("Failed to load booking:", error);
+    } catch (_error) {
+      console.error("Failed to load booking:", _error);
       setError("ไม่สามารถโหลดข้อมูลได้");
     } finally {
       setLoading(false);
@@ -71,7 +76,9 @@ export default function TripBookingDetailPage() {
     booking && user?.id && helpers.getGuideIdFromBooking(booking) === user.id;
 
   const handlePayment = async () => {
-    if (!booking) return;
+    if (!booking) {
+      return;
+    }
     setPaying(true);
     setError("");
     setInfoMessage("");
@@ -80,11 +87,9 @@ export default function TripBookingDetailPage() {
       const cs = resp.data?.client_secret;
       const pi = resp.data?.payment_intent_id;
       const amount = resp.data?.amount ?? helpers.getTotal(booking);
-
       if (!cs || !pi) {
         throw new Error("missing client secret or payment intent id");
       }
-
       router.push(
         `/trip-bookings/${bookingId}/payment?pi=${encodeURIComponent(
           pi
@@ -98,10 +103,36 @@ export default function TripBookingDetailPage() {
     }
   };
 
-  // Trip status actions
-  const confirmGuideArrival = async () => {
-    if (!booking) return;
-    if (!confirm("ยืนยันว่าไกด์ได้มาถึงแล้ว?")) return;
+  // ===== Openers (แทน window.confirm)
+  const openConfirmGuideArrival = () => {
+    setConfirmTitle("ยืนยันว่าไกด์ได้มาถึงแล้ว?");
+    setConfirmMessage("การยืนยันนี้จะแจ้งสถานะให้ทั้งสองฝ่ายทราบ");
+    setConfirmTone("info");
+    setConfirmAction("arrival");
+    setConfirmOpen(true);
+  };
+
+  const openConfirmTripComplete = () => {
+    setConfirmTitle("ยืนยันว่าทริปเสร็จสิ้นแล้ว?");
+    setConfirmMessage("การยืนยันนี้จะทำให้ทริปเข้าสู่สถานะเสร็จสิ้น");
+    setConfirmTone("success");
+    setConfirmAction("complete");
+    setConfirmOpen(true);
+  };
+
+  const openConfirmUserNoShow = () => {
+    setConfirmTitle("ยืนยันว่าคุณไม่มาในวันที่นัดหมาย?");
+    setConfirmMessage("หากยืนยัน ระบบจะบันทึกว่าคุณไม่ได้เข้าร่วมทริปตามกำหนด และดำเนินการตามขั้นตอนของแพลตฟอร์ม");
+    setConfirmTone("error");
+    setConfirmAction("user_no_show");
+    setConfirmOpen(true);
+  };
+
+  // ===== Executors (กด "ยืนยัน" ในโมดอล)
+  const doConfirmGuideArrival = async () => {
+    if (!booking) {
+      return;
+    }
     setActionLoading("confirm-arrival");
     setError("");
     setInfoMessage("");
@@ -114,12 +145,14 @@ export default function TripBookingDetailPage() {
       setError("ไม่สามารถยืนยันการมาถึงของไกด์ได้");
     } finally {
       setActionLoading(null);
+      setConfirmOpen(false);
     }
   };
 
-  const confirmTripComplete = async () => {
-    if (!booking) return;
-    if (!confirm("ยืนยันว่าทริปเสร็จสิ้นแล้ว?")) return;
+  const doConfirmTripComplete = async () => {
+    if (!booking) {
+      return;
+    }
     setActionLoading("confirm-complete");
     setError("");
     setInfoMessage("");
@@ -132,63 +165,14 @@ export default function TripBookingDetailPage() {
       setError("ไม่สามารถยืนยันการเสร็จสิ้นทริปได้");
     } finally {
       setActionLoading(null);
+      setConfirmOpen(false);
     }
   };
 
-  const openReportNoShow = () => {
-    setNoShowReason("");
-    setShowNoShowModal(true);
-  };
-
-  const submitReportNoShow = async () => {
-    if (!booking) return;
-    if (!noShowReason.trim()) {
-      setError("โปรดระบุเหตุผลในการรายงานไกด์ไม่มา");
+  const doConfirmUserNoShow = async () => {
+    if (!booking) {
       return;
     }
-    setActionLoading("report-no-show");
-    setError("");
-    setInfoMessage("");
-    try {
-      console.log("Sending report guide no-show request:", {
-        bookingId,
-        reason: noShowReason,
-        description: noShowReason,
-      });
-
-      const response = await tripBookingAPI.reportGuideNoShow(
-        Number(bookingId),
-        {
-          reason: noShowReason,
-          description: noShowReason,
-        }
-      );
-
-      console.log("Report guide no-show response:", response);
-      setShowNoShowModal(false);
-      setInfoMessage("รายงานไกด์ไม่มาเรียบร้อย คืนเงินเต็มจำนวนแล้ว");
-      await loadBooking();
-    } catch (e: any) {
-      console.error("Error reporting guide no-show:", e);
-      const errorMsg =
-        e?.response?.data?.error ||
-        e?.response?.data?.message ||
-        "ไม่สามารถรายงานไกด์ไม่มาได้";
-      const statusInfo = e?.response?.data?.status
-        ? ` (สถานะปัจจุบัน: ${e.response.data.status})`
-        : "";
-      const dateInfo = e?.response?.data?.start_date
-        ? ` วันเริ่มทริป: ${e.response.data.start_date}`
-        : "";
-      setError(errorMsg + statusInfo + dateInfo);
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const confirmUserNoShow = async () => {
-    if (!booking) return;
-    if (!confirm("ยืนยันว่าคุณไม่มาในวันที่นัดหมาย?")) return;
     setActionLoading("confirm-user-no-show");
     setError("");
     setInfoMessage("");
@@ -201,22 +185,55 @@ export default function TripBookingDetailPage() {
       setError("ไม่สามารถยืนยันการไม่มาของลูกค้าได้");
     } finally {
       setActionLoading(null);
+      setConfirmOpen(false);
+    }
+  };
+
+  // รายงานไกด์ไม่มา (ยังใช้ NoShowModal เดิม)
+  const openReportNoShow = () => {
+    setNoShowReason("");
+    setShowNoShowModal(true);
+  };
+
+  const submitReportNoShow = async () => {
+    if (!booking) {
+      return;
+    }
+    if (!noShowReason.trim()) {
+      setError("โปรดระบุเหตุผลในการรายงานไกด์ไม่มา");
+      return;
+    }
+    setActionLoading("report-no-show");
+    setError("");
+    setInfoMessage("");
+    try {
+      await tripBookingAPI.reportGuideNoShow(Number(bookingId), {
+        reason: noShowReason,
+        description: noShowReason,
+      });
+      setShowNoShowModal(false);
+      setInfoMessage("รายงานไกด์ไม่มาเรียบร้อย คืนเงินเต็มจำนวนแล้ว");
+      await loadBooking();
+    } catch (e: any) {
+      console.error("Error reporting guide no-show:", e);
+      const msg =
+        e?.response?.data?.error ||
+        e?.response?.data?.message ||
+        "ไม่สามารถรายงานไกด์ไม่มาได้";
+      const statusInfo = e?.response?.data?.status
+        ? ` (สถานะปัจจุบัน: ${e.response.data.status})`
+        : "";
+      const dateInfo = e?.response?.data?.start_date
+        ? ` วันเริ่มทริป: ${e.response.data.start_date}`
+        : "";
+      setError(msg + statusInfo + dateInfo);
+    } finally {
+      setActionLoading(null);
     }
   };
 
   const getStatusColor = (status: string) => helpers.getStatusColor(status);
   const getStatusText = (status: string) => helpers.getStatusText(status);
-
-  // Timeline helpers
-  type StepState = "complete" | "current" | "upcoming";
-  const TIMELINE_ORDER = [
-    "pending_payment",
-    "paid",
-    "trip_started",
-    "trip_completed",
-  ] as const;
-
-  const buildTimelineLocal = (status: string) => buildTimeline(status);
 
   if (loading) {
     return (
@@ -241,7 +258,16 @@ export default function TripBookingDetailPage() {
   }
 
   const status = helpers.getStatus(booking);
-  const timeline = buildTimelineLocal(status);
+  const timeline = useBookingTimeline(helpers.getStatusText).buildTimeline(status);
+
+  // สีแทบบนของโมดอลตามโทน
+  let confirmToneBar = "bg-emerald-600";
+  if (confirmTone === "error") {
+    confirmToneBar = "bg-red-600";
+  }
+  if (confirmTone === "info") {
+    confirmToneBar = "bg-amber-600";
+  }
 
   return (
     <>
@@ -250,7 +276,9 @@ export default function TripBookingDetailPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <BookingHeader
             bookingId={helpers.getId(booking)}
-            onBack={() => router.back()}
+            onBack={() => {
+              router.back();
+            }}
           />
 
           <BookingMessages error={error} infoMessage={infoMessage} />
@@ -266,10 +294,10 @@ export default function TripBookingDetailPage() {
               paying={paying}
               actionLoading={actionLoading}
               onPayment={handlePayment}
-              onConfirmGuideArrival={confirmGuideArrival}
-              onConfirmTripComplete={confirmTripComplete}
+              onConfirmGuideArrival={openConfirmGuideArrival}
+              onConfirmTripComplete={openConfirmTripComplete}
               onOpenReportNoShow={openReportNoShow}
-              onConfirmUserNoShow={confirmUserNoShow}
+              onConfirmUserNoShow={openConfirmUserNoShow}
               getStatusColor={getStatusColor}
               getStatusText={getStatusText}
               getPaymentStatus={helpers.getPaymentStatus}
@@ -307,10 +335,66 @@ export default function TripBookingDetailPage() {
           reason={noShowReason}
           actionLoading={actionLoading}
           onReasonChange={setNoShowReason}
-          onClose={() => setShowNoShowModal(false)}
+          onClose={() => {
+            setShowNoShowModal(false);
+          }}
           onSubmit={submitReportNoShow}
         />
       </div>
+
+      {/* ===== Confirm Modal (แทน window.confirm) ===== */}
+      {confirmOpen ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => {
+              // หากต้องการให้คลิกพื้นหลังเพื่อปิด ให้เปิดบรรทัดต่อไป
+              // setConfirmOpen(false);
+            }}
+          />
+          <div className="relative w-full max-w-md rounded-2xl bg-white shadow-xl">
+            <div className={`${confirmToneBar} h-2 rounded-t-2xl`} />
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900">{confirmTitle}</h3>
+              <p className="mt-2 text-gray-700 whitespace-pre-wrap">{confirmMessage}</p>
+              <div className="mt-6 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={actionLoading !== null}
+                  onClick={() => {
+                    setConfirmOpen(false);
+                  }}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="button"
+                  disabled={actionLoading !== null}
+                  onClick={() => {
+                    if (confirmAction === "arrival") {
+                      doConfirmGuideArrival();
+                    } else if (confirmAction === "complete") {
+                      doConfirmTripComplete();
+                    } else if (confirmAction === "user_no_show") {
+                      doConfirmUserNoShow();
+                    }
+                  }}
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 ${
+                    confirmTone === "error"
+                      ? "bg-red-600 hover:bg-red-700"
+                      : confirmTone === "success"
+                      ? "bg-emerald-600 hover:bg-emerald-700"
+                      : "bg-amber-600 hover:bg-amber-700"
+                  }`}
+                >
+                  {actionLoading ? "กำลังดำเนินการ..." : "ยืนยัน"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }
