@@ -35,7 +35,6 @@ func main() {
 		&models.TripPayment{}, 
         &models.TripReview{}, 
         &models.TripReport{}, 
-		&models.GuidePerformance{}, 
         &models.PaymentRelease{},
 	); err != nil {
 		log.Printf("Migration error: %v", err)

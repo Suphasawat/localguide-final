@@ -285,31 +285,6 @@ type TripReport struct {
 	Actions          string       `gorm:"type:text"` // การดำเนินการที่ทำ
 }
 
-// GuidePerformance - สถิติการทำงานของไกด์
-type GuidePerformance struct {
-	gorm.Model
-	GuideID              uint    `gorm:"not null;unique"`
-	Guide                Guide   `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:GuideID"`
-	TotalTrips           int     `gorm:"default:0"`
-	CompletedTrips       int     `gorm:"default:0"`
-	CancelledTrips       int     `gorm:"default:0"`
-	NoShowTrips          int     `gorm:"default:0"`
-	AverageRating        float64 `gorm:"default:0"`
-	AverageServiceRating float64 `gorm:"default:0"`
-	AverageKnowledgeRating float64 `gorm:"default:0"`
-	AverageCommunicationRating float64 `gorm:"default:0"`
-	AveragePunctualityRating float64 `gorm:"default:0"`
-	TotalEarnings        float64 `gorm:"default:0"`
-	ReportsCount         int     `gorm:"default:0"`
-	ResolvedReportsCount int     `gorm:"default:0"`
-	CompletionRate       float64 `gorm:"default:0"` // % ของทริปที่เสร็จสมบูรณ์
-	ResponseRate         float64 `gorm:"default:0"` // % ของ offer ที่ตอบรับ
-	LastActiveAt         *time.Time 
-	AccountStatus        string  `gorm:"default:'active'"` // active, warning, suspended, banned
-	WarningCount         int     `gorm:"default:0"`
-	SuspensionCount      int     `gorm:"default:0"`
-}
-
 // PaymentRelease - ตาราง track การจ่ายเงินให้ไกด์แต่ละครั้ง
 type PaymentRelease struct {
 	gorm.Model

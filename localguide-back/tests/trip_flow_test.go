@@ -36,7 +36,6 @@ func TestTripBookingFlow(t *testing.T) {
 		&models.TripPayment{}, 
 		&models.TripReview{}, 
 		&models.TripReport{}, 
-		&models.GuidePerformance{}, 
 		&models.PaymentRelease{},
 
 	)
