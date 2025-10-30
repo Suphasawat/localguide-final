@@ -19,14 +19,23 @@ export default function TripRequireDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+
   const [tripRequire, setTripRequire] = useState<TripRequire | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  // Highlight offers
+
+  // โหลดข้อเสนอ
   const [offersLoading, setOffersLoading] = useState(true);
   const [offersCount, setOffersCount] = useState(0);
   const [offersPreview, setOffersPreview] = useState<TripOffer[]>([]);
+
+  // ลบ
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // ===== โมดอลยืนยันการลบ (inline) =====
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const confirmTitle = "ลบความต้องการทริปนี้หรือไม่?";
+  const confirmMessage = "การดำเนินการนี้ไม่สามารถยกเลิกได้";
 
   const tripId = params.id as string;
 
@@ -35,12 +44,10 @@ export default function TripRequireDetailPage() {
       router.push("/auth/login");
       return;
     }
-
     if (user?.role !== 1) {
       router.push("/dashboard");
       return;
     }
-
     loadTripRequire();
     loadOffers();
   }, [user, isAuthenticated, router, tripId, user?.id]);
@@ -49,13 +56,10 @@ export default function TripRequireDetailPage() {
     try {
       const response = await tripRequireAPI.getById(Number(tripId));
       const data = response.data?.data;
-
-      // ตรวจสอบว่าเป็นเจ้าของ trip require หรือไม่
       if (data && data.UserID !== user?.id) {
         setError("คุณไม่มีสิทธิ์เข้าดูข้อมูลนี้");
         return;
       }
-
       setTripRequire(data);
     } catch (error: any) {
       console.error("Failed to load trip require:", error);
@@ -81,7 +85,7 @@ export default function TripRequireDetailPage() {
         : raw?.offers || raw?.data || raw?.TripOffers || [];
       setOffersCount(list?.length || 0);
       setOffersPreview((list || []).slice(0, 2));
-    } catch (e) {
+    } catch (_e) {
       setOffersCount(0);
       setOffersPreview([]);
     } finally {
@@ -89,71 +93,56 @@ export default function TripRequireDetailPage() {
     }
   };
 
+  // เปิดโมดอลยืนยัน (เชื่อมกับปุ่มลบจาก Header / Mobile)
   const handleDelete = async () => {
-    if (
-      !confirm(
-        "คุณต้องการลบความต้องการทริปนี้หรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้"
-      )
-    ) {
-      return;
-    }
+    setConfirmOpen(true);
+  };
 
+  // ทำการลบจริงเมื่อกดยืนยันในโมดอล
+  const confirmDelete = async () => {
     setDeleteLoading(true);
     try {
       await tripRequireAPI.delete(Number(tripId));
+      setConfirmOpen(false);
       router.push("/user/trip-requires");
     } catch (error) {
       console.error("Failed to delete trip require:", error);
       setError("ไม่สามารถลบความต้องการทริปได้ กรุณาลองใหม่อีกครั้ง");
+      setConfirmOpen(false);
     } finally {
       setDeleteLoading(false);
     }
   };
 
-  // Helper functions for components
+  // helpers
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "open":
-        return "bg-green-100 text-green-800";
-      case "in_review":
-        return "bg-yellow-100 text-yellow-800";
-      case "assigned":
-        return "bg-blue-100 text-blue-800";
-      case "completed":
-        return "bg-gray-100 text-gray-800";
-      case "cancelled":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
+    if (status === "open") { return "bg-green-100 text-green-800"; }
+    if (status === "in_review") { return "bg-yellow-100 text-yellow-800"; }
+    if (status === "assigned") { return "bg-blue-100 text-blue-800"; }
+    if (status === "completed") { return "bg-gray-100 text-gray-800"; }
+    if (status === "cancelled") { return "bg-red-100 text-red-800"; }
+    return "bg-gray-100 text-gray-800";
   };
 
   const getStatusText = (status: string) => {
-    switch (status) {
-      case "open":
-        return "เปิดรับข้อเสนอ";
-      case "in_review":
-        return "กำลังพิจารณา";
-      case "assigned":
-        return "เลือกไกด์แล้ว";
-      case "completed":
-        return "เสร็จสิ้น";
-      case "cancelled":
-        return "ยกเลิก";
-      default:
-        return status;
-    }
+    if (status === "open") { return "เปิดรับข้อเสนอ"; }
+    if (status === "in_review") { return "กำลังพิจารณา"; }
+    if (status === "assigned") { return "เลือกไกด์แล้ว"; }
+    if (status === "completed") { return "เสร็จสิ้น"; }
+    if (status === "cancelled") { return "ยกเลิก"; }
+    return status;
   };
 
   const getOfferGuideName = (o: any) => {
     const u = o?.Guide?.User;
-    if (u?.FirstName || u?.LastName)
+    if (u?.FirstName || u?.LastName) {
       return `${u?.FirstName || ""} ${u?.LastName || ""}`.trim();
-    return o?.GuideName || o?.guide_name || "ไกด์ไม่ระบุชื่อ";
+    } else {
+      return o?.GuideName || o?.guide_name || "ไกด์ไม่ระบุชื่อ";
+    }
   };
 
-  const getOfferTitle = (o: any) =>
-    o?.Title || `ข้อเสนอจาก ${getOfferGuideName(o)}`;
+  const getOfferTitle = (o: any) => o?.Title || `ข้อเสนอจาก ${getOfferGuideName(o)}`;
 
   const getOfferPrice = (o: any) => {
     const q =
@@ -162,7 +151,11 @@ export default function TripRequireDetailPage() {
         ? o.TripOfferQuotation[o.TripOfferQuotation.length - 1]
         : null);
     const price = q?.TotalPrice ?? o?.TotalPrice;
-    return typeof price === "number" ? price : undefined;
+    if (typeof price === "number") {
+      return price;
+    } else {
+      return undefined;
+    }
   };
 
   if (loading) {
@@ -195,62 +188,97 @@ export default function TripRequireDetailPage() {
     );
   }
 
+  // สีแทบบนโมดอล (โทนอันตราย)
+  const toneBar = "bg-red-600";
+
   return (
     <>
-    <div className="min-h-screen bg-gray-50 py-8">
-      <Navbar />
-      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <TripRequireHeader
-          tripRequire={tripRequire}
-          offersCount={offersCount}
-          offersLoading={offersLoading}
-          deleteLoading={deleteLoading}
-          getStatusColor={getStatusColor}
-          getStatusText={getStatusText}
-          onDelete={handleDelete}
-        />
+      <div className="min-h-screen bg-gray-50 py-8">
+        <Navbar />
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <TripRequireHeader
+            tripRequire={tripRequire}
+            offersCount={offersCount}
+            offersLoading={offersLoading}
+            deleteLoading={deleteLoading}
+            getStatusColor={getStatusColor}
+            getStatusText={getStatusText}
+            onDelete={handleDelete}
+          />
 
-        {/* Offers Highlight */}
-        <OffersHighlight
-          tripRequire={tripRequire}
-          offersCount={offersCount}
-          offersLoading={offersLoading}
-        />
+          <OffersHighlight
+            tripRequire={tripRequire}
+            offersCount={offersCount}
+            offersLoading={offersLoading}
+          />
 
-        {/* Offers Preview */}
-        <OffersPreview
-          tripRequire={tripRequire}
-          offersPreview={offersPreview}
-          getOfferTitle={getOfferTitle}
-          getOfferGuideName={getOfferGuideName}
-          getOfferPrice={getOfferPrice}
-        />
+          <OffersPreview
+            tripRequire={tripRequire}
+            offersPreview={offersPreview}
+            getOfferTitle={getOfferTitle}
+            getOfferGuideName={getOfferGuideName}
+            getOfferPrice={getOfferPrice}
+          />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            <TripRequireDetails tripRequire={tripRequire} />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <TripRequireDetails tripRequire={tripRequire} />
+            </div>
+            <div className="lg:col-start-3">
+              <TripRequireSidebar tripRequire={tripRequire} />
+            </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="lg:col-start-3">
-            <TripRequireSidebar tripRequire={tripRequire} />
+          <MobileActionButtons
+            tripRequire={tripRequire}
+            offersCount={offersCount}
+            offersLoading={offersLoading}
+            deleteLoading={deleteLoading}
+            onDelete={handleDelete}
+          />
+        </div>
+      </div>
+      <Footer />
+
+      {/* ===== โมดอลยืนยันการลบ (แทน window.confirm) ===== */}
+      {confirmOpen ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => {
+              // ป้องกันกดพื้นหลังปิด ถ้าอยากปิดให้เปิดบรรทัดถัดไป
+              // setConfirmOpen(false);
+            }}
+          />
+          <div className="relative w-full max-w-md rounded-2xl bg-white shadow-xl">
+            <div className={`${toneBar} h-2 rounded-t-2xl`} />
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900">{confirmTitle}</h3>
+              <p className="mt-2 text-gray-700">{confirmMessage}</p>
+              <div className="mt-6 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={deleteLoading}
+                  onClick={() => {
+                    setConfirmOpen(false);
+                  }}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  disabled={deleteLoading}
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                >
+                  {deleteLoading ? "กำลังลบ..." : "ลบเลย"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-
-
-        {/* Mobile Action Buttons */}
-        <MobileActionButtons
-          tripRequire={tripRequire}
-          offersCount={offersCount}
-          offersLoading={offersLoading}
-          deleteLoading={deleteLoading}
-          onDelete={handleDelete}
-        />
-      </div>
-    </div>
-    <Footer />
+      ) : null}
     </>
   );
 }
