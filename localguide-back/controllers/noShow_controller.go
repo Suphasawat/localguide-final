@@ -47,9 +47,14 @@ func ConfirmUserNoShow(c *fiber.Ctx) error {
 		})
 	}
 
-	// Validate timeline - ต้องอยู่ในช่วงวันทริป
+	// 🔧 แก้ไข: เทียบแค่วัน ไม่สนเวลา
 	now := time.Now()
-	if now.Before(booking.StartDate) {
+	startYear, startMonth, startDay := booking.StartDate.Date()
+	nowYear, nowMonth, nowDay := now.Date()
+	startDateOnly := time.Date(startYear, startMonth, startDay, 0, 0, 0, 0, booking.StartDate.Location())
+	nowDateOnly := time.Date(nowYear, nowMonth, nowDay, 0, 0, 0, 0, now.Location())
+
+	if nowDateOnly.Before(startDateOnly) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Cannot confirm no-show before trip start date",
 		})
@@ -191,9 +196,14 @@ func ReportUserNoShow(c *fiber.Ctx) error {
 		})
 	}
 
-	// Validate timeline - ต้องอยู่ในช่วงวันทริป หรือหลังวันทริป
+	// 🔧 แก้ไข: เทียบแค่วัน ไม่สนเวลา
 	now := time.Now()
-	if now.Before(booking.StartDate) {
+	startYear, startMonth, startDay := booking.StartDate.Date()
+	nowYear, nowMonth, nowDay := now.Date()
+	startDateOnly := time.Date(startYear, startMonth, startDay, 0, 0, 0, 0, booking.StartDate.Location())
+	nowDateOnly := time.Date(nowYear, nowMonth, nowDay, 0, 0, 0, 0, now.Location())
+
+	if nowDateOnly.Before(startDateOnly) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Cannot report no-show before trip start date",
 		})
@@ -376,10 +386,14 @@ func ReportGuideNoShow(c *fiber.Ctx) error {
 		})
 	}
 
-	// Validate timeline - ต้องอยู่ในช่วงวันทริป หรือหลังวันทริป
+	// 🔧 แก้ไข: เทียบแค่วัน ไม่สนเวลา
 	now := time.Now()
-	// Allow reporting on or after start date
-	if now.Before(booking.StartDate) {
+	startYear, startMonth, startDay := booking.StartDate.Date()
+	nowYear, nowMonth, nowDay := now.Date()
+	startDateOnly := time.Date(startYear, startMonth, startDay, 0, 0, 0, 0, booking.StartDate.Location())
+	nowDateOnly := time.Date(nowYear, nowMonth, nowDay, 0, 0, 0, 0, now.Location())
+
+	if nowDateOnly.Before(startDateOnly) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":      "Cannot report guide no-show before trip start date",
 			"start_date": booking.StartDate.Format("2006-01-02"),

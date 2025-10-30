@@ -348,6 +348,7 @@ func GetTripBookingByID(c *fiber.Ctx) error {
 		"created_at":      booking.CreatedAt,
 		"updated_at":      booking.UpdatedAt,
 		"has_review":      hasReview,
+		"guide_user_id":    booking.Guide.User.ID, 
 
 		// Trip info
 		"trip_title":       booking.TripOffer.TripRequire.Title,

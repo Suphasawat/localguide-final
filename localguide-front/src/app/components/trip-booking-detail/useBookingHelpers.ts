@@ -1,7 +1,6 @@
 import type { TripBooking as TripBookingType } from "@/app/types";
 
 export const useBookingHelpers = () => {
-  // Safe getters for mixed shapes
   const getId = (b: any) => b?.ID ?? b?.id;
   const getStatus = (b: any) => b?.Status ?? b?.status ?? "";
   const getPaymentStatus = (b: any) =>
@@ -39,9 +38,13 @@ export const useBookingHelpers = () => {
     b?.SpecialRequests ?? b?.special_requests ?? "";
   const getNotes = (b: any) => b?.Notes ?? b?.notes ?? "";
   const getUserIdFromBooking = (b: any) =>
-    b?.User?.ID ?? b?.user_id ?? b?.UserID;
-  const getGuideIdFromBooking = (b: any) =>
-    b?.GuideID ?? b?.guide_id ?? b?.Guide?.User?.ID;
+    b?.User?.id ?? b?.User?.ID ?? b?.user_id ?? b?.UserID;
+  
+  // 🔧 แก้ไขตรงนี้: ใช้ Guide.User.id แทน guide_id
+  const getGuideIdFromBooking = (b: any) => {
+    // ลำดับความสำคัญ: Guide.User.id > Guide.UserID > fallback อื่นๆ
+    return b?.Guide?.User?.id ?? b?.Guide?.User?.ID ?? b?.Guide?.UserID ?? b?.guide_id ?? b?.GuideID;
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {

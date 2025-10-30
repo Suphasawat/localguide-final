@@ -23,6 +23,8 @@ interface BookingStatusProps {
   onConfirmTripComplete: () => void;
   onOpenReportNoShow: () => void;
   onConfirmUserNoShow: () => void;
+  // 🆕 เพิ่ม callback สำหรับไกด์รายงานลูกค้าไม่มา
+  onOpenReportUserNoShow: () => void;
   getStatusColor: (status: string) => string;
   getStatusText: (status: string) => string;
   getPaymentStatus: (booking: any) => string;
@@ -45,6 +47,7 @@ export default function BookingStatus({
   onConfirmTripComplete,
   onOpenReportNoShow,
   onConfirmUserNoShow,
+  onOpenReportUserNoShow,
   getStatusColor,
   getStatusText,
   getPaymentStatus,
@@ -54,16 +57,13 @@ export default function BookingStatus({
 }: BookingStatusProps) {
   const router = useRouter();
 
-  // 🔹 แปลง ISO datetime -> YYYY-MM-DD (เช่น 2025-10-29T07:00:00+07:00 -> 2025-10-29)
   const toYMD = (raw?: string) => {
     if (!raw) {
       return "-";
     }
-    // ถ้าเป็นรูปแบบ YYYY-MM-DD... ตัด 10 ตัวแรกได้เลย
     if (raw.length >= 10 && raw[4] === "-" && raw[7] === "-") {
       return raw.slice(0, 10);
     }
-    // เผื่อกรณีรูปแบบอื่น
     const d = new Date(raw);
     if (!Number.isNaN(d.getTime())) {
       const y = d.getFullYear();
@@ -78,7 +78,6 @@ export default function BookingStatus({
     <div className="bg-white rounded-lg shadow-md p-6">
       <h2 className="text-xl font-semibold mb-4">สถานะการจอง</h2>
 
-      {/* Status Grid */}
       <div className="grid md:grid-cols-2 gap-4">
         <div>
           <div className="text-sm text-gray-500">สถานะ</div>
@@ -98,7 +97,6 @@ export default function BookingStatus({
         </div>
         <div>
           <div className="text-sm text-gray-500">วันที่เริ่ม</div>
-          {/* 🔹 ใช้ตัวแปลงที่นี่ */}
           <div className="mt-1">{toYMD(getStartDate(booking))}</div>
         </div>
         <div>
@@ -107,7 +105,6 @@ export default function BookingStatus({
         </div>
       </div>
 
-      {/* Payment Button */}
       {status === "pending_payment" && isOwner && (
         <button
           onClick={onPayment}
@@ -118,7 +115,6 @@ export default function BookingStatus({
         </button>
       )}
 
-      {/* Timeline */}
       <div className="mt-6">
         <h3 className="text-lg font-semibold mb-3">ไทม์ไลน์สถานะ</h3>
         <ol className="relative border-s border-gray-200 ms-3">
@@ -175,17 +171,46 @@ export default function BookingStatus({
         </ol>
       </div>
 
-      {/* Action Buttons */}
       <div className="mt-6 space-x-3">
+        {/* ปุ่มสำหรับลูกค้า (User) - แสดงเมื่อเป็น user_id */}
         {isOwner && status === "paid" && (
+          <>
+            <button
+              onClick={onConfirmGuideArrival}
+              disabled={actionLoading === "confirm-arrival"}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-60"
+            >
+              {actionLoading === "confirm-arrival"
+                ? "กำลังยืนยัน..."
+                : "ยืนยันไกด์มาถึงแล้ว"}
+            </button>
+
+            <button
+              onClick={onOpenReportNoShow}
+              disabled={actionLoading === "report-guide-no-show"}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-60"
+            >
+              รายงานว่าไกด์ไม่มา
+            </button>
+
+            <button
+              onClick={onConfirmUserNoShow}
+              disabled={actionLoading === "confirm-user-no-show"}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-60"
+            >
+              ยืนยันว่าฉันไม่มา
+            </button>
+          </>
+        )}
+
+        {/* ปุ่มสำหรับไกด์ (Guide) - แสดงเมื่อเป็น guide_id */}
+        {isGuideOwner && status === "paid" && (
           <button
-            onClick={onConfirmGuideArrival}
-            disabled={actionLoading === "confirm-arrival"}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-60"
+            onClick={onOpenReportUserNoShow}
+            disabled={actionLoading === "report-user-no-show"}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-60"
           >
-            {actionLoading === "confirm-arrival"
-              ? "กำลังยืนยัน..."
-              : "ยืนยันไกด์มาถึงแล้ว"}
+            รายงานว่าลูกค้าไม่มา
           </button>
         )}
 
@@ -201,27 +226,6 @@ export default function BookingStatus({
           </button>
         )}
 
-        {isOwner && status === "paid" && (
-          <button
-            onClick={onOpenReportNoShow}
-            disabled={actionLoading === "report-no-show"}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-60"
-          >
-            รายงานว่าไกด์ไม่มา
-          </button>
-        )}
-
-        {isOwner && status === "paid" && (
-          <button
-            onClick={onConfirmUserNoShow}
-            disabled={actionLoading === "confirm-user-no-show"}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-60"
-          >
-            ยืนยันว่าฉันไม่มา
-          </button>
-        )}
-
-        {/* Review Button - Show after trip is completed */}
         {isOwner && status === "trip_completed" && !booking.has_review && (
           <button
             onClick={() => router.push(`/reviews/create/${getId(booking)}`)}
@@ -231,7 +235,6 @@ export default function BookingStatus({
           </button>
         )}
 
-        {/* View Review Button */}
         {isOwner && status === "trip_completed" && booking.has_review && (
           <div className="inline-flex items-center px-4 py-2 text-sm text-emerald-600 bg-emerald-50 rounded-md">
             ✓ คุณได้เขียนรีวิวแล้ว

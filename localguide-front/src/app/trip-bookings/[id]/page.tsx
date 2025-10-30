@@ -32,9 +32,10 @@ export default function TripBookingDetailPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showNoShowModal, setShowNoShowModal] = useState(false);
   const [noShowReason, setNoShowReason] = useState("");
+  // 🆕 เพิ่ม state สำหรับระบุว่า modal เป็นการรายงานแบบไหน
+  const [noShowReportType, setNoShowReportType] = useState<"guide" | "user">("guide");
   const [infoMessage, setInfoMessage] = useState("");
 
-  // ===== Confirm Modal State (inline)
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmTitle, setConfirmTitle] = useState("");
   const [confirmMessage, setConfirmMessage] = useState("");
@@ -54,7 +55,6 @@ export default function TripBookingDetailPage() {
       return;
     }
     loadBooking();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, bookingId]);
 
   const loadBooking = async () => {
@@ -70,10 +70,11 @@ export default function TripBookingDetailPage() {
     }
   };
 
-  const isOwner =
-    booking && user?.id && helpers.getUserIdFromBooking(booking) === user.id;
-  const isGuideOwner =
-    booking && user?.id && helpers.getGuideIdFromBooking(booking) === user.id;
+const isOwner =
+  booking && user?.id && helpers.getUserIdFromBooking(booking) === user.id;
+
+const guideUserId = booking?.guide_user_id ?? booking?.Guide?.User?.id ?? booking?.Guide?.User?.ID;
+const isGuideOwner = booking && user?.id && guideUserId === user.id;
 
   const handlePayment = async () => {
     if (!booking) {
@@ -103,7 +104,6 @@ export default function TripBookingDetailPage() {
     }
   };
 
-  // ===== Openers (แทน window.confirm)
   const openConfirmGuideArrival = () => {
     setConfirmTitle("ยืนยันว่าไกด์ได้มาถึงแล้ว?");
     setConfirmMessage("การยืนยันนี้จะแจ้งสถานะให้ทั้งสองฝ่ายทราบ");
@@ -128,7 +128,6 @@ export default function TripBookingDetailPage() {
     setConfirmOpen(true);
   };
 
-  // ===== Executors (กด "ยืนยัน" ในโมดอล)
   const doConfirmGuideArrival = async () => {
     if (!booking) {
       return;
@@ -189,9 +188,17 @@ export default function TripBookingDetailPage() {
     }
   };
 
-  // รายงานไกด์ไม่มา (ยังใช้ NoShowModal เดิม)
-  const openReportNoShow = () => {
+  // 🆕 เปิด modal สำหรับลูกค้ารายงานไกด์ไม่มา
+  const openReportGuideNoShow = () => {
     setNoShowReason("");
+    setNoShowReportType("guide");
+    setShowNoShowModal(true);
+  };
+
+  // 🆕 เปิด modal สำหรับไกด์รายงานลูกค้าไม่มา
+  const openReportUserNoShow = () => {
+    setNoShowReason("");
+    setNoShowReportType("user");
     setShowNoShowModal(true);
   };
 
@@ -200,26 +207,38 @@ export default function TripBookingDetailPage() {
       return;
     }
     if (!noShowReason.trim()) {
-      setError("โปรดระบุเหตุผลในการรายงานไกด์ไม่มา");
+      setError(`โปรดระบุเหตุผลในการรายงาน${noShowReportType === "guide" ? "ไกด์" : "ลูกค้า"}ไม่มา`);
       return;
     }
-    setActionLoading("report-no-show");
+
+    const actionKey = noShowReportType === "guide" ? "report-guide-no-show" : "report-user-no-show";
+    setActionLoading(actionKey);
     setError("");
     setInfoMessage("");
+
     try {
-      await tripBookingAPI.reportGuideNoShow(Number(bookingId), {
-        reason: noShowReason,
-        description: noShowReason,
-      });
+      // 🆕 เรียก API ตามประเภทการรายงาน
+      if (noShowReportType === "guide") {
+        await tripBookingAPI.reportGuideNoShow(Number(bookingId), {
+          reason: noShowReason,
+          description: noShowReason,
+        });
+        setInfoMessage("รายงานไกด์ไม่มาเรียบร้อย คืนเงินเต็มจำนวนแล้ว");
+      } else {
+        await tripBookingAPI.reportUserNoShow(Number(bookingId), {
+          reason: noShowReason,
+          description: noShowReason,
+        });
+        setInfoMessage("รายงานลูกค้าไม่มาเรียบร้อย");
+      }
       setShowNoShowModal(false);
-      setInfoMessage("รายงานไกด์ไม่มาเรียบร้อย คืนเงินเต็มจำนวนแล้ว");
       await loadBooking();
     } catch (e: any) {
-      console.error("Error reporting guide no-show:", e);
+      console.error(`Error reporting ${noShowReportType} no-show:`, e);
       const msg =
         e?.response?.data?.error ||
         e?.response?.data?.message ||
-        "ไม่สามารถรายงานไกด์ไม่มาได้";
+        `ไม่สามารถรายงาน${noShowReportType === "guide" ? "ไกด์" : "ลูกค้า"}ไม่มาได้`;
       const statusInfo = e?.response?.data?.status
         ? ` (สถานะปัจจุบัน: ${e.response.data.status})`
         : "";
@@ -260,7 +279,6 @@ export default function TripBookingDetailPage() {
   const status = helpers.getStatus(booking);
   const timeline = useBookingTimeline(helpers.getStatusText).buildTimeline(status);
 
-  // สีแทบบนของโมดอลตามโทน
   let confirmToneBar = "bg-emerald-600";
   if (confirmTone === "error") {
     confirmToneBar = "bg-red-600";
@@ -296,8 +314,9 @@ export default function TripBookingDetailPage() {
               onPayment={handlePayment}
               onConfirmGuideArrival={openConfirmGuideArrival}
               onConfirmTripComplete={openConfirmTripComplete}
-              onOpenReportNoShow={openReportNoShow}
+              onOpenReportNoShow={openReportGuideNoShow}
               onConfirmUserNoShow={openConfirmUserNoShow}
+              onOpenReportUserNoShow={openReportUserNoShow}
               getStatusColor={getStatusColor}
               getStatusText={getStatusText}
               getPaymentStatus={helpers.getPaymentStatus}
@@ -334,6 +353,7 @@ export default function TripBookingDetailPage() {
           show={showNoShowModal}
           reason={noShowReason}
           actionLoading={actionLoading}
+          reportType={noShowReportType}
           onReasonChange={setNoShowReason}
           onClose={() => {
             setShowNoShowModal(false);
@@ -342,15 +362,11 @@ export default function TripBookingDetailPage() {
         />
       </div>
 
-      {/* ===== Confirm Modal (แทน window.confirm) ===== */}
       {confirmOpen ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
           <div
             className="absolute inset-0 bg-black/50"
-            onClick={() => {
-              // หากต้องการให้คลิกพื้นหลังเพื่อปิด ให้เปิดบรรทัดต่อไป
-              // setConfirmOpen(false);
-            }}
+            onClick={() => {}}
           />
           <div className="relative w-full max-w-md rounded-2xl bg-white shadow-xl">
             <div className={`${confirmToneBar} h-2 rounded-t-2xl`} />

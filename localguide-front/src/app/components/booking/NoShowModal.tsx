@@ -7,6 +7,8 @@ interface NoShowModalProps {
   onReasonChange: (v: string) => void;
   onClose: () => void;
   onSubmit: () => void;
+  // 🆕 เพิ่ม prop เพื่อระบุว่าเป็นการรายงานแบบไหน
+  reportType: "guide" | "user";
 }
 
 export default function NoShowModal({
@@ -16,29 +18,35 @@ export default function NoShowModal({
   onReasonChange,
   onClose,
   onSubmit,
+  reportType,
 }: NoShowModalProps) {
   if (!show) {
     return null;
   }
 
-  const submitting = actionLoading === "report-no-show";
+  const submitting = 
+    reportType === "guide" 
+      ? actionLoading === "report-guide-no-show"
+      : actionLoading === "report-user-no-show";
+
+  const title = reportType === "guide" ? "รายงานไกด์ไม่มา" : "รายงานลูกค้าไม่มา";
+  const description = 
+    reportType === "guide"
+      ? "โปรดระบุเหตุผลหรือรายละเอียดเพิ่มเติม"
+      : "โปรดระบุเหตุผลว่าทำไมลูกค้าไม่มาตามนัดหมาย";
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      {/* ⭐ เปลี่ยน overlay จากดำทึบ เป็นโปร่ง/เบลอ */}
       <div
         className="absolute inset-0 bg-emerald-950/40 backdrop-blur-[1px]"
         onClick={onClose}
       />
 
       <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-xl">
-        {/* แถบโทนด้านบน */}
         <div className="h-2 rounded-t-2xl bg-red-600" />
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900">รายงานไกด์ไม่มา</h3>
-          <p className="mt-2 text-sm text-gray-600">
-            โปรดระบุเหตุผลหรือรายละเอียดเพิ่มเติม
-          </p>
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <p className="mt-2 text-sm text-gray-600">{description}</p>
 
           <textarea
             value={reason}
