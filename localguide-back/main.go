@@ -52,6 +52,9 @@ func main() {
 
 	app := fiber.New()
 	
+	// Serve uploads static files
+	app.Static("/uploads", "./uploads")
+	
 	// CORS configuration
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
@@ -136,6 +139,10 @@ func main() {
     api.Get("/users/:id", middleware.AuthRequired(), middleware.OwnerOrAdminRequired(), controllers.GetUserByID)
     api.Put("/users/:id", middleware.AuthRequired(), middleware.OwnerOrAdminRequired(), controllers.EditUser)
     api.Get("/me", middleware.AuthRequired(), controllers.Me)
+
+    // Avatar upload/delete
+    api.Post("/users/profile/avatar", middleware.AuthRequired(), controllers.UploadProfileAvatar)
+    api.Delete("/users/profile/avatar", middleware.AuthRequired(), controllers.DeleteProfileAvatar)
 
     // Admin routes
     admin := api.Group("/admin", middleware.AuthRequired(), middleware.AdminRequired())

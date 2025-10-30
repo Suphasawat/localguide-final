@@ -119,6 +119,11 @@ export const userAPI = {
   updateProfile: (data: any) => api.put("/users/profile", data),
   getById: (id: number) => api.get(`/users/${id}`),
   update: (id: number, data: any) => api.put(`/users/${id}`, data),
+  uploadAvatar: (formData: FormData) =>
+    api.post(`/users/profile/avatar`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  deleteAvatar: () => api.delete(`/users/profile/avatar`),
 };
 
 // Review API
