@@ -20,6 +20,37 @@ export default function CreateTripRequirePage() {
   const [loading, setLoading] = useState(false);
   const [loadingProvinces, setLoadingProvinces] = useState(true);
 
+  // ===== Modal (inline ไม่ต้องสร้างไฟล์ใหม่) =====
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+  const [modalTone, setModalTone] = useState<"success" | "error" | "info">("info");
+  const [modalPrimaryText, setModalPrimaryText] = useState("ตกลง");
+  const [modalPrimaryAction, setModalPrimaryAction] = useState<(() => void) | null>(null);
+
+  function openModal(
+    title: string,
+    message: string,
+    tone: "success" | "error" | "info" = "info",
+    primaryText?: string,
+    onPrimary?: () => void
+  ) {
+    setModalTitle(title);
+    setModalMessage(message);
+    setModalTone(tone);
+    if (primaryText) {
+      setModalPrimaryText(primaryText);
+    } else {
+      setModalPrimaryText("ตกลง");
+    }
+    if (onPrimary) {
+      setModalPrimaryAction(() => onPrimary);
+    } else {
+      setModalPrimaryAction(null);
+    }
+    setModalOpen(true);
+  }
+
   const {
     formData,
     handleChange,
@@ -30,7 +61,9 @@ export default function CreateTripRequirePage() {
   } = useTripRequireForm();
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading) {
+      return;
+    }
     if (!isAuthenticated) {
       router.push("/auth/login");
       return;
@@ -51,7 +84,9 @@ export default function CreateTripRequirePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (loading) return;
+    if (loading) {
+      return;
+    }
 
     if (
       !formData.title ||
@@ -59,19 +94,19 @@ export default function CreateTripRequirePage() {
       !formData.start_date ||
       !formData.end_date
     ) {
-      alert("กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน");
+      openModal("กรอกข้อมูลไม่ครบ", "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน", "error");
       return;
     }
     if (formData.province_id === 0) {
-      alert("กรุณาเลือกจังหวัด");
+      openModal("ยังไม่ได้เลือกจังหวัด", "กรุณาเลือกจังหวัดก่อนส่งแบบฟอร์ม", "error");
       return;
     }
     if (formData.min_price >= formData.max_price) {
-      alert("ราคาสูงสุดต้องมากกว่าราคาต่ำสุด");
+      openModal("ช่วงราคาไม่ถูกต้อง", "ราคาสูงสุดต้องมากกว่าราคาต่ำสุด", "error");
       return;
     }
     if (isExpireAfterStart) {
-      alert("วันหมดอายุโพสต์ต้องไม่ช้ากว่าวันเริ่มต้นทริป");
+      openModal("กำหนดวันหมดอายุไม่ถูกต้อง", "วันหมดอายุโพสต์ต้องไม่ช้ากว่าวันเริ่มต้นทริป", "error");
       return;
     }
 
@@ -94,20 +129,28 @@ export default function CreateTripRequirePage() {
     try {
       const res = await tripRequireAPI.create(payload);
       if (res.data) {
-        alert("สร้างความต้องการทริปสำเร็จ!");
-        router.push("/user/trip-requires");
+        openModal(
+          "สำเร็จ",
+          "สร้างความต้องการทริปสำเร็จ!",
+          "success",
+          "ไปที่รายการของฉัน",
+          () => {
+            setModalOpen(false);
+            router.push("/user/trip-requires");
+          }
+        );
       } else {
-        alert("ไม่สามารถสร้างความต้องการได้");
+        openModal("ไม่สำเร็จ", "ไม่สามารถสร้างความต้องการได้", "error");
       }
     } catch (error: unknown) {
       const err = error as {
         response?: { data?: { error?: string; message?: string } };
       };
-      alert(
-        err?.response?.data?.error ||
-          err?.response?.data?.message ||
-          "เกิดข้อผิดพลาดในการสร้างความต้องการ"
-      );
+      const msg =
+        (err?.response?.data?.error as string) ||
+        (err?.response?.data?.message as string) ||
+        "เกิดข้อผิดพลาดในการสร้างความต้องการ";
+      openModal("เกิดข้อผิดพลาด", msg, "error");
     } finally {
       setLoading(false);
     }
@@ -115,6 +158,15 @@ export default function CreateTripRequirePage() {
 
   if (authLoading || loadingProvinces) {
     return <Loading text="กำลังโหลดแบบฟอร์ม..." />;
+  }
+
+  // สีแถบบนตาม tone
+  let toneBar = "bg-emerald-600";
+  if (modalTone === "error") {
+    toneBar = "bg-red-600";
+  }
+  if (modalTone === "info") {
+    toneBar = "bg-amber-600";
   }
 
   return (
@@ -164,6 +216,42 @@ export default function CreateTripRequirePage() {
       </div>
 
       <Footer />
+
+      {/* ===== Inline Modal (แทน alert) ===== */}
+      {modalOpen ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => { setModalOpen(false); }} />
+          <div className="relative w-full max-w-md rounded-2xl bg-white shadow-xl">
+            <div className={`${toneBar} h-2 rounded-t-2xl`} />
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900">{modalTitle}</h3>
+              <p className="mt-2 text-gray-700 whitespace-pre-wrap">{modalMessage}</p>
+              <div className="mt-6 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setModalOpen(false); }}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  ปิด
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (modalPrimaryAction) {
+                      modalPrimaryAction();
+                    } else {
+                      setModalOpen(false);
+                    }
+                  }}
+                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                >
+                  {modalPrimaryText}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }
