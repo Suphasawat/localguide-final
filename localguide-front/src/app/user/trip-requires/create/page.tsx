@@ -25,29 +25,15 @@ export default function CreateTripRequirePage() {
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
   const [modalTone, setModalTone] = useState<"success" | "error" | "info">("info");
-  const [modalPrimaryText, setModalPrimaryText] = useState("ตกลง");
-  const [modalPrimaryAction, setModalPrimaryAction] = useState<(() => void) | null>(null);
 
   function openModal(
     title: string,
     message: string,
-    tone: "success" | "error" | "info" = "info",
-    primaryText?: string,
-    onPrimary?: () => void
+    tone: "success" | "error" | "info" = "info"
   ) {
     setModalTitle(title);
     setModalMessage(message);
     setModalTone(tone);
-    if (primaryText) {
-      setModalPrimaryText(primaryText);
-    } else {
-      setModalPrimaryText("ตกลง");
-    }
-    if (onPrimary) {
-      setModalPrimaryAction(() => onPrimary);
-    } else {
-      setModalPrimaryAction(null);
-    }
     setModalOpen(true);
   }
 
@@ -129,16 +115,10 @@ export default function CreateTripRequirePage() {
     try {
       const res = await tripRequireAPI.create(payload);
       if (res.data) {
-        openModal(
-          "สำเร็จ",
-          "สร้างความต้องการทริปสำเร็จ!",
-          "success",
-          "ไปที่รายการของฉัน",
-          () => {
-            setModalOpen(false);
-            router.push("/user/trip-requires");
-          }
-        );
+        setModalTitle("สำเร็จ");
+        setModalMessage("สร้างความต้องการทริปสำเร็จ!");
+        setModalTone("success");
+        setModalOpen(true);
       } else {
         openModal("ไม่สำเร็จ", "ไม่สามารถสร้างความต้องการได้", "error");
       }
@@ -160,7 +140,6 @@ export default function CreateTripRequirePage() {
     return <Loading text="กำลังโหลดแบบฟอร์ม..." />;
   }
 
-  // สีแถบบนตาม tone
   let toneBar = "bg-emerald-600";
   if (modalTone === "error") {
     toneBar = "bg-red-600";
@@ -217,35 +196,25 @@ export default function CreateTripRequirePage() {
 
       <Footer />
 
-      {/* ===== Inline Modal (แทน alert) ===== */}
+      {/* ===== Inline Modal (เหลือแค่ปุ่มไปที่รายการของฉัน) ===== */}
       {modalOpen ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => { setModalOpen(false); }} />
+          <div className="absolute inset-0 bg-black/50" />
           <div className="relative w-full max-w-md rounded-2xl bg-white shadow-xl">
             <div className={`${toneBar} h-2 rounded-t-2xl`} />
-            <div className="p-6">
+            <div className="p-6 text-center">
               <h3 className="text-lg font-semibold text-gray-900">{modalTitle}</h3>
               <p className="mt-2 text-gray-700 whitespace-pre-wrap">{modalMessage}</p>
-              <div className="mt-6 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => { setModalOpen(false); }}
-                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  ปิด
-                </button>
+              <div className="mt-6">
                 <button
                   type="button"
                   onClick={() => {
-                    if (modalPrimaryAction) {
-                      modalPrimaryAction();
-                    } else {
-                      setModalOpen(false);
-                    }
+                    setModalOpen(false);
+                    router.push("/user/trip-requires");
                   }}
-                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                  className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
                 >
-                  {modalPrimaryText}
+                  ไปที่รายการของฉัน
                 </button>
               </div>
             </div>
