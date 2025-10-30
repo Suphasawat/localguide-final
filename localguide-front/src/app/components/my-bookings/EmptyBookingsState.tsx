@@ -93,13 +93,6 @@ export default function EmptyBookingsState({
                 <span>+</span>
                 <span>สร้างความต้องการทริป</span>
               </Link>
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center justify-center gap-2 border border-gray-300 text-gray-700 px-6 py-2.5 rounded-full hover:bg-gray-50 transition-all font-medium shadow-sm"
-              >
-                <span>←</span>
-                <span>Dashboard</span>
-              </Link>
             </div>
           </div>
         )}
