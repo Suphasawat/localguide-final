@@ -109,6 +109,8 @@ export const tripBookingAPI = {
     api.put(`/trip-bookings/${id}/report-user-no-show`, data),
   confirmUserNoShow: (id: number) =>
     api.put(`/trip-bookings/${id}/confirm-user-no-show`),
+  reportGuideNoShow: (id: number, data: any) =>
+    api.put(`/trip-bookings/${id}/report-guide-no-show`, data),
 };
 
 // User API

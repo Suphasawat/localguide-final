@@ -91,7 +91,7 @@ func ConfirmUserNoShow(c *fiber.Ctx) error {
 	stripeService := services.NewStripeService()
 	refundAmountCents := int64(userRefundAmount * 100)
 
-	stripeRefund, err := stripeService.RefundPayment(payment.StripePaymentIntentID, refundAmountCents, "user_confirmed_no_show")
+	stripeRefund, err := stripeService.RefundPayment(payment.StripePaymentIntentID, refundAmountCents, "requested_by_customer")
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to process Stripe refund: " + err.Error(),
@@ -216,8 +216,11 @@ func ReportUserNoShow(c *fiber.Ctx) error {
 		ReportType:     "user_no_show",
 		Title:          "Guide reports user no-show",
 		Description:    "Guide reported that user did not show up for the trip.",
+		Evidence:       "",
 		Severity:       "high",
 		Status:         "pending",
+		AdminNotes:     "",
+		Actions:        "",
 	}
 
 	if err := config.DB.Create(&report).Error; err != nil {
@@ -301,6 +304,8 @@ func DisputeNoShowReport(c *fiber.Ctx) error {
 		Evidence:       requestData.Evidence,
 		Severity:       "medium",
 		Status:         "pending",
+		AdminNotes:     "",
+		Actions:        "",
 	}
 
 	if err := config.DB.Create(&report).Error; err != nil {
@@ -328,6 +333,20 @@ func ReportGuideNoShow(c *fiber.Ctx) error {
 		})
 	}
 
+	// Parse request body (optional)
+	var requestData struct {
+		Reason      string `json:"reason"`
+		Description string `json:"description"`
+		Evidence    string `json:"evidence"`
+	}
+	// ไม่ return error ถ้า parse ไม่ได้ เพราะ request body เป็น optional
+	c.BodyParser(&requestData)
+	
+	// ถ้าไม่มี reason ให้ใช้ค่า default
+	if requestData.Reason == "" {
+		requestData.Reason = "Guide did not show up"
+	}
+
 	var booking models.TripBooking
 	if err := config.DB.First(&booking, bookingID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -351,15 +370,20 @@ func ReportGuideNoShow(c *fiber.Ctx) error {
 	// Validate status
 	if booking.Status != "paid" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid booking status for guide no-show report",
+			"error":   "Invalid booking status for guide no-show report",
+			"status":  booking.Status,
+			"message": "Booking must be in 'paid' status to report guide no-show",
 		})
 	}
 
-	// Validate timeline - ต้องอยู่ในช่วงวันทริป
+	// Validate timeline - ต้องอยู่ในช่วงวันทริป หรือหลังวันทริป
 	now := time.Now()
+	// Allow reporting on or after start date
 	if now.Before(booking.StartDate) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Cannot report guide no-show before trip start date",
+			"error":      "Cannot report guide no-show before trip start date",
+			"start_date": booking.StartDate.Format("2006-01-02"),
+			"now":        now.Format("2006-01-02"),
 		})
 	}
 
@@ -374,15 +398,26 @@ func ReportGuideNoShow(c *fiber.Ctx) error {
 	}
 
 	// สร้าง TripReport
+	description := requestData.Description
+	if description == "" {
+		description = requestData.Reason
+	}
+	if description == "" {
+		description = "User reported that guide did not show up for the trip."
+	}
+
 	report := models.TripReport{
 		TripBookingID:  uint(bookingID),
 		ReporterID:     userID,
 		ReportedUserID: booking.GuideID,
 		ReportType:     "guide_no_show",
 		Title:          "User reports guide no-show",
-		Description:    "User reported that guide did not show up for the trip.",
+		Description:    description,
+		Evidence:       "",
 		Severity:       "critical",
 		Status:         "pending",
+		AdminNotes:     "",
+		Actions:        "",
 	}
 
 	if err := config.DB.Create(&report).Error; err != nil {
@@ -402,7 +437,7 @@ func ReportGuideNoShow(c *fiber.Ctx) error {
 	stripeService := services.NewStripeService()
 	refundAmountCents := int64(payment.TotalAmount * 100)
 	
-	stripeRefund, err := stripeService.RefundPayment(payment.StripePaymentIntentID, refundAmountCents, "guide_no_show")
+	stripeRefund, err := stripeService.RefundPayment(payment.StripePaymentIntentID, refundAmountCents, "requested_by_customer")
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to process Stripe refund: " + err.Error(),
@@ -480,7 +515,7 @@ func processNoShowPayment(c *fiber.Ctx, booking *models.TripBooking, payment *mo
 
 	// Refund remaining 50% to user via Stripe
 	refundAmount := int64(payment.SecondPayment * 100) // Convert to cents
-	stripeRefund, err := stripeService.RefundPayment(payment.StripePaymentIntentID, refundAmount, reason)
+	stripeRefund, err := stripeService.RefundPayment(payment.StripePaymentIntentID, refundAmount, "requested_by_customer")
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   "Failed to process Stripe refund: " + err.Error(),

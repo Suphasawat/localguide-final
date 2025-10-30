@@ -275,14 +275,14 @@ type TripReport struct {
 	ReportType       string       `gorm:"not null"` // guide_no_show, user_no_show, inappropriate_behavior, safety_issue, payment_issue, other
 	Title            string       `gorm:"not null"`
 	Description      string       `gorm:"type:text;not null"`
-	Evidence         string       `gorm:"type:json"` // หลักฐาน (รูปภาพ, ไฟล์)
+	Evidence         string       `gorm:"type:text"` // หลักฐาน (รูปภาพ, ไฟล์, URL)
 	Severity         string       `gorm:"default:'medium'"` // low, medium, high, critical
 	Status           string       `gorm:"default:'pending'"` // pending, investigating, resolved, dismissed
 	AdminNotes       string       `gorm:"type:text"` // หมายเหตุจาก admin
 	ReviewedBy       *uint        // Admin ที่รับเรื่อง
 	ReviewedAt       *time.Time   // วันที่ admin review
 	ResolvedAt       *time.Time   // วันที่แก้ไขเสร็จ
-	Actions          string       `gorm:"type:json"` // การดำเนินการที่ทำ
+	Actions          string       `gorm:"type:text"` // การดำเนินการที่ทำ
 }
 
 // GuidePerformance - สถิติการทำงานของไกด์

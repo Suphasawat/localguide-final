@@ -150,15 +150,37 @@ export default function TripBookingDetailPage() {
     setError("");
     setInfoMessage("");
     try {
-      await tripBookingAPI.reportUserNoShow(Number(bookingId), {
+      console.log("Sending report guide no-show request:", {
+        bookingId,
         reason: noShowReason,
+        description: noShowReason,
       });
+
+      const response = await tripBookingAPI.reportGuideNoShow(
+        Number(bookingId),
+        {
+          reason: noShowReason,
+          description: noShowReason,
+        }
+      );
+
+      console.log("Report guide no-show response:", response);
       setShowNoShowModal(false);
-      setInfoMessage("รายงานไกด์ไม่มาเรียบร้อย");
+      setInfoMessage("รายงานไกด์ไม่มาเรียบร้อย คืนเงินเต็มจำนวนแล้ว");
       await loadBooking();
-    } catch (e) {
-      console.error(e);
-      setError("ไม่สามารถรายงานไกด์ไม่มาได้");
+    } catch (e: any) {
+      console.error("Error reporting guide no-show:", e);
+      const errorMsg =
+        e?.response?.data?.error ||
+        e?.response?.data?.message ||
+        "ไม่สามารถรายงานไกด์ไม่มาได้";
+      const statusInfo = e?.response?.data?.status
+        ? ` (สถานะปัจจุบัน: ${e.response.data.status})`
+        : "";
+      const dateInfo = e?.response?.data?.start_date
+        ? ` วันเริ่มทริป: ${e.response.data.start_date}`
+        : "";
+      setError(errorMsg + statusInfo + dateInfo);
     } finally {
       setActionLoading(null);
     }
