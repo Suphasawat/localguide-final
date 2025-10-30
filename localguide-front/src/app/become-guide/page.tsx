@@ -32,7 +32,9 @@ export default function BecomeGuidePage() {
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [languages, setLanguages] = useState<Language[]>([]);
   const [attractions, setAttractions] = useState<Attraction[]>([]);
-  const [filteredAttractions, setFilteredAttractions] = useState<Attraction[]>([]);
+  const [filteredAttractions, setFilteredAttractions] = useState<Attraction[]>(
+    []
+  );
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState("");
@@ -41,7 +43,6 @@ export default function BecomeGuidePage() {
   const [formData, setFormData] = useState({
     bio: "",
     description: "",
-    price: 0,
     provinceId: 0,
     selectedLanguages: [] as number[],
     selectedAttractions: [] as number[],
@@ -83,7 +84,9 @@ export default function BecomeGuidePage() {
   // เปลี่ยนรายการสถานที่ตามจังหวัด
   useEffect(() => {
     if (formData.provinceId > 0) {
-      const filtered = attractions.filter((a) => a.ProvinceID === formData.provinceId);
+      const filtered = attractions.filter(
+        (a) => a.ProvinceID === formData.provinceId
+      );
       setFilteredAttractions(filtered);
       setFormData((prev) => ({ ...prev, selectedAttractions: [] }));
     } else {
@@ -101,7 +104,6 @@ export default function BecomeGuidePage() {
       const guideData = {
         bio: formData.bio,
         description: formData.description,
-        price: formData.price,
         provinceId: formData.provinceId,
         languageIds: formData.selectedLanguages,
         attractionIds: formData.selectedAttractions,
@@ -109,7 +111,9 @@ export default function BecomeGuidePage() {
       };
 
       await guideAPI.create(guideData);
-      setSuccess("ส่งคำขอสมัครเป็นไกด์เรียบร้อยแล้ว รอการอนุมัติจากผู้ดูแลระบบ");
+      setSuccess(
+        "ส่งคำขอสมัครเป็นไกด์เรียบร้อยแล้ว รอการอนุมัติจากผู้ดูแลระบบ"
+      );
 
       setTimeout(() => {
         router.push("/dashboard");
@@ -123,21 +127,31 @@ export default function BecomeGuidePage() {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "price" || name === "provinceId" ? Number(value) : value,
+      [name]: name === "provinceId" ? Number(value) : value,
     }));
   };
 
   const handleLanguageToggle = (languageId: number) => {
     setFormData((prev) => {
       if (prev.selectedLanguages.includes(languageId)) {
-        return { ...prev, selectedLanguages: prev.selectedLanguages.filter((id) => id !== languageId) };
+        return {
+          ...prev,
+          selectedLanguages: prev.selectedLanguages.filter(
+            (id) => id !== languageId
+          ),
+        };
       } else {
-        return { ...prev, selectedLanguages: [...prev.selectedLanguages, languageId] };
+        return {
+          ...prev,
+          selectedLanguages: [...prev.selectedLanguages, languageId],
+        };
       }
     });
   };
@@ -145,9 +159,17 @@ export default function BecomeGuidePage() {
   const handleAttractionToggle = (attractionId: number) => {
     setFormData((prev) => {
       if (prev.selectedAttractions.includes(attractionId)) {
-        return { ...prev, selectedAttractions: prev.selectedAttractions.filter((id) => id !== attractionId) };
+        return {
+          ...prev,
+          selectedAttractions: prev.selectedAttractions.filter(
+            (id) => id !== attractionId
+          ),
+        };
       } else {
-        return { ...prev, selectedAttractions: [...prev.selectedAttractions, attractionId] };
+        return {
+          ...prev,
+          selectedAttractions: [...prev.selectedAttractions, attractionId],
+        };
       }
     });
   };
@@ -155,7 +177,6 @@ export default function BecomeGuidePage() {
   const isFormValid =
     formData.bio &&
     formData.description &&
-    formData.price > 0 &&
     formData.provinceId > 0 &&
     formData.selectedLanguages.length > 0 &&
     formData.selectedAttractions.length > 0;
@@ -171,64 +192,66 @@ export default function BecomeGuidePage() {
     );
   }
 
-return (
-  <>
-    <Navbar />
+  return (
+    <>
+      <Navbar />
 
-    {/* ✅ Header สีเขียว (จัดให้ตรงกับฟอร์ม) */}
-    <div className="bg-emerald-600 text-white pb-24">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">
-        <p className="text-emerald-100 text-sm font-medium uppercase tracking-wide">
-          สำหรับไกด์
-        </p>
-        <h1 className="mt-1 text-4xl font-extrabold">สมัครเป็นไกด์นำเที่ยว</h1>
-        <p className="mt-2 text-emerald-50">
-          กรอกข้อมูลเพื่อสมัครเป็นไกด์นำเที่ยวพื้นที่ของคุณ
-        </p>
+      {/* ✅ Header สีเขียว (จัดให้ตรงกับฟอร์ม) */}
+      <div className="bg-emerald-600 text-white pb-24">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">
+          <p className="text-emerald-100 text-sm font-medium uppercase tracking-wide">
+            สำหรับไกด์
+          </p>
+          <h1 className="mt-1 text-4xl font-extrabold">
+            สมัครเป็นไกด์นำเที่ยว
+          </h1>
+          <p className="mt-2 text-emerald-50">
+            กรอกข้อมูลเพื่อสมัครเป็นไกด์นำเที่ยวพื้นที่ของคุณ
+          </p>
+        </div>
       </div>
-    </div>
 
-    {/* ✅ เนื้อหา (ฟอร์ม) */}
-    <div className="bg-gray-50 -mt-15 pb-12 min-h-screen">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {error && (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-800">
-            {error}
-          </div>
-        )}
+      {/* ✅ เนื้อหา (ฟอร์ม) */}
+      <div className="bg-gray-50 -mt-15 pb-12 min-h-screen">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {error && (
+            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-800">
+              {error}
+            </div>
+          )}
 
-        {success && (
-          <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800">
-            {success}
-          </div>
-        )}
+          {success && (
+            <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800">
+              {success}
+            </div>
+          )}
 
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8 space-y-6"
-        >
-          <GuideFormFields
-            formData={formData}
-            provinces={provinces}
-            languages={languages}
-            filteredAttractions={filteredAttractions}
-            onFormChange={handleChange}
-            onLanguageToggle={handleLanguageToggle}
-            onAttractionToggle={handleAttractionToggle}
-          />
+          <form
+            onSubmit={handleSubmit}
+            className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8 space-y-6"
+          >
+            <GuideFormFields
+              formData={formData}
+              provinces={provinces}
+              languages={languages}
+              filteredAttractions={filteredAttractions}
+              onFormChange={handleChange}
+              onLanguageToggle={handleLanguageToggle}
+              onAttractionToggle={handleAttractionToggle}
+            />
 
-          <GuideFormNotice />
+            <GuideFormNotice />
 
-          <GuideFormActions
-            loading={loading}
-            isFormValid={!!isFormValid}
-            onCancel={() => router.back()}
-          />
-        </form>
+            <GuideFormActions
+              loading={loading}
+              isFormValid={!!isFormValid}
+              onCancel={() => router.back()}
+            />
+          </form>
+        </div>
       </div>
-    </div>
 
-    <Footer />
-  </>
-);
+      <Footer />
+    </>
+  );
 }

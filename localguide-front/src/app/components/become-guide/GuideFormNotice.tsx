@@ -20,7 +20,6 @@ export default function GuideFormNotice() {
           <div className="mt-2 text-sm text-yellow-700">
             <p>
               คำขอจะต้องผ่านการอนุมัติจากผู้ดูแลระบบก่อน
-              คุณจะได้รับการแจ้งเตือนผ่านอีเมลเมื่อมีการอัปเดตสถานะ
             </p>
           </div>
         </div>

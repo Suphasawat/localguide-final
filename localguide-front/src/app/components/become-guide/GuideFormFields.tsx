@@ -2,7 +2,6 @@ interface GuideFormFieldsProps {
   formData: {
     bio: string;
     description: string;
-    price: number;
     provinceId: number;
     selectedLanguages: number[];
     selectedAttractions: number[];
@@ -62,22 +61,6 @@ export default function GuideFormFields({
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            ราคาค่าบริการ (บาท/วัน) *
-          </label>
-          <input
-            type="number"
-            name="price"
-            value={formData.price}
-            onChange={onFormChange}
-            required
-            min="0"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="3000"
-          />
-        </div>
-
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             จังหวัด *
@@ -159,7 +142,7 @@ export default function GuideFormFields({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          หมายเลขใบอนุญาตไกด์ (ถ้ามี)
+          หมายเลขใบอนุญาตไกด์
         </label>
         <input
           type="text"
