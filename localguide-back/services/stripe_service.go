@@ -60,15 +60,28 @@ func (s *StripeService) RefundPayment(paymentIntentID string, amount int64, reas
 	params := &stripe.RefundParams{
 		PaymentIntent: stripe.String(paymentIntentID),
 		Amount:        stripe.Int64(amount),
-		Reason:        stripe.String(reason),
 	}
 
-	refund, err := refund.New(params)
+	// Map internal reasons to Stripe-supported refund reasons.
+	// Stripe only accepts: duplicate, fraudulent, requested_by_customer
+	switch reason {
+	case "duplicate":
+		params.Reason = stripe.String(string(stripe.RefundReasonDuplicate))
+	case "fraudulent":
+		params.Reason = stripe.String(string(stripe.RefundReasonFraudulent))
+	case "requested_by_customer":
+		params.Reason = stripe.String(string(stripe.RefundReasonRequestedByCustomer))
+	default:
+		// For any internal/custom reason, default to requested_by_customer
+		params.Reason = stripe.String(string(stripe.RefundReasonRequestedByCustomer))
+	}
+
+	ref, err := refund.New(params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create refund: %w", err)
 	}
 
-	return refund, nil
+	return ref, nil
 }
 
 // GetPaymentIntent ดึงข้อมูล PaymentIntent

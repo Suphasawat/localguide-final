@@ -157,6 +157,7 @@ func main() {
     admin.Put("/trip-reports/:id", controllers.HandleTripReport)
     admin.Get("/payments", controllers.GetAllPayments)
     admin.Put("/payments/:id/release", controllers.ManualReleasePayment)
+    admin.Put("/trip-bookings/:id/resolve-dispute", controllers.AdminResolveNoShowDispute) // Admin ตัดสินกรณี dispute
     
     
     // Google Auth routes

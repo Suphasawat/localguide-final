@@ -154,4 +154,23 @@ export const uploadAPI = {
   },
 };
 
+// Admin API
+export const adminAPI = {
+  getVerifications: () => api.get("/admin/verifications"),
+  approveGuide: (id: number, status: string, comments: string) =>
+    api.put(`/admin/verifications/${id}/status`, {
+      status,
+      admin_comments: comments,
+    }),
+  getTripReports: () => api.get("/admin/trip-reports"),
+  handleTripReport: (id: number, data: any) =>
+    api.put(`/admin/trip-reports/${id}`, data),
+  resolveDispute: (bookingId: number, decision: string, adminNotes: string) =>
+    api.put(`/admin/trip-bookings/${bookingId}/resolve-dispute`, {
+      decision,
+      admin_notes: adminNotes,
+      reason: adminNotes,
+    }),
+};
+
 export default api;

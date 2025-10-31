@@ -67,9 +67,30 @@ func AdminResolveNoShowDispute(c *fiber.Ctx) error {
 		})
 	}
 
-	if booking.Status != "no_show_disputed" {
+	// More robust: ensure there is a pending TripReport related to this booking
+	// that requires admin action (either a dispute_no_show or original user_no_show report)
+	var disputeReport models.TripReport
+	err = config.DB.Where("trip_booking_id = ? AND report_type = ? AND status = ?", bookingID, "dispute_no_show", "pending").First(&disputeReport).Error
+	if err != nil {
+		// not found dispute_no_show pending; try original user_no_show pending report
+		var originalReport models.TripReport
+		err2 := config.DB.Where("trip_booking_id = ? AND report_type = ? AND status = ?", bookingID, "user_no_show", "pending").First(&originalReport).Error
+		if err2 != nil {
+			// still not found -> no pending reports to resolve
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error":   "No active dispute to resolve",
+				"status":  booking.Status,
+			})
+		}
+		// If original report exists, we can proceed (admin is resolving original pending report)
+	} else {
+		// disputeReport exists and is pending -> proceed
+	}
+
+	// Validate decision
+	if requestData.Decision != "guide_wins" && requestData.Decision != "user_wins" && requestData.Decision != "split_cost" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "No active dispute to resolve",
+			"error": "Invalid decision. Must be 'guide_wins', 'user_wins', or 'split_cost'",
 		})
 	}
 

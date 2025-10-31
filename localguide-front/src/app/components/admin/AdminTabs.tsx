@@ -7,6 +7,7 @@ export default function AdminTabs({ activeTab, onTabChange }: AdminTabsProps) {
   const tabs = [
     { id: "verifications", label: "การอนุมัติไกด์" },
     { id: "reports", label: "รายงานปัญหา" },
+    { id: "disputes", label: "ข้อพิพาท No-Show" },
     { id: "payments", label: "การจ่ายเงิน" },
   ];
 

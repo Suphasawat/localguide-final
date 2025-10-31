@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { api } from "../../lib/api";
+import { api, adminAPI } from "../../lib/api";
 import { GuideVerification, TripReport } from "../../types/index";
 
 export function useAdminData() {
@@ -10,6 +10,7 @@ export function useAdminData() {
   const [activeTab, setActiveTab] = useState("verifications");
   const [verifications, setVerifications] = useState<GuideVerification[]>([]);
   const [reports, setReports] = useState<TripReport[]>([]);
+  const [disputes, setDisputes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -38,6 +39,15 @@ export function useAdminData() {
       } else if (activeTab === "reports") {
         const response = await api.get("/admin/trip-reports");
         setReports(response.data?.reports || []);
+      } else if (activeTab === "disputes") {
+        const response = await api.get("/admin/trip-reports");
+        // Filter only dispute reports
+        const allReports = response.data?.reports || [];
+        const disputeReports = allReports.filter(
+          (r: any) =>
+            r.ReportType === "dispute_no_show" && r.Status === "pending"
+        );
+        setDisputes(disputeReports);
       }
     } catch (error) {
       console.error("Failed to load data:", error);
@@ -79,14 +89,37 @@ export function useAdminData() {
     }
   };
 
+  const handleResolveDispute = async (
+    bookingId: number,
+    decision: string,
+    adminNotes: string
+  ) => {
+    try {
+      await adminAPI.resolveDispute(bookingId, decision, adminNotes);
+      loadData();
+    } catch (err: any) {
+      // Surface backend error message (if available) to the admin
+      console.error("Failed to resolve dispute:", err);
+      const backendMsg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message;
+      alert(`ไม่สามารถตัดสินข้อพิพาทได้: ${backendMsg}`);
+      // Do not rethrow to avoid unhandled promise rejection in UI
+      return;
+    }
+  };
+
   return {
     activeTab,
     setActiveTab,
     verifications,
     reports,
+    disputes,
     loading,
     error,
     handleApproveGuide,
     handleReportAction,
+    handleResolveDispute,
   };
 }
