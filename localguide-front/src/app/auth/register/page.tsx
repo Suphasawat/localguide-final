@@ -11,6 +11,9 @@ type FieldErrors = Partial<{
   email: string;
   password: string;
   confirmPassword: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
 }>;
 
 export default function RegisterPage() {
@@ -18,6 +21,9 @@ export default function RegisterPage() {
     email: "",
     password: "",
     confirmPassword: "",
+    firstName: "",
+    lastName: "",
+    phone: "",
   });
 
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -40,6 +46,12 @@ export default function RegisterPage() {
     if (lastDot < atIndex + 2) return false;
     if (lastDot >= trimmed.length - 1) return false;
     return true;
+  }
+
+  function isSimplePhone(value: string): boolean {
+    const trimmed = value.trim();
+    const regex = /^\+?[0-9]{9,15}$/;
+    return regex.test(trimmed);
   }
 
   function validate(values = formData): FieldErrors {
@@ -86,6 +98,18 @@ export default function RegisterPage() {
       e.confirmPassword = "รหัสผ่านไม่ตรงกัน";
     }
 
+    if (values.firstName.trim().length === 0) {
+      e.firstName = "กรุณากรอกชื่อจริง";
+    }
+    if (values.lastName.trim().length === 0) {
+      e.lastName = "กรุณากรอกนามสกุล";
+    }
+    if (values.phone.trim().length === 0) {
+      e.phone = "กรุณากรอกเบอร์โทรศัพท์";
+    } else if (!isSimplePhone(values.phone)) {
+      e.phone = "รูปแบบเบอร์โทรไม่ถูกต้อง";
+    }
+
     return e;
   }
 
@@ -121,10 +145,15 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const ok = await register({
+      const registerData: any = {
         email: formData.email.trim(),
         password: formData.password,
-      });
+        first_name: formData.firstName.trim(),
+        last_name: formData.lastName.trim(),
+        phone: formData.phone.trim(),
+      };
+
+      const ok = await register(registerData as any);
       if (ok === true) {
         router.push("/auth/login?message=registration-success");
       } else {
@@ -179,6 +208,72 @@ export default function RegisterPage() {
               />
               {errors.email && (
                 <p className="mt-1 text-xs text-red-600">{errors.email}</p>
+              )}
+            </div>
+
+            {/* ชื่อ-นามสกุล */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="mb-2 text-sm font-extrabold text-emerald-800">
+                  ชื่อจริง
+                </p>
+                <input
+                  id="firstName"
+                  name="firstName"
+                  type="text"
+                  placeholder="ชื่อ"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  className={`w-full h-12 rounded-full border-2 px-5 text-[15px] placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-emerald-500 ${
+                    errors.firstName ? "border-red-500" : "border-gray-300"
+                  }`}
+                />
+                {errors.firstName && (
+                  <p className="mt-1 text-xs text-red-600">
+                    {errors.firstName}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <p className="mb-2 text-sm font-extrabold text-emerald-800">
+                  นามสกุล
+                </p>
+                <input
+                  id="lastName"
+                  name="lastName"
+                  type="text"
+                  placeholder="นามสกุล"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  className={`w-full h-12 rounded-full border-2 px-5 text-[15px] placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-emerald-500 ${
+                    errors.lastName ? "border-red-500" : "border-gray-300"
+                  }`}
+                />
+                {errors.lastName && (
+                  <p className="mt-1 text-xs text-red-600">{errors.lastName}</p>
+                )}
+              </div>
+            </div>
+
+            {/* เบอร์โทร */}
+            <div>
+              <p className="mb-2 text-sm font-extrabold text-emerald-800">
+                เบอร์โทรศัพท์
+              </p>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                placeholder="เช่น +66123456789 หรือ 0812345678"
+                value={formData.phone}
+                onChange={handleChange}
+                className={`w-full h-12 rounded-full border-2 px-5 text-[15px] placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-emerald-500 ${
+                  errors.phone ? "border-red-500" : "border-gray-300"
+                }`}
+              />
+              {errors.phone && (
+                <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
               )}
             </div>
 

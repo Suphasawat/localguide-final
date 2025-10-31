@@ -14,8 +14,11 @@ import (
 
 func Register(c *fiber.Ctx) error {
 	var req struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		Email     string `json:"email"`
+		Password  string `json:"password"`
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+		Phone     string `json:"phone"`
 	}
 
 	if err := c.BodyParser(&req); err != nil {
@@ -25,9 +28,17 @@ func Register(c *fiber.Ctx) error {
 	if !isValidEmail(req.Email) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid email format"})
 	}
-	
+
 	if utf8.RuneCountInString(req.Password) < 8 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Password must be at least 8 characters"})
+	}
+
+	if utf8.RuneCountInString(req.FirstName) == 0 || utf8.RuneCountInString(req.LastName) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "First name and last name are required"})
+	}
+
+	if !isValidPhone(req.Phone) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid phone number"})
 	}
 
 	var existing models.AuthUser
@@ -50,16 +61,16 @@ func Register(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to create auth user"})
 	}
 
-	// สมัคร user อย่างเดียว (role = 1, ข้อมูลอื่นเป็นค่าว่างหรือ default)
+	// สมัคร user อย่างเดียว (role = 1, กำหนดชื่อ-สกุล-เบอร์)
 	user := models.User{
 		AuthUserID:  authUser.ID,
-		FirstName:   "",
-		LastName:    "",
+		FirstName:   req.FirstName,
+		LastName:    req.LastName,
 		Nickname:    "",
 		BirthDate:   nil,
 		RoleID:      1,
 		Nationality: "",
-		Phone:       "",
+		Phone:       req.Phone,
 		Sex:         "",
 	}
 
@@ -84,18 +95,17 @@ func Register(c *fiber.Ctx) error {
 	}
 
 	userResponse := fiber.Map{
-		"id":    user.ID,
-		"email": authUser.Email,
-		"role":  user.RoleID,
+		"id":        user.ID,
+		"email":     authUser.Email,
+		"role":      user.RoleID,
+		"firstName": user.FirstName,
+		"lastName":  user.LastName,
+		"phone":     user.Phone,
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"token": tokenString,
-		"user":  fiber.Map{
-			"id":    userResponse["id"],
-			"email": userResponse["email"],
-			"role":  userResponse["role"],
-		},
+		"user":  userResponse,
 	})
 }
 
@@ -169,4 +179,11 @@ func Me(c *fiber.Ctx) error {
 func isValidEmail(email string) bool {
 	regex := regexp.MustCompile(`^[a-zA-Z0-9._%%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
 	return regex.MatchString(email)
+}
+
+// Phone validation
+func isValidPhone(phone string) bool {
+    // ยอมรับรูปแบบ + และตัวเลข 9-15 หลัก เช่น +66123456789 หรือ 0812345678
+    regex := regexp.MustCompile(`^\+?[0-9]{9,15}$`)
+    return regex.MatchString(phone)
 }
