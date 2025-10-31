@@ -22,17 +22,6 @@ export default function QuotationCard({ quotation }: QuotationCardProps) {
           </span>
         </div>
 
-        <div>
-          <span className="text-gray-600">มีผลถึง:</span>{" "}
-          <span className="font-medium">
-            {new Date(quotation.ValidUntil).toLocaleDateString("th-TH", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </span>
-        </div>
-
         {quotation.PriceBreakdown && (
           <div>
             <h3 className="font-medium text-gray-700 mb-2">

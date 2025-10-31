@@ -213,12 +213,6 @@ return (
                           {offer.TripOfferQuotation[0].TotalPrice?.toLocaleString()}{" "}
                           บาท
                         </div>
-                        <div>
-                          ⏰ หมดอายุ:{" "}
-                          {new Date(
-                            offer.TripOfferQuotation[0].ValidUntil
-                          ).toLocaleDateString("th-TH")}
-                        </div>
                       </>
                     )}
 
