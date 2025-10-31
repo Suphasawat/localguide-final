@@ -25,6 +25,8 @@ interface BookingStatusProps {
   onConfirmUserNoShow: () => void;
   // 🆕 เพิ่ม callback สำหรับไกด์รายงานลูกค้าไม่มา
   onOpenReportUserNoShow: () => void;
+  // 🆕 เปิด modal สำหรับโต้แย้งการรีพอร์ต
+  onOpenDispute: () => void;
   getStatusColor: (status: string) => string;
   getStatusText: (status: string) => string;
   getPaymentStatus: (booking: any) => string;
@@ -48,6 +50,7 @@ export default function BookingStatus({
   onOpenReportNoShow,
   onConfirmUserNoShow,
   onOpenReportUserNoShow,
+  onOpenDispute,
   getStatusColor,
   getStatusText,
   getPaymentStatus,
@@ -192,13 +195,30 @@ export default function BookingStatus({
             >
               รายงานว่าไกด์ไม่มา
             </button>
+          </>
+        )}
 
+        {/* ปุ่มยืนยันว่าฉันไม่มา — เฉพาะเมื่อไกด์ได้รีพอร์ตแล้ว (user_no_show_reported) */}
+        {isOwner && status === "user_no_show_reported" && (
+          <>
             <button
               onClick={onConfirmUserNoShow}
               disabled={actionLoading === "confirm-user-no-show"}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-60"
             >
               ยืนยันว่าฉันไม่มา
+            </button>
+
+            {/* ปุ่มใหม่: โต้แย้งการรีพอร์ต (เปิด modal แทน prompt) */}
+            <button
+              onClick={() => {
+                if (actionLoading) return;
+                onOpenDispute();
+              }}
+              disabled={actionLoading === "dispute-no-show"}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-60"
+            >
+              โต้แย้งการรีพอร์ต
             </button>
           </>
         )}

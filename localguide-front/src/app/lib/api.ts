@@ -111,6 +111,8 @@ export const tripBookingAPI = {
     api.put(`/trip-bookings/${id}/confirm-user-no-show`),
   reportGuideNoShow: (id: number, data: any) =>
     api.put(`/trip-bookings/${id}/report-guide-no-show`, data),
+  disputeNoShow: (id: number, data: any) =>
+    api.put(`/trip-bookings/${id}/dispute-no-show`, data),
 };
 
 // User API
@@ -137,6 +139,19 @@ export const reviewAPI = {
     api.post(`/reviews/${id}/response`, { response }),
   markHelpful: (id: number) => api.post(`/reviews/${id}/helpful`),
   getReviewableBookings: () => api.get("/trip-bookings/reviewable"),
+};
+
+// Upload API
+export const uploadAPI = {
+  uploadFile: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.post("/uploads", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
 };
 
 export default api;

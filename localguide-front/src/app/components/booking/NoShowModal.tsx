@@ -9,6 +9,9 @@ interface NoShowModalProps {
   onSubmit: () => void;
   // 🆕 เพิ่ม prop เพื่อระบุว่าเป็นการรายงานแบบไหน
   reportType: "guide" | "user";
+  // 🆕 เพิ่ม props สำหรับอัปโหลดรูปหลักฐาน
+  evidenceFile: File | null;
+  onEvidenceFileChange: (file: File | null) => void;
 }
 
 export default function NoShowModal({
@@ -19,18 +22,21 @@ export default function NoShowModal({
   onClose,
   onSubmit,
   reportType,
+  evidenceFile,
+  onEvidenceFileChange,
 }: NoShowModalProps) {
   if (!show) {
     return null;
   }
 
-  const submitting = 
-    reportType === "guide" 
+  const submitting =
+    reportType === "guide"
       ? actionLoading === "report-guide-no-show"
       : actionLoading === "report-user-no-show";
 
-  const title = reportType === "guide" ? "รายงานไกด์ไม่มา" : "รายงานลูกค้าไม่มา";
-  const description = 
+  const title =
+    reportType === "guide" ? "รายงานไกด์ไม่มา" : "รายงานลูกค้าไม่มา";
+  const description =
     reportType === "guide"
       ? "โปรดระบุเหตุผลหรือรายละเอียดเพิ่มเติม"
       : "โปรดระบุเหตุผลว่าทำไมลูกค้าไม่มาตามนัดหมาย";
@@ -55,6 +61,31 @@ export default function NoShowModal({
             placeholder="รายละเอียด..."
             className="mt-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
+
+          {/* 🆕 เพิ่มช่องอัปโหลดรูปหลักฐาน */}
+          <div className="mt-3">
+            <label className="block text-sm font-medium text-gray-700">
+              หลักฐาน (รูปภาพ)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) =>
+                onEvidenceFileChange(e.target.files?.[0] ?? null)
+              }
+              className="mt-1 block w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-md file:border-0
+                file:text-sm file:font-semibold
+                file:bg-emerald-50 file:text-emerald-700
+                hover:file:bg-emerald-100"
+            />
+            {evidenceFile && (
+              <p className="mt-1 text-xs text-gray-600">
+                เลือกแล้ว: {evidenceFile.name}
+              </p>
+            )}
+          </div>
 
           <div className="mt-6 flex items-center justify-end gap-2">
             <button
