@@ -23,9 +23,7 @@ interface BookingStatusProps {
   onConfirmTripComplete: () => void;
   onOpenReportNoShow: () => void;
   onConfirmUserNoShow: () => void;
-  // 🆕 เพิ่ม callback สำหรับไกด์รายงานลูกค้าไม่มา
   onOpenReportUserNoShow: () => void;
-  // 🆕 เปิด modal สำหรับโต้แย้งการรีพอร์ต
   onOpenDispute: () => void;
   getStatusColor: (status: string) => string;
   getStatusText: (status: string) => string;
@@ -76,6 +74,39 @@ export default function BookingStatus({
     }
     return raw;
   };
+
+  // ---------- NEW: helper สำหรับข้อความ terminal ----------
+  function getTerminalLabel(): string {
+    // ตัดสินจาก status ก่อน เพื่อระบุว่าเป็นไกด์/ลูกค้า
+    if (typeof status === "string") {
+      const s = status.toLowerCase();
+      if (s.includes("guide_no_show")) {
+        return "ไกด์ไม่มา";
+      }
+      if (s.includes("user_no_show")) {
+        return "ลูกค้าไม่มา";
+      }
+      if (s.includes("cancel")) {
+        return "ยกเลิก";
+      }
+    }
+
+    // สำรองจากค่า terminal เดิม
+    if (timeline?.terminal === "cancelled") {
+      return "ยกเลิก";
+    }
+    if (timeline?.terminal === "no_show") {
+      // ถ้า caller ส่งมาเป็น no_show เฉย ๆ ให้ถือเป็นลูกค้าไม่มาเพื่อถอยหลังเข้าคลอง
+      return "ลูกค้าไม่มา";
+    }
+    return "";
+  }
+
+  // ให้แสดงแถบ terminal เมื่อมี terminal เดิม หรือ status บ่งชี้ no_show / cancel
+  const shouldShowTerminal =
+    Boolean(timeline?.terminal) ||
+    (typeof status === "string" &&
+      (status.includes("no_show") || status.includes("cancel")));
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -154,7 +185,8 @@ export default function BookingStatus({
               </li>
             );
           })}
-          {timeline.terminal && (
+
+          {shouldShowTerminal && (
             <li className="mb-2 ms-6">
               <span className="absolute -start-3 flex h-6 w-6 items-center justify-center rounded-full ring-8 ring-white bg-red-600">
                 <svg
@@ -166,9 +198,7 @@ export default function BookingStatus({
                   <path d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-3 9.75a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75Z" />
                 </svg>
               </span>
-              <div className="font-medium text-red-700">
-                {timeline.terminal === "cancelled" ? "ยกเลิก" : "ลูกค้าไม่มา"}
-              </div>
+              <div className="font-medium text-red-700">{getTerminalLabel()}</div>
             </li>
           )}
         </ol>
