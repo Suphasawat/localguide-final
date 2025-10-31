@@ -197,6 +197,15 @@ func BrowseTripRequires(c *fiber.Ctx) error {
 		query = query.Where("min_price <= ?", maxPrice)
 	}
 
+	// Only show trip requires in the guide's province by default (unless a province_id filter is provided)
+	if provinceID == "" {
+		query = query.Where("province_id = ?", guide.ProvinceID)
+	}
+
+	// Enforce min rating requirement: only show trip requires where required minimum rating is <= guide's rating
+	// TripRequire.MinRating defaults to 0 so this will include all when not set
+	query = query.Where("min_rating <= ?", guide.Rating)
+
 	var tripRequires []models.TripRequire
 	if err := query.Order("created_at DESC").Find(&tripRequires).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
