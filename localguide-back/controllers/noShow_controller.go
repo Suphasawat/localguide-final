@@ -41,9 +41,20 @@ func ConfirmUserNoShow(c *fiber.Ctx) error {
 	}
 
 	// Validate status
-	if booking.Status != "paid" && booking.Status != "user_no_show_reported" {
+	// ยอมให้ผู้ใช้ยืนยันการไม่มาได้เฉพาะเมื่อไกด์ได้รีพอร์ตแล้วเท่านั้น
+	if booking.Status != "user_no_show_reported" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid booking status for no-show confirmation",
+			"error":  "Invalid booking status for no-show confirmation",
+			"status": booking.Status,
+			"message": "User can only confirm no-show after guide reports it",
+		})
+	}
+
+	// ป้องกันการยืนยันซ้ำหรือการดำเนินการกับ booking ที่ถูกตัดสินแล้ว
+	if booking.Status == "user_no_show_confirmed" || booking.Status == "user_no_show_disputed" || booking.Status == "guide_no_show_confirmed" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "No-show already handled",
+			"status": booking.Status,
 		})
 	}
 
@@ -65,6 +76,14 @@ func ConfirmUserNoShow(c *fiber.Ctx) error {
 	if err := config.DB.Where("trip_booking_id = ?", bookingID).First(&payment).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Payment not found",
+		})
+	}
+
+	// ป้องกันการคืนเงินซ้ำ หาก payment ถูกคืนบางส่วนหรือคืนเต็มไปแล้ว
+	if payment.Status == "partially_refunded" || payment.Status == "refunded" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Payment already refunded or partially refunded",
+			"payment_status": payment.Status,
 		})
 	}
 
@@ -160,6 +179,15 @@ func ReportUserNoShow(c *fiber.Ctx) error {
 		})
 	}
 
+	// Parse request body for reason, description, and evidence
+	var requestData struct {
+		Reason      string `json:"reason"`
+		Description string `json:"description"`
+		Evidence    string `json:"evidence"`
+	}
+	// Not required, so don't fail if parsing fails
+	c.BodyParser(&requestData)
+
 	var booking models.TripBooking
 	if err := config.DB.First(&booking, bookingID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -219,14 +247,22 @@ func ReportUserNoShow(c *fiber.Ctx) error {
 	}
 
 	// สร้าง TripReport
+	description := requestData.Description
+	if description == "" {
+		description = requestData.Reason
+	}
+	if description == "" {
+		description = "Guide reported that user did not show up for the trip."
+	}
+
 	report := models.TripReport{
 		TripBookingID:  uint(bookingID),
 		ReporterID:     userID,
 		ReportedUserID: booking.UserID,
 		ReportType:     "user_no_show",
 		Title:          "Guide reports user no-show",
-		Description:    "Guide reported that user did not show up for the trip.",
-		Evidence:       "",
+		Description:    description,
+		Evidence:       requestData.Evidence,
 		Severity:       "high",
 		Status:         "pending",
 		AdminNotes:     "",
@@ -427,7 +463,7 @@ func ReportGuideNoShow(c *fiber.Ctx) error {
 		ReportType:     "guide_no_show",
 		Title:          "User reports guide no-show",
 		Description:    description,
-		Evidence:       "",
+		Evidence:       requestData.Evidence,
 		Severity:       "critical",
 		Status:         "pending",
 		AdminNotes:     "",

@@ -121,6 +121,7 @@ func main() {
     api.Put("/trip-bookings/:id/report-user-no-show", middleware.AuthRequired(), controllers.ReportUserNoShow) // Guide รีพอร์ต user ไม่มา -> ไกด์ได้ 50% + คืนเงินส่วนที่เหลือให้ user
     api.Put("/trip-bookings/:id/confirm-user-no-show", middleware.AuthRequired(), controllers.ConfirmUserNoShow) // User ยืนยันตัวเองไม่มา -> ไกด์ได้ 50% + คืนเงิน 50%
     api.Put("/trip-bookings/:id/report-guide-no-show", middleware.AuthRequired(), controllers.ReportGuideNoShow) // User รีพอร์ตไกด์ไม่มา
+    api.Put("/trip-bookings/:id/dispute-no-show", middleware.AuthRequired(), controllers.DisputeNoShowReport) // User โต้แย้งการรีพอร์ต no-show
 
     // 7. Review system routes (for guides only)
     api.Post("/reviews", middleware.AuthRequired(), controllers.CreateReview) // User สร้างรีวิวให้ไกด์
@@ -143,6 +144,9 @@ func main() {
     // Avatar upload/delete
     api.Post("/users/profile/avatar", middleware.AuthRequired(), controllers.UploadProfileAvatar)
     api.Delete("/users/profile/avatar", middleware.AuthRequired(), controllers.DeleteProfileAvatar)
+
+    // Upload endpoint for evidence files
+    api.Post("/uploads", middleware.AuthRequired(), controllers.UploadFile)
 
     // Admin routes
     admin := api.Group("/admin", middleware.AuthRequired(), middleware.AdminRequired())

@@ -39,11 +39,17 @@ export const useBookingHelpers = () => {
   const getNotes = (b: any) => b?.Notes ?? b?.notes ?? "";
   const getUserIdFromBooking = (b: any) =>
     b?.User?.id ?? b?.User?.ID ?? b?.user_id ?? b?.UserID;
-  
+
   // 🔧 แก้ไขตรงนี้: ใช้ Guide.User.id แทน guide_id
   const getGuideIdFromBooking = (b: any) => {
     // ลำดับความสำคัญ: Guide.User.id > Guide.UserID > fallback อื่นๆ
-    return b?.Guide?.User?.id ?? b?.Guide?.User?.ID ?? b?.Guide?.UserID ?? b?.guide_id ?? b?.GuideID;
+    return (
+      b?.Guide?.User?.id ??
+      b?.Guide?.User?.ID ??
+      b?.Guide?.UserID ??
+      b?.guide_id ??
+      b?.GuideID
+    );
   };
 
   const getStatusColor = (status: string) => {
@@ -60,6 +66,13 @@ export const useBookingHelpers = () => {
         return "bg-red-100 text-red-800";
       case "no_show":
         return "bg-red-100 text-red-800";
+      case "user_no_show_reported":
+      case "no_show_reported":
+        return "bg-orange-100 text-orange-800";
+      case "no_show_confirmed":
+        return "bg-red-100 text-red-800";
+      case "no_show_disputed":
+        return "bg-purple-100 text-purple-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -79,6 +92,13 @@ export const useBookingHelpers = () => {
         return "ยกเลิก";
       case "no_show":
         return "ลูกค้าไม่มา";
+      case "user_no_show_reported":
+      case "no_show_reported":
+        return "ยืนยันว่าไม่มา";
+      case "no_show_confirmed":
+        return "ยืนยันว่าไม่มาแล้ว";
+      case "no_show_disputed":
+        return "โต้แย้งการรีพอร์ต";
       default:
         return status || "-";
     }
