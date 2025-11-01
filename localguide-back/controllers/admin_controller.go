@@ -182,7 +182,8 @@ func GetAllTripReports(c *fiber.Ctx) error {
 	var reports []models.TripReport
 
 	if err := config.DB.
-		Preload("TripBooking").
+		Preload("TripBooking.User").
+		Preload("TripBooking.Guide.User").
 		Preload("Reporter").
 		Preload("ReportedUser").
 		Find(&reports).Error; err != nil {

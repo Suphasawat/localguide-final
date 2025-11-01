@@ -41,11 +41,10 @@ export function useAdminData() {
         setReports(response.data?.reports || []);
       } else if (activeTab === "disputes") {
         const response = await api.get("/admin/trip-reports");
-        // Filter only dispute reports
+        // Filter dispute reports (both pending and resolved)
         const allReports = response.data?.reports || [];
         const disputeReports = allReports.filter(
-          (r: any) =>
-            r.ReportType === "dispute_no_show" && r.Status === "pending"
+          (r: any) => r.ReportType === "dispute_no_show"
         );
         setDisputes(disputeReports);
       }

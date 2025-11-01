@@ -80,3 +80,36 @@ def configure_headless(request):
     """Configure headless mode based on command line option"""
     if request.config.getoption("--headed"):
         Config.HEADLESS = False
+
+@pytest.fixture(scope="session")
+def config():
+    """Provide configuration dictionary for tests"""
+    return {
+        'base_url': Config.BASE_URL,
+        'backend_url': Config.BACKEND_URL,
+        'wait_time': Config.EXPLICIT_WAIT,
+    }
+
+@pytest.fixture(scope="session")
+def test_user():
+    """Provide test user credentials"""
+    return {
+        'email': os.getenv('TEST_USER_EMAIL', 'user1@gmail.com'),
+        'password': os.getenv('TEST_USER_PASSWORD', '12345678Za!')
+    }
+
+@pytest.fixture(scope="session")
+def admin_user():
+    """Provide admin user credentials"""
+    return {
+        'email': os.getenv('ADMIN_EMAIL', 'admin@gmail.com'),
+        'password': os.getenv('ADMIN_PASSWORD', '12345678Za!')
+    }
+
+@pytest.fixture(scope="session")
+def guide_user():
+    """Provide guide user credentials"""
+    return {
+        'email': os.getenv('GUIDE_EMAIL', 'guide1@gmail.com'),
+        'password': os.getenv('GUIDE_PASSWORD', '12345678Za!')
+    }

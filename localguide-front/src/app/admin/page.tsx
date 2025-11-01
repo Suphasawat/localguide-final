@@ -3,11 +3,17 @@
 import AdminTabs from "../components/admin/AdminTabs";
 import VerificationsTab from "../components/admin/VerificationsTab";
 import ReportsTab from "../components/admin/ReportsTab";
-import DisputesTab from "../components/admin/DisputesTab";
 import PaymentsTab from "../components/admin/PaymentsTab";
 import { useAdminData } from "../components/admin/useAdminData";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import dynamic from "next/dynamic";
+
+// Use dynamic import and map to default export explicitly
+const DisputesTab = dynamic(
+  () => import("../components/admin/DisputesTab").then((m) => m.default),
+  { ssr: false }
+);
 
 export default function AdminDashboard() {
   const {
@@ -65,7 +71,9 @@ export default function AdminDashboard() {
     ? verifications.length
     : 0;
   const reportCount = Array.isArray(reports) ? reports.length : 0;
-  const disputeCount = Array.isArray(disputes) ? disputes.length : 0;
+  const disputeCount = Array.isArray(disputes)
+    ? disputes.filter((d: any) => d.Status === "pending").length
+    : 0;
 
   return (
     <>
