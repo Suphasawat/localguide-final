@@ -1,7 +1,9 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { api, adminAPI } from "../../lib/api";
+import { api } from "../../lib/api";
 import { GuideVerification, TripReport } from "../../types/index";
 
 export function useAdminData() {
@@ -41,11 +43,37 @@ export function useAdminData() {
         setReports(response.data?.reports || []);
       } else if (activeTab === "disputes") {
         const response = await api.get("/admin/trip-reports");
-        // Filter dispute reports (both pending and resolved)
+        // ✅ Filter dispute reports แล้วแนบรายงาน user_no_show ที่เกี่ยวข้อง (ล่าสุด)
         const allReports = response.data?.reports || [];
-        const disputeReports = allReports.filter(
-          (r: any) => r.ReportType === "dispute_no_show"
-        );
+
+        const disputeReports = allReports
+          .filter((r: any) => r.ReportType === "dispute_no_show")
+          .map((dispute: any) => {
+            const relatedReports = allReports.filter(
+              (report: any) =>
+                report.TripBookingID === dispute.TripBookingID &&
+                report.ReportType === "user_no_show"
+            );
+
+            const parseDate = (value: string | undefined) => {
+              if (!value) return 0;
+              const timestamp = new Date(value).getTime();
+              return Number.isNaN(timestamp) ? 0 : timestamp;
+            };
+
+            // ใช้ user_no_show ที่ใหม่สุด
+            const originalReport = relatedReports.sort(
+              (a: any, b: any) =>
+                parseDate(b.CreatedAt || b.created_at) -
+                parseDate(a.CreatedAt || a.created_at)
+            )[0];
+
+            return {
+              ...dispute,
+              OriginalReport: originalReport || null,
+            };
+          });
+
         setDisputes(disputeReports);
       }
     } catch (error) {
@@ -71,41 +99,36 @@ export function useAdminData() {
       await api.put(`/admin/verifications/${verificationId}/status`, {
         status,
       });
-      loadData();
+      await loadData();
     } catch (error) {
-      console.error("Failed to update verification:", error);
-      alert("ไม่สามารถอัปเดตสถานะได้");
+      console.error("Failed to update guide verification:", error);
     }
   };
 
   const handleReportAction = async (reportId: number, action: string) => {
     try {
-      await api.put(`/admin/trip-reports/${reportId}`, { action });
-      loadData();
+      await api.put(`/admin/trip-reports/${reportId}/action`, {
+        status: action,
+      });
+      await loadData();
     } catch (error) {
-      console.error("Failed to handle report:", error);
-      alert("ไม่สามารถจัดการรายงานได้");
+      console.error("Failed to update report:", error);
     }
   };
 
   const handleResolveDispute = async (
     bookingId: number,
     decision: string,
-    adminNotes: string
+    reason: string
   ) => {
     try {
-      await adminAPI.resolveDispute(bookingId, decision, adminNotes);
-      loadData();
-    } catch (err: any) {
-      // Surface backend error message (if available) to the admin
-      console.error("Failed to resolve dispute:", err);
-      const backendMsg =
-        err?.response?.data?.error ||
-        err?.response?.data?.message ||
-        err?.message;
-      alert(`ไม่สามารถตัดสินข้อพิพาทได้: ${backendMsg}`);
-      // Do not rethrow to avoid unhandled promise rejection in UI
-      return;
+      await api.put(`/admin/trip-bookings/${bookingId}/resolve-dispute`, {
+        decision,
+        reason,
+      });
+      await loadData();
+    } catch (error) {
+      console.error("Failed to resolve dispute:", error);
     }
   };
 
