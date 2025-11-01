@@ -14,17 +14,23 @@ export default function ReportCard({ report, onAction }: ReportCardProps) {
           <p className="text-gray-600">ประเภท: {report.ReportType}</p>
         </div>
         <span
-          className={`px-3 py-1 rounded-full text-sm ${
-            report.Severity === "critical"
-              ? "bg-red-100 text-red-800"
-              : report.Severity === "high"
-              ? "bg-orange-100 text-orange-800"
-              : report.Severity === "medium"
+          className={`px-3 py-1 rounded-full text-sm font-medium ${
+            report.Status === "resolved"
+              ? "bg-emerald-100 text-emerald-800"
+              : report.Status === "pending"
               ? "bg-yellow-100 text-yellow-800"
+              : report.Status === "in_review"
+              ? "bg-blue-100 text-blue-800"
               : "bg-gray-100 text-gray-800"
           }`}
         >
-          {report.Severity}
+          {report.Status === "resolved"
+            ? "ตัดสินแล้ว"
+            : report.Status === "pending"
+            ? "รอดำเนินการ"
+            : report.Status === "in_review"
+            ? "กำลังตรวจสอบ"
+            : "ไม่ทราบสถานะ"}
         </span>
       </div>
 
@@ -38,29 +44,6 @@ export default function ReportCard({ report, onAction }: ReportCardProps) {
         </div>
         <div className="mt-3">📝 {report.Description}</div>
       </div>
-
-      {report.Status === "pending" && (
-        <div className="flex space-x-3">
-          <button
-            onClick={() => onAction(report.ID, "investigating")}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            เริ่มสอบสวน
-          </button>
-          <button
-            onClick={() => onAction(report.ID, "resolved")}
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-          >
-            แก้ไขแล้ว
-          </button>
-          <button
-            onClick={() => onAction(report.ID, "dismissed")}
-            className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
-          >
-            ยกเลิก
-          </button>
-        </div>
-      )}
     </div>
   );
 }
