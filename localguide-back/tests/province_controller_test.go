@@ -12,15 +12,29 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 func setupTestDB() *gorm.DB {
-	return SetupTestDB()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		panic("Failed to connect to test database")
+	}
+	// migrate minimal models used by tested controllers
+	db.AutoMigrate(&models.Province{}, &models.TouristAttraction{})
+	return db
 }
 
 func setupTestApp() *fiber.App {
-	return SetupTestApp()
+	app := fiber.New(fiber.Config{ErrorHandler: func(c *fiber.Ctx, err error) error {
+		code := fiber.StatusInternalServerError
+		if e, ok := err.(*fiber.Error); ok {
+			code = e.Code
+		}
+		return c.Status(code).JSON(fiber.Map{"error": err.Error()})
+	}})
+	return app
 }
 
 func TestGetProvinces(t *testing.T) {
@@ -210,10 +224,11 @@ func TestGetProvinceAttractions(t *testing.T) {
 		testCases := []struct {
 			url            string
 			expectedStatus int
+			expectedMsg    string
 		}{
-			{"/provinces/abc/attractions", http.StatusBadRequest},
-			{"/provinces/0/attractions", http.StatusBadRequest},
-			{"/provinces/-1/attractions", http.StatusBadRequest},
+			{"/provinces/abc/attractions", http.StatusBadRequest, "Invalid province ID"},
+			{"/provinces/0/attractions", http.StatusBadRequest, "Province ID must be greater than 0"},
+			{"/provinces/-1/attractions", http.StatusBadRequest, "Province ID must be greater than 0"},
 		}
 
 		for _, testCase := range testCases {
@@ -222,19 +237,14 @@ func TestGetProvinceAttractions(t *testing.T) {
 
 			// Assertions
 			assert.NoError(t, err)
+			assert.Equal(t, testCase.expectedStatus, resp.StatusCode)
+
+			// Parse response
+			var response map[string]interface{}
+			json.NewDecoder(resp.Body).Decode(&response)
 			
-			// For invalid IDs, we expect either 400 or 404 depending on how Fiber handles the route
-			if resp.StatusCode == http.StatusBadRequest {
-				// Parse response
-				var response map[string]interface{}
-				json.NewDecoder(resp.Body).Decode(&response)
-				
-				assert.Contains(t, response, "error")
-				assert.Equal(t, "Invalid province ID", response["error"])
-			} else {
-				// If Fiber returns 404 for invalid routes, that's also acceptable
-				assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-			}
+			assert.Contains(t, response, "error")
+			assert.Equal(t, testCase.expectedMsg, response["error"])
 		}
 	})
 

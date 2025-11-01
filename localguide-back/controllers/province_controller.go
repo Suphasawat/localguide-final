@@ -43,7 +43,7 @@ func GetProvinceAttractions(c *fiber.Ctx) error {
 	}
 
 	var province models.Province
-	if err := config.DB.Preload("TouristAttractions").First(&province, id).Error; err != nil {
+	if err := config.DB.First(&province, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"error": "Province not found",
