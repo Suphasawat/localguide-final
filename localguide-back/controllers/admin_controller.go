@@ -166,6 +166,7 @@ func GetPendingVerifications(c *fiber.Ctx) error {
 		Preload("User").
 		Preload("Province").
 		Preload("Guide").
+		Preload("Language").
 		Find(&verifications).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to retrieve verification requests",

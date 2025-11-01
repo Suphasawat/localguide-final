@@ -14,6 +14,7 @@ func GetGuides(c *fiber.Ctx) error {
 
 	result := config.DB.
 		Preload("User").
+		Preload("Province").
 		Preload("Language").
 		Preload("TouristAttraction").
 		Preload("Certification").
@@ -37,6 +38,7 @@ func GetGuideByID(c *fiber.Ctx) error {
 
 	result := config.DB.
 		Preload("User").
+		Preload("Province").
 		Preload("Language").
 		Preload("TouristAttraction").
 		First(&guide, id)

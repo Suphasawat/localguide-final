@@ -142,6 +142,8 @@ func GetTripOffers(c *fiber.Ctx) error {
     var offers []models.TripOffer
     if err := config.DB.
         Preload("Guide.User").
+        Preload("Guide.Province").
+        Preload("Guide.Language").
         Preload("TripOfferQuotation").
         Where("trip_require_id = ?", tripRequireID).
         Order("created_at DESC").
@@ -166,6 +168,8 @@ func GetTripOfferByID(c *fiber.Ctx) error {
         Preload("TripRequire.User").
         Preload("TripRequire.Province").
         Preload("Guide.User").
+        Preload("Guide.Province").
+        Preload("Guide.Language").
         Preload("TripOfferQuotation").
         First(&offer, id).Error; err != nil {
         if err == gorm.ErrRecordNotFound {
@@ -448,6 +452,8 @@ func GetGuideOffers(c *fiber.Ctx) error {
 		Preload("TripRequire.Province").
 		Preload("TripOfferQuotation").
 		Preload("Guide.User").
+		Preload("Guide.Province").
+		Preload("Guide.Language").
 		Where("guide_id = ?", guide.ID).
 		Order("created_at DESC").
 		Find(&offers).Error; err != nil {

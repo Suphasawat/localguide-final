@@ -29,6 +29,11 @@ export default function OfferCard({
     offer.Status === "sent" &&
     (tripRequire.Status === "open" || tripRequire.Status === "in_review");
 
+  // 👉 ดึงข้อมูลไกด์แบบปลอดภัย
+  const guide: any = (offer as any).Guide || {};
+  const user: any = guide.User || {};
+  const provinceName: string = guide?.Province?.Name || "-";
+
   return (
     <div
       className={`bg-white rounded-lg shadow-md overflow-hidden border-l-4 ${
@@ -90,9 +95,35 @@ export default function OfferCard({
               </button>
             )}
           </div>
+          {/* Summary fields */}
           <div className="grid md:grid-cols-2 gap-4 text-sm">
             <div>⭐ คะแนน: {getGuideRating(offer) ?? "ยังไม่มี"}/5</div>
+            <div>📍 จังหวัด: {provinceName}</div>
+            <div>
+              👤 ชื่อ-นามสกุล:{" "}
+              {`${user?.FirstName || "-"} ${user?.LastName || ""}`.trim()}
+            </div>
+            <div>📞 โทร: {user?.Phone || "-"}</div>
+            <div>⚧ เพศ: {user?.Sex || "-"}</div>
           </div>
+
+          {/* Bio / Description */}
+          {guide?.Bio && (
+            <div className="mt-3 text-sm">
+              <div className="text-gray-600">แนะนำตัว (Bio)</div>
+              <div className="text-gray-800 whitespace-pre-wrap">
+                {guide.Bio}
+              </div>
+            </div>
+          )}
+          {guide?.Description && (
+            <div className="mt-3 text-sm">
+              <div className="text-gray-600">รายละเอียด</div>
+              <div className="text-gray-800 whitespace-pre-wrap">
+                {guide.Description}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Quotation */}
