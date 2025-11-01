@@ -44,26 +44,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (data: LoginData): Promise<boolean> => {
     try {
       const response = await authAPI.login(data);
-      // Handle different response structures from backend
-      let token =
-        (response as any).data?.token || (response as any).data?.Token;
-      let userData =
-        (response as any).data?.user ||
-        (response as any).data?.User ||
-        (response as any).data;
+      // Backend returns { token, user } which axios wraps in { data: { token, user } }
+      const token = response.data?.token;
+      const userData = response.data?.user;
 
-      if (token) {
+      if (token && userData) {
         Cookies.set("token", token, { expires: 7 });
-        if (userData && (userData.id || (userData as any).ID)) {
-          setUser(userData as any);
-        } else {
-          await fetchUser();
-        }
+        // Set user with proper role mapping
+        setUser({
+          id: userData.id,
+          email: userData.email,
+          role: userData.role, // This is the RoleID from backend
+          FirstName: userData.FirstName || userData.firstName,
+          LastName: userData.LastName || userData.lastName,
+          Phone: userData.Phone || userData.phone,
+          Nationality: userData.Nationality || userData.nationality,
+          Sex: userData.Sex || userData.sex,
+          Avatar: userData.Avatar || userData.avatar,
+        });
         return true;
       } else {
         return false;
       }
     } catch (error: any) {
+      console.error("Login error:", error);
       return false;
     }
   };

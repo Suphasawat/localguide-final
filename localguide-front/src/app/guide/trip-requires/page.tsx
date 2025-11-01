@@ -23,12 +23,22 @@ export default function GuideTripRequiresPage() {
   });
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
+    // Wait for auth to finish loading
+    if (authLoading) {
+      return;
+    }
+
+    if (!isAuthenticated) {
       router.push("/auth/login");
       return;
     }
 
-    if (user?.role !== 2) {
+    // Wait for user object to be available
+    if (!user) {
+      return;
+    }
+
+    if (user.role !== 2) {
       router.push("/dashboard");
       return;
     }

@@ -34,21 +34,28 @@ interface TripRequireResponse {
 }
 
 export default function MyTripRequiresPage() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [tripRequires, setTripRequires] = useState<TripRequireResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<{ id: number; title: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
 
   // ===== Inline Notification Modal (แทน alert) =====
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifTitle, setNotifTitle] = useState("");
   const [notifMessage, setNotifMessage] = useState("");
-  const [notifTone, setNotifTone] = useState<"success" | "error" | "info">("info");
+  const [notifTone, setNotifTone] = useState<"success" | "error" | "info">(
+    "info"
+  );
   const [notifPrimaryText, setNotifPrimaryText] = useState("ตกลง");
-  const [notifPrimaryAction, setNotifPrimaryAction] = useState<(() => void) | null>(null);
+  const [notifPrimaryAction, setNotifPrimaryAction] = useState<
+    (() => void) | null
+  >(null);
 
   function openNotif(
     title: string,
@@ -74,16 +81,28 @@ export default function MyTripRequiresPage() {
   }
 
   useEffect(() => {
+    // Wait for auth to finish loading
+    if (authLoading) {
+      return;
+    }
+
     if (!isAuthenticated) {
       router.push("/auth/login");
       return;
     }
-    if (user?.role !== 1) {
+
+    // Wait for user object to be available
+    if (!user) {
+      return;
+    }
+
+    if (user.role !== 1) {
       router.push("/dashboard");
       return;
     }
+
     loadTripRequires();
-  }, [user, isAuthenticated, router]);
+  }, [user, authLoading, isAuthenticated, router]);
 
   const loadTripRequires = async () => {
     try {
@@ -91,7 +110,11 @@ export default function MyTripRequiresPage() {
       setTripRequires(response.data?.tripRequires || []);
     } catch (error) {
       console.error("Failed to load trip requires:", error);
-      openNotif("โหลดข้อมูลไม่สำเร็จ", "ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง", "error");
+      openNotif(
+        "โหลดข้อมูลไม่สำเร็จ",
+        "ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง",
+        "error"
+      );
     } finally {
       setLoading(false);
     }
@@ -177,7 +200,10 @@ export default function MyTripRequiresPage() {
             <TripRequiresHeader
               tripRequiresCount={tripRequires.length}
               openCount={tripRequires.filter((t) => t.Status === "open").length}
-              totalOffers={tripRequires.reduce((sum, t) => sum + t.total_offers, 0)}
+              totalOffers={tripRequires.reduce(
+                (sum, t) => sum + t.total_offers,
+                0
+              )}
             />
             <div className="flex items-center gap-3">
               <Link
@@ -246,8 +272,12 @@ export default function MyTripRequiresPage() {
           <div className="relative w-full max-w-md rounded-2xl bg-white shadow-xl">
             <div className={`${toneBar} h-2 rounded-t-2xl`} />
             <div className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900">{notifTitle}</h3>
-              <p className="mt-2 text-gray-700 whitespace-pre-wrap">{notifMessage}</p>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {notifTitle}
+              </h3>
+              <p className="mt-2 text-gray-700 whitespace-pre-wrap">
+                {notifMessage}
+              </p>
               <div className="mt-6 flex items-center justify-end gap-2">
                 <button
                   type="button"
