@@ -49,7 +49,6 @@ func main() {
 	migrations.SeedTouristAttractions(config.DB)
 	migrations.SeedUsers(config.DB)                   
 	migrations.SeedGuides(config.DB)
-	migrations.SeedReviews(config.DB)
 
 	app := fiber.New()
 	
