@@ -82,12 +82,15 @@ export const tripRequireAPI = {
 // TripOffer API
 export const tripOfferAPI = {
   create: (data: any) => api.post("/trip-offers", data),
+  getOwn: () => api.get("/trip-offers"), // ดึง offers ของ guide เอง
   getByRequire: (requireId: number) =>
     api.get(`/trip-requires/${requireId}/offers`),
   getById: (id: number) => api.get(`/trip-offers/${id}`),
   update: (id: number, data: any) => api.put(`/trip-offers/${id}`, data),
   delete: (id: number) => api.delete(`/trip-offers/${id}`),
   accept: (id: number) => api.put(`/trip-offers/${id}/accept`),
+  reject: (id: number, data?: { reason?: string }) =>
+    api.put(`/trip-offers/${id}/reject`, data || {}),
 };
 
 // TripBooking API
@@ -106,6 +109,10 @@ export const tripBookingAPI = {
     api.put(`/trip-bookings/${id}/report-user-no-show`, data),
   confirmUserNoShow: (id: number) =>
     api.put(`/trip-bookings/${id}/confirm-user-no-show`),
+  reportGuideNoShow: (id: number, data: any) =>
+    api.put(`/trip-bookings/${id}/report-guide-no-show`, data),
+  disputeNoShow: (id: number, data: any) =>
+    api.put(`/trip-bookings/${id}/dispute-no-show`, data),
 };
 
 // User API
@@ -114,6 +121,56 @@ export const userAPI = {
   updateProfile: (data: any) => api.put("/users/profile", data),
   getById: (id: number) => api.get(`/users/${id}`),
   update: (id: number, data: any) => api.put(`/users/${id}`, data),
+  uploadAvatar: (formData: FormData) =>
+    api.post(`/users/profile/avatar`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  deleteAvatar: () => api.delete(`/users/profile/avatar`),
+};
+
+// Review API
+export const reviewAPI = {
+  create: (data: any) => api.post("/reviews", data),
+  getGuideReviews: (guideId: number) => api.get(`/guides/${guideId}/reviews`),
+  getMyReviews: () => api.get("/my-reviews"),
+  update: (id: number, data: any) => api.put(`/reviews/${id}`, data),
+  delete: (id: number) => api.delete(`/reviews/${id}`),
+  respond: (id: number, response: string) =>
+    api.post(`/reviews/${id}/response`, { response }),
+  markHelpful: (id: number) => api.post(`/reviews/${id}/helpful`),
+  getReviewableBookings: () => api.get("/trip-bookings/reviewable"),
+};
+
+// Upload API
+export const uploadAPI = {
+  uploadFile: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.post("/uploads", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
+};
+
+// Admin API
+export const adminAPI = {
+  getVerifications: () => api.get("/admin/verifications"),
+  approveGuide: (id: number, status: string, comments: string) =>
+    api.put(`/admin/verifications/${id}/status`, {
+      status,
+      admin_comments: comments,
+    }),
+  getTripReports: () => api.get("/admin/trip-reports"),
+  handleTripReport: (id: number, data: any) =>
+    api.put(`/admin/trip-reports/${id}`, data),
+  resolveDispute: (bookingId: number, decision: string, adminNotes: string) =>
+    api.put(`/admin/trip-bookings/${bookingId}/resolve-dispute`, {
+      decision,
+      admin_notes: adminNotes,
+      reason: adminNotes,
+    }),
 };
 
 export default api;

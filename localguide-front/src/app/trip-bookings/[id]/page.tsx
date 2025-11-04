@@ -3,8 +3,20 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter, useParams } from "next/navigation";
-import { tripBookingAPI } from "../../lib/api";
+import { tripBookingAPI, uploadAPI } from "../../lib/api";
 import type { TripBooking as TripBookingType } from "../../types";
+import Navbar from "@/app/components/Navbar";
+import BookingStatus from "@/app/components/booking/BookingStatus";
+import TripInformation from "@/app/components/booking/TripInformation";
+import ContactInformation from "@/app/components/booking/ContactInformation";
+import NotesSection from "@/app/components/booking/NotesSection";
+import NoShowModal from "@/app/components/booking/NoShowModal";
+import BookingHeader from "@/app/components/trip-booking-detail/BookingHeader";
+import BookingMessages from "@/app/components/trip-booking-detail/BookingMessages";
+import { useBookingHelpers } from "@/app/components/trip-booking-detail/useBookingHelpers";
+import { useBookingTimeline } from "@/app/components/trip-booking-detail/useBookingTimeline";
+
+type ConfirmActionKey = "arrival" | "complete" | "user_no_show" | null;
 
 export default function TripBookingDetailPage() {
   const { user, isAuthenticated } = useAuth();
@@ -17,103 +29,107 @@ export default function TripBookingDetailPage() {
   const [error, setError] = useState("");
   const [paying, setPaying] = useState(false);
 
-  // Trip status management state
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showNoShowModal, setShowNoShowModal] = useState(false);
   const [noShowReason, setNoShowReason] = useState("");
+  // 🆕 เพิ่ม state สำหรับระบุว่า modal เป็นการรายงานแบบไหน
+  const [noShowReportType, setNoShowReportType] = useState<"guide" | "user">(
+    "guide"
+  );
   const [infoMessage, setInfoMessage] = useState("");
+
+  // 🆕 State สำหรับอัปโหลดรูปหลักฐานสำหรับ no-show report
+  const [noShowEvidenceFile, setNoShowEvidenceFile] = useState<File | null>(
+    null
+  );
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTitle, setConfirmTitle] = useState("");
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [confirmTone, setConfirmTone] = useState<"info" | "success" | "error">(
+    "info"
+  );
+  const [confirmAction, setConfirmAction] = useState<ConfirmActionKey>(null);
+
+  // 🆕 State สำหรับ dispute modal
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [disputeReason, setDisputeReason] = useState("");
+  const [disputeDescription, setDisputeDescription] = useState("");
+  const [disputeEvidenceFile, setDisputeEvidenceFile] = useState<File | null>(
+    null
+  );
+
+  const helpers = useBookingHelpers();
+  const { buildTimeline } = useBookingTimeline(helpers.getStatusText);
 
   useEffect(() => {
     if (!isAuthenticated) {
       router.push("/auth/login");
       return;
     }
-
     if (!bookingId) {
       router.push("/trip-bookings");
       return;
     }
-
     loadBooking();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, bookingId]);
 
   const loadBooking = async () => {
     try {
       const response = await tripBookingAPI.getById(Number(bookingId));
-      const data = response.data?.booking ?? response.data; // support both shapes
+      const data = response.data?.booking ?? response.data;
       setBooking(data || null);
-    } catch (error) {
-      console.error("Failed to load booking:", error);
+    } catch (_error) {
+      console.error("Failed to load booking:", _error);
       setError("ไม่สามารถโหลดข้อมูลได้");
     } finally {
       setLoading(false);
     }
   };
 
-  // Safe getters for mixed shapes
-  const getId = (b: any) => b?.ID ?? b?.id;
-  const getStatus = (b: any) => b?.Status ?? b?.status ?? "";
-  const getPaymentStatus = (b: any) =>
-    b?.PaymentStatus ?? b?.payment_status ?? "";
-  const getTotal = (b: any) => b?.TotalAmount ?? b?.total_amount ?? 0;
-  const getStartDate = (b: any) => b?.StartDate ?? b?.start_date ?? "";
-  const getProvince = (b: any) =>
-    b?.TripOffer?.TripRequire?.Province?.Name ??
-    b?.province_name ??
-    b?.ProvinceName ??
-    "-";
-  const getTripTitle = (b: any) =>
-    b?.TripOffer?.Title ??
-    b?.trip_title ??
-    b?.TripTitle ??
-    `การจอง #${getId(b)}`;
-  const getTripRequireTitle = (b: any) =>
-    b?.TripOffer?.TripRequire?.Title ?? b?.trip_require_title ?? "-";
-  const getTripDays = (b: any) => b?.TripOffer?.TripRequire?.Days ?? "-";
-  const getUserName = (b: any) => {
-    const u = b?.User;
-    if (u?.FirstName || u?.LastName)
-      return `${u?.FirstName || ""} ${u?.LastName || ""}`.trim();
-    return b?.user_name ?? b?.UserName ?? "-";
-  };
-  const getGuideName = (b: any) => {
-    const g = b?.Guide?.User;
-    if (g?.FirstName || g?.LastName)
-      return `${g?.FirstName || ""} ${g?.LastName || ""}`.trim();
-    return b?.guide_name ?? b?.GuideName ?? "-";
-  };
-  const getUserPhone = (b: any) => b?.User?.Phone ?? "-";
-  const getGuidePhone = (b: any) => b?.Guide?.User?.Phone ?? "-";
-  const getSpecialRequests = (b: any) =>
-    b?.SpecialRequests ?? b?.special_requests ?? "";
-  const getNotes = (b: any) => b?.Notes ?? b?.notes ?? "";
-  const getUserIdFromBooking = (b: any) =>
-    b?.User?.ID ?? b?.user_id ?? b?.UserID;
-  const getGuideIdFromBooking = (b: any) =>
-    b?.GuideID ?? b?.guide_id ?? b?.Guide?.User?.ID;
-
   const isOwner =
-    booking && user?.id && getUserIdFromBooking(booking) === user.id;
-  const isGuideOwner =
-    booking && user?.id && getGuideIdFromBooking(booking) === user.id;
+    booking && user?.id && helpers.getUserIdFromBooking(booking) === user.id;
+
+  // Use helper to obtain guide user id (handles various shapes)
+  // Prefer several known shapes returned by backend. Try in order:
+  // 1) booking.Guide.UserID
+  // 2) booking.Guide.User.id
+  // 3) booking.guide_user_id / booking.GuideUserID / booking.guideUserId
+  // 4) fallback to helpers.getGuideIdFromBooking
+  let guideUserId: number | undefined = undefined;
+  if (booking) {
+    const b: any = booking;
+    guideUserId =
+      b?.Guide?.UserID ??
+      b?.Guide?.User?.id ??
+      b?.guide_user_id ??
+      b?.GuideUserID ??
+      b?.guideUserId ??
+      undefined;
+    if (!guideUserId) {
+      // final fallback
+      guideUserId = helpers.getGuideIdFromBooking(booking) as
+        | number
+        | undefined;
+    }
+  }
+  const isGuideOwner = !!(booking && user?.id && guideUserId === user.id);
 
   const handlePayment = async () => {
-    if (!booking) return;
+    if (!booking) {
+      return;
+    }
     setPaying(true);
     setError("");
     setInfoMessage("");
     try {
-      // Create PaymentIntent first to get client_secret for sandbox display
       const resp = await tripBookingAPI.createPayment(Number(bookingId));
       const cs = resp.data?.client_secret;
       const pi = resp.data?.payment_intent_id;
-      const amount = resp.data?.amount ?? getTotal(booking);
-
+      const amount = resp.data?.amount ?? helpers.getTotal(booking);
       if (!cs || !pi) {
         throw new Error("missing client secret or payment intent id");
       }
-
       router.push(
         `/trip-bookings/${bookingId}/payment?pi=${encodeURIComponent(
           pi
@@ -127,10 +143,36 @@ export default function TripBookingDetailPage() {
     }
   };
 
-  // Trip status actions
-  const confirmGuideArrival = async () => {
-    if (!booking) return;
-    if (!confirm("ยืนยันว่าไกด์ได้มาถึงแล้ว?")) return;
+  const openConfirmGuideArrival = () => {
+    setConfirmTitle("ยืนยันว่าไกด์ได้มาถึงแล้ว?");
+    setConfirmMessage("การยืนยันนี้จะแจ้งสถานะให้ทั้งสองฝ่ายทราบ");
+    setConfirmTone("info");
+    setConfirmAction("arrival");
+    setConfirmOpen(true);
+  };
+
+  const openConfirmTripComplete = () => {
+    setConfirmTitle("ยืนยันว่าทริปเสร็จสิ้นแล้ว?");
+    setConfirmMessage("การยืนยันนี้จะทำให้ทริปเข้าสู่สถานะเสร็จสิ้น");
+    setConfirmTone("success");
+    setConfirmAction("complete");
+    setConfirmOpen(true);
+  };
+
+  const openConfirmUserNoShow = () => {
+    setConfirmTitle("ยืนยันว่าคุณไม่มาในวันที่นัดหมาย?");
+    setConfirmMessage(
+      "หากยืนยัน ระบบจะบันทึกว่าคุณไม่ได้เข้าร่วมทริปตามกำหนด และดำเนินการตามขั้นตอนของแพลตฟอร์ม"
+    );
+    setConfirmTone("error");
+    setConfirmAction("user_no_show");
+    setConfirmOpen(true);
+  };
+
+  const doConfirmGuideArrival = async () => {
+    if (!booking) {
+      return;
+    }
     setActionLoading("confirm-arrival");
     setError("");
     setInfoMessage("");
@@ -143,12 +185,14 @@ export default function TripBookingDetailPage() {
       setError("ไม่สามารถยืนยันการมาถึงของไกด์ได้");
     } finally {
       setActionLoading(null);
+      setConfirmOpen(false);
     }
   };
 
-  const confirmTripComplete = async () => {
-    if (!booking) return;
-    if (!confirm("ยืนยันว่าทริปเสร็จสิ้นแล้ว?")) return;
+  const doConfirmTripComplete = async () => {
+    if (!booking) {
+      return;
+    }
     setActionLoading("confirm-complete");
     setError("");
     setInfoMessage("");
@@ -161,41 +205,14 @@ export default function TripBookingDetailPage() {
       setError("ไม่สามารถยืนยันการเสร็จสิ้นทริปได้");
     } finally {
       setActionLoading(null);
+      setConfirmOpen(false);
     }
   };
 
-  const openReportNoShow = () => {
-    setNoShowReason("");
-    setShowNoShowModal(true);
-  };
-
-  const submitReportNoShow = async () => {
-    if (!booking) return;
-    if (!noShowReason.trim()) {
-      setError("โปรดระบุเหตุผลในการรายงานลูกค้าไม่มา");
+  const doConfirmUserNoShow = async () => {
+    if (!booking) {
       return;
     }
-    setActionLoading("report-no-show");
-    setError("");
-    setInfoMessage("");
-    try {
-      await tripBookingAPI.reportUserNoShow(Number(bookingId), {
-        reason: noShowReason,
-      });
-      setShowNoShowModal(false);
-      setInfoMessage("รายงานลูกค้าไม่มาเรียบร้อย");
-      await loadBooking();
-    } catch (e) {
-      console.error(e);
-      setError("ไม่สามารถรายงานลูกค้าไม่มาได้");
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const confirmUserNoShow = async () => {
-    if (!booking) return;
-    if (!confirm("ยืนยันว่าคุณไม่มาในวันที่นัดหมาย?")) return;
     setActionLoading("confirm-user-no-show");
     setError("");
     setInfoMessage("");
@@ -208,394 +225,413 @@ export default function TripBookingDetailPage() {
       setError("ไม่สามารถยืนยันการไม่มาของลูกค้าได้");
     } finally {
       setActionLoading(null);
+      setConfirmOpen(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "pending_payment":
-        return "bg-yellow-100 text-yellow-800";
-      case "paid":
-        return "bg-blue-100 text-blue-800";
-      case "trip_started":
-        return "bg-green-100 text-green-800";
-      case "trip_completed":
-        return "bg-green-100 text-green-800";
-      case "cancelled":
-        return "bg-red-100 text-red-800";
-      case "no_show":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
+  // 🆕 เปิด modal สำหรับลูกค้ารายงานไกด์ไม่มา
+  const openReportGuideNoShow = () => {
+    setNoShowReason("");
+    setNoShowEvidenceFile(null);
+    setNoShowReportType("guide");
+    setShowNoShowModal(true);
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "pending_payment":
-        return "รอชำระเงิน";
-      case "paid":
-        return "ชำระแล้ว";
-      case "trip_started":
-        return "เริ่มทริปแล้ว";
-      case "trip_completed":
-        return "เสร็จสิ้น";
-      case "cancelled":
-        return "ยกเลิก";
-      case "no_show":
-        return "ลูกค้าไม่มา";
-      default:
-        return status || "-";
-    }
+  // 🆕 เปิด modal สำหรับไกด์รายงานลูกค้าไม่มา
+  const openReportUserNoShow = () => {
+    setNoShowReason("");
+    setNoShowEvidenceFile(null);
+    setNoShowReportType("user");
+    setShowNoShowModal(true);
   };
 
-  // Timeline helpers
-  type StepState = "complete" | "current" | "upcoming";
-  const TIMELINE_ORDER = [
-    "pending_payment",
-    "paid",
-    "trip_started",
-    "trip_completed",
-  ] as const;
-
-  const buildTimeline = (status: string) => {
-    let terminal: "cancelled" | "no_show" | undefined;
-    let currentIndex = TIMELINE_ORDER.indexOf(status as any);
-
-    if (status === "no_show") {
-      terminal = "no_show";
-      currentIndex = TIMELINE_ORDER.indexOf("paid");
-    } else if (status === "cancelled") {
-      terminal = "cancelled";
-      // Assume cancellation usually happens before trip started
-      currentIndex = Math.max(0, TIMELINE_ORDER.indexOf("pending_payment"));
+  const submitReportNoShow = async () => {
+    if (!booking) {
+      return;
+    }
+    if (!noShowReason.trim()) {
+      setError(
+        `โปรดระบุเหตุผลในการรายงาน${
+          noShowReportType === "guide" ? "ไกด์" : "ลูกค้า"
+        }ไม่มา`
+      );
+      return;
     }
 
-    if (currentIndex < 0) currentIndex = 0;
+    const actionKey =
+      noShowReportType === "guide"
+        ? "report-guide-no-show"
+        : "report-user-no-show";
+    setActionLoading(actionKey);
+    setError("");
+    setInfoMessage("");
 
-    const steps = TIMELINE_ORDER.map((key, idx) => {
-      let state: StepState = "upcoming";
-      if (status === "trip_completed") {
-        state = idx < TIMELINE_ORDER.length - 1 ? "complete" : "current";
-      } else if (!terminal) {
-        state =
-          idx < currentIndex
-            ? "complete"
-            : idx === currentIndex
-            ? "current"
-            : "upcoming";
-      } else {
-        state = idx < currentIndex ? "complete" : "upcoming";
+    try {
+      // 🆕 อัปโหลดรูปหลักฐานก่อนส่งรายงาน (ถ้ามี)
+      let evidenceUrl = "";
+      if (noShowEvidenceFile) {
+        try {
+          const uploadResponse = await uploadAPI.uploadFile(noShowEvidenceFile);
+          evidenceUrl =
+            uploadResponse.data?.url || uploadResponse.data?.path || "";
+        } catch (uploadErr: any) {
+          console.error("Upload error:", uploadErr);
+          throw new Error(
+            uploadErr?.response?.data?.error || "ไม่สามารถอัปโหลดไฟล์หลักฐานได้"
+          );
+        }
       }
-      return { key, label: getStatusText(key), state };
-    });
 
-    return { steps, terminal };
+      // 🆕 เรียก API ตามประเภทการรายงาน
+      if (noShowReportType === "guide") {
+        await tripBookingAPI.reportGuideNoShow(Number(bookingId), {
+          reason: noShowReason,
+          description: noShowReason,
+          evidence: evidenceUrl,
+        });
+        setInfoMessage("รายงานไกด์ไม่มาเรียบร้อย คืนเงินเต็มจำนวนแล้ว");
+      } else {
+        await tripBookingAPI.reportUserNoShow(Number(bookingId), {
+          reason: noShowReason,
+          description: noShowReason,
+          evidence: evidenceUrl,
+        });
+        setInfoMessage("รายงานลูกค้าไม่มาเรียบร้อย");
+      }
+      setShowNoShowModal(false);
+      await loadBooking();
+    } catch (e: any) {
+      console.error(`Error reporting ${noShowReportType} no-show:`, e);
+      const msg =
+        e?.response?.data?.error ||
+        e?.response?.data?.message ||
+        `ไม่สามารถรายงาน${
+          noShowReportType === "guide" ? "ไกด์" : "ลูกค้า"
+        }ไม่มาได้`;
+      const statusInfo = e?.response?.data?.status
+        ? ` (สถานะปัจจุบัน: ${e.response.data.status})`
+        : "";
+      const dateInfo = e?.response?.data?.start_date
+        ? ` วันเริ่มทริป: ${e.response.data.start_date}`
+        : "";
+      setError(msg + statusInfo + dateInfo);
+    } finally {
+      setActionLoading(null);
+    }
   };
+
+  // 🆕 ฟังก์ชันสำหรับเปิด dispute modal
+  const openDisputeModal = () => {
+    setDisputeReason("");
+    setDisputeDescription("");
+    setDisputeEvidenceFile(null);
+    setShowDisputeModal(true);
+  };
+
+  // 🆕 ฟังก์ชันสำหรับส่งข้อมูลการโต้แย้ง
+  const submitDispute = async () => {
+    if (!booking) return;
+    if (!disputeReason.trim()) {
+      setError("โปรดระบุเหตุผลที่โต้แย้ง");
+      return;
+    }
+    setActionLoading("dispute-no-show");
+    setError("");
+    setInfoMessage("");
+    try {
+      // If there's an evidence file, upload it first to server static storage endpoint
+      let evidenceUrl = "";
+      if (disputeEvidenceFile) {
+        try {
+          const uploadResponse = await uploadAPI.uploadFile(
+            disputeEvidenceFile
+          );
+          evidenceUrl =
+            uploadResponse.data?.url || uploadResponse.data?.path || "";
+        } catch (uploadErr: any) {
+          console.error("Upload error:", uploadErr);
+          throw new Error(
+            uploadErr?.response?.data?.error || "ไม่สามารถอัปโหลดไฟล์หลักฐานได้"
+          );
+        }
+      }
+
+      const payload = {
+        reason: disputeReason,
+        description: disputeDescription,
+        evidence: evidenceUrl,
+      };
+
+      await tripBookingAPI.disputeNoShow(Number(bookingId), payload);
+      setInfoMessage(
+        "โต้แย้งการรีพอร์ตเรียบร้อยแล้ว Admin จะพิจารณาภายใน 24-48 ชั่วโมง"
+      );
+      setShowDisputeModal(false);
+      await loadBooking();
+    } catch (e: any) {
+      console.error("Failed to submit dispute:", e);
+      const msg =
+        e?.response?.data?.error || e?.message || "ไม่สามารถโต้แย้งได้";
+      setError(msg);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const getStatusColor = (status: string) => helpers.getStatusColor(status);
+  const getStatusText = (status: string) => helpers.getStatusText(status);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">กำลังโหลด...</div>
-      </div>
+      <>
+        <Navbar />
+        <div className="min-h-screen flex items-center justify-center pt-8">
+          <div className="text-lg">กำลังโหลด...</div>
+        </div>
+      </>
     );
   }
 
   if (!booking) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg text-red-600">ไม่พบข้อมูลการจอง</div>
-      </div>
+      <>
+        <Navbar />
+        <div className="min-h-screen flex items-center justify-center pt-8">
+          <div className="text-lg text-red-600">ไม่พบข้อมูลการจอง</div>
+        </div>
+      </>
     );
   }
 
-  const status = getStatus(booking);
-  const timeline = buildTimeline(status);
+  const status = helpers.getStatus(booking);
+  const timeline = useBookingTimeline(helpers.getStatusText).buildTimeline(
+    status
+  );
+
+  let confirmToneBar = "bg-emerald-600";
+  if (confirmTone === "error") {
+    confirmToneBar = "bg-red-600";
+  }
+  if (confirmTone === "info") {
+    confirmToneBar = "bg-amber-600";
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <button
-            onClick={() => router.back()}
-            className="mb-4 text-blue-600 hover:text-blue-800"
-          >
-            ← กลับ
-          </button>
-          <h1 className="text-3xl font-bold text-gray-900">รายละเอียดการจอง</h1>
-          <p className="mt-2 text-gray-600">หมายเลขการจอง: #{getId(booking)}</p>
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gray-50 pt-8 pb-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <BookingHeader
+            bookingId={helpers.getId(booking)}
+            onBack={() => {
+              router.back();
+            }}
+          />
+
+          <BookingMessages error={error} infoMessage={infoMessage} />
+
+          <div className="space-y-6">
+            <BookingStatus
+              booking={booking}
+              user={user}
+              status={status}
+              timeline={timeline}
+              isOwner={!!isOwner}
+              isGuideOwner={!!isGuideOwner}
+              paying={paying}
+              actionLoading={actionLoading}
+              onPayment={handlePayment}
+              onConfirmGuideArrival={openConfirmGuideArrival}
+              onConfirmTripComplete={openConfirmTripComplete}
+              onOpenReportNoShow={openReportGuideNoShow}
+              onConfirmUserNoShow={openConfirmUserNoShow}
+              onOpenReportUserNoShow={openReportUserNoShow}
+              onOpenDispute={openDisputeModal}
+              getStatusColor={getStatusColor}
+              getStatusText={getStatusText}
+              getPaymentStatus={helpers.getPaymentStatus}
+              getStartDate={helpers.getStartDate}
+              getTotal={helpers.getTotal}
+              getId={helpers.getId}
+            />
+
+            <TripInformation
+              booking={booking}
+              getTripTitle={helpers.getTripTitle}
+              getProvince={helpers.getProvince}
+              getTripRequireTitle={helpers.getTripRequireTitle}
+              getTripDays={helpers.getTripDays}
+            />
+
+            <ContactInformation
+              booking={booking}
+              getUserName={helpers.getUserName}
+              getUserPhone={helpers.getUserPhone}
+              getGuideName={helpers.getGuideName}
+              getGuidePhone={helpers.getGuidePhone}
+            />
+
+            <NotesSection
+              booking={booking}
+              getSpecialRequests={helpers.getSpecialRequests}
+              getNotes={helpers.getNotes}
+            />
+          </div>
         </div>
 
-        {error && (
-          <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            {error}
-          </div>
-        )}
-        {infoMessage && (
-          <div className="mb-6 bg-green-100 border border-green-400 text-green-800 px-4 py-3 rounded">
-            {infoMessage}
-          </div>
-        )}
+        <NoShowModal
+          show={showNoShowModal}
+          reason={noShowReason}
+          actionLoading={actionLoading}
+          reportType={noShowReportType}
+          evidenceFile={noShowEvidenceFile}
+          onEvidenceFileChange={setNoShowEvidenceFile}
+          onReasonChange={setNoShowReason}
+          onClose={() => {
+            setShowNoShowModal(false);
+          }}
+          onSubmit={submitReportNoShow}
+        />
 
-        <div className="space-y-6">
-          {/* Booking Status */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">สถานะการจอง</h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <div className="text-sm text-gray-500">สถานะ</div>
-                <div
-                  className={`inline-block mt-1 px-3 py-1 rounded-full text-sm ${getStatusColor(
-                    status
-                  )}`}
-                >
-                  {getStatusText(status)}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-500">สถานะการชำระเงิน</div>
-                <div className="mt-1 font-medium">
-                  {getPaymentStatus(booking) || "-"}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-500">วันที่เริ่ม</div>
-                <div className="mt-1">{getStartDate(booking) || "-"}</div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-500">ยอดรวม</div>
-                <div className="mt-1 font-semibold">฿{getTotal(booking)}</div>
-              </div>
-            </div>
-
-            {status === "pending_payment" && isOwner && (
-              <button
-                onClick={handlePayment}
-                disabled={paying}
-                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60"
-              >
-                {paying ? "กำลังสร้างการชำระเงิน..." : "ชำระเงิน"}
-              </button>
-            )}
-
-            {/* Timeline */}
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-3">ไทม์ไลน์สถานะ</h3>
-              <ol className="relative border-s border-gray-200 ms-3">
-                {timeline.steps.map((step) => {
-                  const color =
-                    step.state === "complete"
-                      ? "bg-green-600"
-                      : step.state === "current"
-                      ? "bg-blue-600"
-                      : "bg-gray-300";
-                  const textColor =
-                    step.state === "upcoming"
-                      ? "text-gray-500"
-                      : "text-gray-900";
-                  return (
-                    <li key={step.key} className="mb-8 ms-6">
-                      <span
-                        className={`absolute -start-3 flex h-6 w-6 items-center justify-center rounded-full ring-8 ring-white ${color}`}
-                      >
-                        {step.state === "complete" ? (
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                            className="h-4 w-4 text-white"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.529-1.652-1.651a.75.75 0 1 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.144-.094l3.474-4.222Z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        ) : null}
-                      </span>
-                      <div className={`font-medium ${textColor}`}>
-                        {step.label}
-                      </div>
-                    </li>
-                  );
-                })}
-                {timeline.terminal && (
-                  <li className="mb-2 ms-6">
-                    <span className="absolute -start-3 flex h-6 w-6 items-center justify-center rounded-full ring-8 ring-white bg-red-600">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        className="h-4 w-4 text-white"
-                      >
-                        <path d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-3 9.75a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75Z" />
-                      </svg>
-                    </span>
-                    <div className="font-medium text-red-700">
-                      {timeline.terminal === "cancelled"
-                        ? "ยกเลิก"
-                        : "ลูกค้าไม่มา"}
-                    </div>
-                  </li>
-                )}
-              </ol>
-            </div>
-
-            {/* Trip status management actions */}
-            <div className="mt-6 space-x-3">
-              {isOwner && status === "paid" && (
-                <button
-                  onClick={confirmGuideArrival}
-                  disabled={actionLoading === "confirm-arrival"}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-60"
-                >
-                  {actionLoading === "confirm-arrival"
-                    ? "กำลังยืนยัน..."
-                    : "ยืนยันไกด์มาถึงแล้ว"}
-                </button>
-              )}
-
-              {isOwner && status === "trip_started" && (
-                <button
-                  onClick={confirmTripComplete}
-                  disabled={actionLoading === "confirm-complete"}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-60"
-                >
-                  {actionLoading === "confirm-complete"
-                    ? "กำลังยืนยัน..."
-                    : "ยืนยันทริปเสร็จสิ้น"}
-                </button>
-              )}
-
-              {isGuideOwner && status === "paid" && (
-                <button
-                  onClick={openReportNoShow}
-                  disabled={actionLoading === "report-no-show"}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-60"
-                >
-                  รายงานลูกค้าไม่มา
-                </button>
-              )}
-
-              {/* Optional: allow user to confirm no-show after guide report (conservative gating) */}
-              {isOwner && status === "paid" && (
-                <button
-                  onClick={confirmUserNoShow}
-                  disabled={actionLoading === "confirm-user-no-show"}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-60"
-                >
-                  ยืนยันว่าฉันไม่มา
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Trip Information */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">ข้อมูลทริป</h2>
-            <div className="space-y-2">
-              <div>
-                <span className="text-sm text-gray-500">ชื่อทริป:</span>{" "}
-                <span className="font-medium">{getTripTitle(booking)}</span>
-              </div>
-              <div>
-                <span className="text-sm text-gray-500">จังหวัด:</span>{" "}
-                <span className="font-medium">{getProvince(booking)}</span>
-              </div>
-              <div>
-                <span className="text-sm text-gray-500">
-                  หัวข้อความต้องการ:
-                </span>{" "}
-                <span className="font-medium">
-                  {getTripRequireTitle(booking)}
-                </span>
-              </div>
-              <div>
-                <span className="text-sm text-gray-500">จำนวนวัน:</span>{" "}
-                <span className="font-medium">{getTripDays(booking)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Contacts */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">ข้อมูลติดต่อ</h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <div className="text-sm text-gray-500">ผู้จอง</div>
-                <div className="font-medium">{getUserName(booking)}</div>
-                <div className="text-sm text-gray-600">
-                  โทร: {getUserPhone(booking)}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-500">ไกด์</div>
-                <div className="font-medium">{getGuideName(booking)}</div>
-                <div className="text-sm text-gray-600">
-                  โทร: {getGuidePhone(booking)}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Notes */}
-          {(getSpecialRequests(booking) || getNotes(booking)) && (
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold mb-4">หมายเหตุ</h2>
-              {getSpecialRequests(booking) && (
-                <div className="mb-2">
-                  <span className="text-sm text-gray-500">
-                    ความต้องการพิเศษ:
-                  </span>{" "}
-                  {getSpecialRequests(booking)}
-                </div>
-              )}
-              {getNotes(booking) && (
+        {/* Dispute Modal */}
+        {showDisputeModal ? (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center">
+            <div
+              className="absolute inset-0 bg-black/30"
+              onClick={() => {
+                // click outside to close
+                setShowDisputeModal(false);
+              }}
+            />
+            <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-xl p-6">
+              <h3 className="text-lg font-semibold">โต้แย้งการรีพอร์ต</h3>
+              <p className="text-sm text-gray-600 mt-2">
+                กรุณาระบุเหตุผลและแนบหลักฐาน (ถ้ามี)
+              </p>
+              <div className="mt-4 space-y-3">
                 <div>
-                  <span className="text-sm text-gray-500">โน้ต:</span>{" "}
-                  {getNotes(booking)}
+                  <label className="block text-sm font-medium text-gray-700">
+                    เหตุผล
+                  </label>
+                  <input
+                    value={disputeReason}
+                    onChange={(e) => setDisputeReason(e.target.value)}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  />
                 </div>
-              )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    รายละเอียดเพิ่มเติม
+                  </label>
+                  <textarea
+                    value={disputeDescription}
+                    onChange={(e) => setDisputeDescription(e.target.value)}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    หลักฐาน (รูปภาพ)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) =>
+                      setDisputeEvidenceFile(e.target.files?.[0] ?? null)
+                    }
+                    className="mt-1 block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-md file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-purple-50 file:text-purple-700
+                      hover:file:bg-purple-100"
+                  />
+                  {disputeEvidenceFile && (
+                    <div className="mt-2">
+                      <p className="text-xs text-gray-600 mb-1">
+                        เลือกแล้ว: {disputeEvidenceFile.name}
+                      </p>
+                      <img
+                        src={URL.createObjectURL(disputeEvidenceFile)}
+                        alt="Preview"
+                        className="max-w-full h-auto max-h-48 rounded border border-gray-200"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  onClick={() => setShowDisputeModal(false)}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  onClick={submitDispute}
+                  disabled={actionLoading === "dispute-no-show"}
+                  className="rounded-lg px-4 py-2 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
+                >
+                  {actionLoading === "dispute-no-show"
+                    ? "กำลังส่ง..."
+                    : "ส่งโต้แย้ง"}
+                </button>
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+        ) : null}
       </div>
 
-      {/* Report No-Show Modal */}
-      {showNoShowModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-3">รายงานลูกค้าไม่มา</h3>
-            <p className="text-sm text-gray-600 mb-3">
-              โปรดระบุเหตุผลหรือรายละเอียดเพิ่มเติม
-            </p>
-            <textarea
-              className="w-full border border-gray-300 rounded-md p-2 mb-4"
-              rows={4}
-              value={noShowReason}
-              onChange={(e) => setNoShowReason(e.target.value)}
-              placeholder="รายละเอียด..."
-            />
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setShowNoShowModal(false)}
-                className="px-4 py-2 text-sm rounded-md border"
-              >
-                ยกเลิก
-              </button>
-              <button
-                onClick={submitReportNoShow}
-                disabled={actionLoading === "report-no-show"}
-                className="px-4 py-2 text-sm rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-60"
-              >
-                {actionLoading === "report-no-show"
-                  ? "กำลังส่ง..."
-                  : "ส่งรายงาน"}
-              </button>
+      {confirmOpen ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => {}} />
+          <div className="relative w-full max-w-md rounded-2xl bg-white shadow-xl">
+            <div className={`${confirmToneBar} h-2 rounded-t-2xl`} />
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {confirmTitle}
+              </h3>
+              <p className="mt-2 text-gray-700 whitespace-pre-wrap">
+                {confirmMessage}
+              </p>
+              <div className="mt-6 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={actionLoading !== null}
+                  onClick={() => {
+                    setConfirmOpen(false);
+                  }}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="button"
+                  disabled={actionLoading !== null}
+                  onClick={() => {
+                    if (confirmAction === "arrival") {
+                      doConfirmGuideArrival();
+                    } else if (confirmAction === "complete") {
+                      doConfirmTripComplete();
+                    } else if (confirmAction === "user_no_show") {
+                      doConfirmUserNoShow();
+                    }
+                  }}
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 ${
+                    confirmTone === "error"
+                      ? "bg-red-600 hover:bg-red-700"
+                      : confirmTone === "success"
+                      ? "bg-emerald-600 hover:bg-emerald-700"
+                      : "bg-amber-600 hover:bg-amber-700"
+                  }`}
+                >
+                  {actionLoading ? "กำลังดำเนินการ..." : "ยืนยัน"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      )}
-    </div>
+      ) : null}
+    </>
   );
 }

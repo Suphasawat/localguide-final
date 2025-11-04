@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { api } from "../../lib/api";
+import { tripOfferAPI } from "../../lib/api";
 import Link from "next/link";
+import Navbar from "@/app/components/Navbar";
+import Footer from "@/app/components/Footer";
 
 interface TripOffer {
   ID: number;
@@ -49,12 +51,17 @@ export default function MyOffersPage() {
 
   const loadMyOffers = async () => {
     try {
-      // Since there's no specific API for guide's offers, we'll need to implement this
-      // For now, we'll show a placeholder
-      setOffers([]);
-    } catch (error) {
+      setLoading(true);
+      setError("");
+      const response = await tripOfferAPI.getOwn();
+      const data = response.data?.offers || response.data?.data || [];
+      setOffers(data);
+    } catch (error: any) {
       console.error("Failed to load offers:", error);
-      setError("ไม่สามารถโหลดข้อมูลได้");
+      setError(
+        error.response?.data?.error ||
+          "ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง"
+      );
     } finally {
       setLoading(false);
     }
@@ -66,8 +73,6 @@ export default function MyOffersPage() {
         return "bg-gray-100 text-gray-800";
       case "sent":
         return "bg-blue-100 text-blue-800";
-      case "negotiating":
-        return "bg-yellow-100 text-yellow-800";
       case "accepted":
         return "bg-green-100 text-green-800";
       case "rejected":
@@ -87,8 +92,6 @@ export default function MyOffersPage() {
         return "ฉบับร่าง";
       case "sent":
         return "ส่งแล้ว";
-      case "negotiating":
-        return "กำลังเจรจา";
       case "accepted":
         return "ได้รับการยอมรับ";
       case "rejected":
@@ -110,19 +113,43 @@ export default function MyOffersPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 flex justify-between items-center">
+return (
+  <>
+    <Navbar />
+
+    {/* ✅ Header สีเขียว (ขนาดกลาง) */}
+    <div className="bg-emerald-600">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-white">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">ข้อเสนอของฉัน</h1>
-            <p className="mt-2 text-gray-600">
+            <p className="text-emerald-100 text-sm font-medium uppercase tracking-wide">
+              สำหรับไกด์
+            </p>
+            <h1 className="mt-1 text-4xl font-extrabold">ข้อเสนอของฉัน</h1>
+            <p className="mt-2 text-emerald-50">
               ดูและจัดการข้อเสนอแพ็กเกจทัวร์ที่คุณส่งไป
             </p>
           </div>
+
+          {/* ปุ่มสำหรับจอ ≥ sm */}
           <Link
             href="/guide/browse-trips"
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+            className="hidden sm:inline-flex rounded-full bg-white/90 hover:bg-white px-5 py-2.5 text-emerald-700 font-semibold shadow-sm transition"
+          >
+            เสนอแพ็กเกจใหม่
+          </Link>
+        </div>
+      </div>
+    </div>
+
+    {/* ✅ เนื้อหาหลัก */}
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* ปุ่มสำหรับจอ < sm */}
+        <div className="sm:hidden mb-6">
+          <Link
+            href="/guide/browse-trips"
+            className="w-full inline-flex justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 font-semibold shadow-sm transition"
           >
             เสนอแพ็กเกจใหม่
           </Link>
@@ -137,12 +164,12 @@ export default function MyOffersPage() {
         {offers.length === 0 ? (
           <div className="text-center py-12">
             <div className="max-w-md mx-auto">
-              <p className="text-gray-500 text-lg mb-4">
+              <p className="text-gray-600 text-lg mb-4">
                 คุณยังไม่มีข้อเสนอแพ็กเกจ
               </p>
               <Link
                 href="/guide/browse-trips"
-                className="inline-block bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors"
+                className="inline-block rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 font-semibold shadow-sm transition"
               >
                 เริ่มเสนอแพ็กเกจแรก
               </Link>
@@ -153,7 +180,7 @@ export default function MyOffersPage() {
             {offers.map((offer) => (
               <div
                 key={offer.ID}
-                className="bg-white rounded-lg shadow-md overflow-hidden"
+                className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
               >
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
@@ -161,7 +188,7 @@ export default function MyOffersPage() {
                       {offer.Title}
                     </h3>
                     <span
-                      className={`px-2 py-1 text-xs rounded-full ${getStatusColor(
+                      className={`px-2.5 py-1 text-xs rounded-full ${getStatusColor(
                         offer.Status
                       )}`}
                     >
@@ -178,6 +205,7 @@ export default function MyOffersPage() {
                       👤 ลูกค้า: {offer.TripRequire?.User?.FirstName}{" "}
                       {offer.TripRequire?.User?.LastName}
                     </div>
+
                     {offer.TripOfferQuotation?.[0] && (
                       <>
                         <div>
@@ -185,14 +213,9 @@ export default function MyOffersPage() {
                           {offer.TripOfferQuotation[0].TotalPrice?.toLocaleString()}{" "}
                           บาท
                         </div>
-                        <div>
-                          ⏰ หมดอายุ:{" "}
-                          {new Date(
-                            offer.TripOfferQuotation[0].ValidUntil
-                          ).toLocaleDateString("th-TH")}
-                        </div>
                       </>
                     )}
+
                     {offer.SentAt && (
                       <div>
                         📅 ส่งเมื่อ:{" "}
@@ -204,7 +227,7 @@ export default function MyOffersPage() {
                   <div className="mt-6">
                     <Link
                       href={`/guide/trip-offers/${offer.ID}`}
-                      className="w-full bg-blue-600 text-white text-center py-2 px-4 rounded-md hover:bg-blue-700 transition-colors block"
+                      className="w-full block text-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 font-semibold shadow-sm transition"
                     >
                       ดูรายละเอียด
                     </Link>
@@ -216,5 +239,9 @@ export default function MyOffersPage() {
         )}
       </div>
     </div>
-  );
+
+    <Footer />
+  </>
+);
+
 }

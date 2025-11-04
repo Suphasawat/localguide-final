@@ -14,6 +14,7 @@ func GetGuides(c *fiber.Ctx) error {
 
 	result := config.DB.
 		Preload("User").
+		Preload("Province").
 		Preload("Language").
 		Preload("TouristAttraction").
 		Preload("Certification").
@@ -37,6 +38,7 @@ func GetGuideByID(c *fiber.Ctx) error {
 
 	result := config.DB.
 		Preload("User").
+		Preload("Province").
 		Preload("Language").
 		Preload("TouristAttraction").
 		First(&guide, id)
@@ -55,7 +57,7 @@ func GetGuideByID(c *fiber.Ctx) error {
 
 func CreateGuide(c *fiber.Ctx) error {
     // ดึง UserID จาก JWT token แทนจากข้อมูลที่ส่งมา
-    userID := c.Locals("userID")
+    userID := c.Locals("user_id")
     if userID == nil {
         return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
             "error": "Unauthorized",
@@ -66,7 +68,6 @@ func CreateGuide(c *fiber.Ctx) error {
         Bio                 string   `json:"bio"`
         Description         string   `json:"description"`
         ProvinceID          uint     `json:"provinceId"`
-        Price               float64  `json:"price"`
         LanguageIDs         []uint   `json:"languageIds"`
         AttractionIDs       []uint   `json:"attractionIds"`
         CertificationNumber string   `json:"certificationNumber"`
@@ -79,10 +80,10 @@ func CreateGuide(c *fiber.Ctx) error {
     }
 
     // ตรวจสอบข้อมูลที่จำเป็น
-    if req.Bio == "" || req.Description == "" || req.Price <= 0 || 
+    if req.Bio == "" || req.Description == "" || 
        req.ProvinceID == 0 || len(req.LanguageIDs) == 0 || req.CertificationNumber == "" {
         return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "error": "Missing required fields (bio, description, price, provinceId, languageIds, certificationNumber)",
+            "error": "Missing required fields (bio, description, provinceId, languageIds, certificationNumber)",
         })
     }
 
@@ -112,7 +113,6 @@ func CreateGuide(c *fiber.Ctx) error {
         UserID:              userID.(uint),
         Bio:                 req.Bio,
         Description:         req.Description,
-        Price:               req.Price,
         ProvinceID:          req.ProvinceID,
         CertificationData:   req.CertificationNumber,
         Status:              "pending",

@@ -41,7 +41,7 @@ func CreateTripRequire(c *fiber.Ctx) error {
 	}
 
 	// ดึง UserID จาก JWT token
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("user_id").(uint)
 
 	// ตรวจสอบว่า Province มีอยู่จริง
 	var province models.Province
@@ -116,7 +116,7 @@ func CreateTripRequire(c *fiber.Ctx) error {
 
 // GetTripRequires - ดู trip requires ของ user ตัวเอง
 func GetTripRequires(c *fiber.Ctx) error {
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("user_id").(uint)
 
 	var tripRequires []models.TripRequire
 	if err := config.DB.Where("user_id = ?", userID).Order("created_at DESC").Find(&tripRequires).Error; err != nil {
@@ -161,7 +161,7 @@ func GetTripRequires(c *fiber.Ctx) error {
 // BrowseTripRequires - สำหรับ Guide ดู trip requires ที่สามารถ offer ได้
 func BrowseTripRequires(c *fiber.Ctx) error {
 	// ตรวจสอบว่าเป็น Guide
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("user_id").(uint)
 	var guide models.Guide
 	if err := config.DB.Where("user_id = ?", userID).First(&guide).Error; err != nil {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
@@ -175,7 +175,14 @@ func BrowseTripRequires(c *fiber.Ctx) error {
 	maxPrice := c.Query("max_price")
 	status := c.Query("status", "open")
 
-	query := config.DB.Where("status = ?", status)
+	// ให้แสดงทั้ง open และ in_review
+	var statuses []string
+	if status == "open" {
+		statuses = []string{"open", "in_review"}
+	} else {
+		statuses = []string{status}
+	}
+	query := config.DB.Where("status IN ?", statuses)
 
 	// Filter by province if specified
 	if provinceID != "" {
@@ -189,6 +196,15 @@ func BrowseTripRequires(c *fiber.Ctx) error {
 	if maxPrice != "" {
 		query = query.Where("min_price <= ?", maxPrice)
 	}
+
+	// Only show trip requires in the guide's province by default (unless a province_id filter is provided)
+	if provinceID == "" {
+		query = query.Where("province_id = ?", guide.ProvinceID)
+	}
+
+	// Enforce min rating requirement: only show trip requires where required minimum rating is <= guide's rating
+	// TripRequire.MinRating defaults to 0 so this will include all when not set
+	query = query.Where("min_rating <= ?", guide.Rating)
 
 	var tripRequires []models.TripRequire
 	if err := query.Order("created_at DESC").Find(&tripRequires).Error; err != nil {
@@ -349,7 +365,7 @@ func DeleteTripRequire(c *fiber.Ctx) error {
 	}
 
 	// ตรวจสอบว่าเป็นเจ้าของ trip require หรือไม่
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("user_id").(uint)
 	var tripRequire models.TripRequire
 	if err := config.DB.Where("id = ? AND user_id = ?", tripID, userID).First(&tripRequire).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {

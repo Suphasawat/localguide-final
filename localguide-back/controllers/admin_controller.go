@@ -48,7 +48,6 @@ func ApproveGuide(c *fiber.Ctx) error {
 			UserID:      verification.UserID,
 			Bio:         verification.Bio,
 			Description: verification.Description,
-			Price:       verification.Price,
 			ProvinceID:  verification.ProvinceID, // ใช้ ProvinceID จาก verification
 			Available:   true, // ตั้งค่าเป็น available
 			Rating:      0,    // เริ่มต้นที่ 0
@@ -167,6 +166,7 @@ func GetPendingVerifications(c *fiber.Ctx) error {
 		Preload("User").
 		Preload("Province").
 		Preload("Guide").
+		Preload("Language").
 		Find(&verifications).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to retrieve verification requests",
@@ -183,7 +183,8 @@ func GetAllTripReports(c *fiber.Ctx) error {
 	var reports []models.TripReport
 
 	if err := config.DB.
-		Preload("TripBooking").
+		Preload("TripBooking.User").
+		Preload("TripBooking.Guide.User").
 		Preload("Reporter").
 		Preload("ReportedUser").
 		Find(&reports).Error; err != nil {

@@ -31,13 +31,10 @@ func main() {
 		&models.TripRequire{}, 
         &models.TripOffer{}, 
         &models.TripOfferQuotation{}, 
-        &models.TripOfferNegotiation{},
         &models.TripBooking{}, 
 		&models.TripPayment{}, 
         &models.TripReview{}, 
         &models.TripReport{}, 
-		&models.GuidePerformance{}, 
-        &models.TripNotification{}, 
         &models.PaymentRelease{},
 	); err != nil {
 		log.Printf("Migration error: %v", err)
@@ -54,6 +51,9 @@ func main() {
 	migrations.SeedGuides(config.DB)
 
 	app := fiber.New()
+	
+	// Serve uploads static files
+	app.Static("/uploads", "./uploads")
 	
 	// CORS configuration
 	app.Use(cors.New(cors.Config{
@@ -93,13 +93,15 @@ func main() {
     
     // 2. TripOffer routes (Guide เสนอรายละเอียด)
     api.Post("/trip-offers", middleware.AuthRequired(), controllers.CreateTripOffer)
+    api.Get("/trip-offers", middleware.AuthRequired(), controllers.GetGuideOffers) // ดู offers ของ guide เอง
     api.Get("/trip-requires/:id/offers", middleware.AuthRequired(), controllers.GetTripOffers) // ดู offers ของ require นี้
     api.Get("/trip-offers/:id", middleware.AuthRequired(), controllers.GetTripOfferByID)
-    api.Put("/trip-offers/:id", middleware.AuthRequired(), controllers.UpdateTripOffer) // สำหรับแก้ไข/เจรจา
+    api.Put("/trip-offers/:id", middleware.AuthRequired(), controllers.UpdateTripOffer) // สำหรับแก้ไข
     api.Delete("/trip-offers/:id", middleware.AuthRequired(), controllers.WithdrawTripOffer)
     
-    // 3. Accept offer (User เลือก offer 1 คน - คนที่เหลือ reject อัตโนมัติ)
+    // 3. Accept/Reject offer
     api.Put("/trip-offers/:id/accept", middleware.AuthRequired(), controllers.AcceptTripOffer)
+    api.Put("/trip-offers/:id/reject", middleware.AuthRequired(), controllers.RejectTripOffer)
     
     // 4. Payment (User จ่ายเงิน 100%)
     api.Post("/trip-bookings/:id/payment", middleware.AuthRequired(), controllers.CreateTripPayment)
@@ -118,6 +120,18 @@ func main() {
     api.Put("/trip-bookings/:id/confirm-trip-complete", middleware.AuthRequired(), controllers.ConfirmTripComplete) // User ยืนยันทริปเสร็จ -> ไกด์ได้เงินเต็ม
     api.Put("/trip-bookings/:id/report-user-no-show", middleware.AuthRequired(), controllers.ReportUserNoShow) // Guide รีพอร์ต user ไม่มา -> ไกด์ได้ 50% + คืนเงินส่วนที่เหลือให้ user
     api.Put("/trip-bookings/:id/confirm-user-no-show", middleware.AuthRequired(), controllers.ConfirmUserNoShow) // User ยืนยันตัวเองไม่มา -> ไกด์ได้ 50% + คืนเงิน 50%
+    api.Put("/trip-bookings/:id/report-guide-no-show", middleware.AuthRequired(), controllers.ReportGuideNoShow) // User รีพอร์ตไกด์ไม่มา
+    api.Put("/trip-bookings/:id/dispute-no-show", middleware.AuthRequired(), controllers.DisputeNoShowReport) // User โต้แย้งการรีพอร์ต no-show
+
+    // 7. Review system routes (for guides only)
+    api.Post("/reviews", middleware.AuthRequired(), controllers.CreateReview) // User สร้างรีวิวให้ไกด์
+    api.Get("/guides/:id/reviews", controllers.GetGuideReviews) // ดูรีวิวทั้งหมดของไกด์ (public)
+    api.Get("/my-reviews", middleware.AuthRequired(), controllers.GetMyReviews) // ดูรีวิวของตัวเอง
+    api.Put("/reviews/:id", middleware.AuthRequired(), controllers.UpdateReview) // แก้ไขรีวิว (เฉพาะเจ้าของ)
+    api.Delete("/reviews/:id", middleware.AuthRequired(), controllers.DeleteReview) // ลบรีวิว (เฉพาะเจ้าของ)
+    api.Post("/reviews/:id/response", middleware.AuthRequired(), controllers.GuideRespondToReview) // ไกด์ตอบกลับรีวิว
+    api.Post("/reviews/:id/helpful", middleware.AuthRequired(), controllers.MarkReviewHelpful) // ทำเครื่องหมายรีวิวว่าเป็นประโยชน์
+    api.Get("/trip-bookings/reviewable", middleware.AuthRequired(), controllers.GetReviewableBookings) // ดู bookings ที่รีวิวได้
 
     // User profile routes
     api.Get("/users/profile", middleware.AuthRequired(), controllers.GetUserProfile)
@@ -126,6 +140,13 @@ func main() {
     api.Get("/users/:id", middleware.AuthRequired(), middleware.OwnerOrAdminRequired(), controllers.GetUserByID)
     api.Put("/users/:id", middleware.AuthRequired(), middleware.OwnerOrAdminRequired(), controllers.EditUser)
     api.Get("/me", middleware.AuthRequired(), controllers.Me)
+
+    // Avatar upload/delete
+    api.Post("/users/profile/avatar", middleware.AuthRequired(), controllers.UploadProfileAvatar)
+    api.Delete("/users/profile/avatar", middleware.AuthRequired(), controllers.DeleteProfileAvatar)
+
+    // Upload endpoint for evidence files
+    api.Post("/uploads", middleware.AuthRequired(), controllers.UploadFile)
 
     // Admin routes
     admin := api.Group("/admin", middleware.AuthRequired(), middleware.AdminRequired())
@@ -136,7 +157,7 @@ func main() {
     admin.Put("/trip-reports/:id", controllers.HandleTripReport)
     admin.Get("/payments", controllers.GetAllPayments)
     admin.Put("/payments/:id/release", controllers.ManualReleasePayment)
-    
+    admin.Put("/trip-bookings/:id/resolve-dispute", controllers.AdminResolveNoShowDispute) // Admin ตัดสินกรณี dispute
     
     // Google Auth routes
     api.Get("/auth/google/login", controllers.GoogleLogin)

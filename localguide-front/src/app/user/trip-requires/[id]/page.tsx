@@ -3,18 +3,39 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "../../../contexts/AuthContext";
-import { tripRequireAPI } from "../../../lib/api";
-import { TripRequire } from "../../../types";
+import { tripRequireAPI, tripOfferAPI } from "../../../lib/api";
+import { TripRequire, TripOffer } from "../../../types";
 import Link from "next/link";
+import Navbar from "@/app/components/Navbar";
+import TripRequireHeader from "@/app/components/trip-require-detail/TripRequireHeader";
+import OffersHighlight from "@/app/components/trip-require-detail/OffersHighlight";
+import OffersPreview from "@/app/components/trip-require-detail/OffersPreview";
+import TripRequireDetails from "@/app/components/trip-require-detail/TripRequireDetails";
+import TripRequireSidebar from "@/app/components/trip-require-detail/TripRequireSidebar";
+import MobileActionButtons from "@/app/components/trip-require-detail/MobileActionButtons";
+import Footer from "@/app/components/Footer";
 
 export default function TripRequireDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+
   const [tripRequire, setTripRequire] = useState<TripRequire | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // โหลดข้อเสนอ
+  const [offersLoading, setOffersLoading] = useState(true);
+  const [offersCount, setOffersCount] = useState(0);
+  const [offersPreview, setOffersPreview] = useState<TripOffer[]>([]);
+
+  // ลบ
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // ===== โมดอลยืนยันการลบ (inline) =====
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const confirmTitle = "ลบความต้องการทริปนี้หรือไม่?";
+  const confirmMessage = "การดำเนินการนี้ไม่สามารถยกเลิกได้";
 
   const tripId = params.id as string;
 
@@ -23,26 +44,22 @@ export default function TripRequireDetailPage() {
       router.push("/auth/login");
       return;
     }
-
     if (user?.role !== 1) {
       router.push("/dashboard");
       return;
     }
-
     loadTripRequire();
+    loadOffers();
   }, [user, isAuthenticated, router, tripId, user?.id]);
 
   const loadTripRequire = async () => {
     try {
       const response = await tripRequireAPI.getById(Number(tripId));
       const data = response.data?.data;
-
-      // ตรวจสอบว่าเป็นเจ้าของ trip require หรือไม่
       if (data && data.UserID !== user?.id) {
         setError("คุณไม่มีสิทธิ์เข้าดูข้อมูลนี้");
         return;
       }
-
       setTripRequire(data);
     } catch (error: any) {
       console.error("Failed to load trip require:", error);
@@ -58,58 +75,86 @@ export default function TripRequireDetailPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (
-      !confirm(
-        "คุณต้องการลบความต้องการทริปนี้หรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้"
-      )
-    ) {
-      return;
+  const loadOffers = async () => {
+    try {
+      setOffersLoading(true);
+      const res = await tripOfferAPI.getByRequire(Number(tripId));
+      const raw = res.data;
+      const list: any[] = Array.isArray(raw)
+        ? raw
+        : raw?.offers || raw?.data || raw?.TripOffers || [];
+      setOffersCount(list?.length || 0);
+      setOffersPreview((list || []).slice(0, 2));
+    } catch (_e) {
+      setOffersCount(0);
+      setOffersPreview([]);
+    } finally {
+      setOffersLoading(false);
     }
+  };
 
+  // เปิดโมดอลยืนยัน (เชื่อมกับปุ่มลบจาก Header / Mobile)
+  const handleDelete = async () => {
+    setConfirmOpen(true);
+  };
+
+  // ทำการลบจริงเมื่อกดยืนยันในโมดอล
+  const confirmDelete = async () => {
     setDeleteLoading(true);
     try {
       await tripRequireAPI.delete(Number(tripId));
+      setConfirmOpen(false);
       router.push("/user/trip-requires");
     } catch (error) {
       console.error("Failed to delete trip require:", error);
       setError("ไม่สามารถลบความต้องการทริปได้ กรุณาลองใหม่อีกครั้ง");
+      setConfirmOpen(false);
     } finally {
       setDeleteLoading(false);
     }
   };
 
+  // helpers
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "open":
-        return "bg-green-100 text-green-800";
-      case "in_review":
-        return "bg-yellow-100 text-yellow-800";
-      case "assigned":
-        return "bg-blue-100 text-blue-800";
-      case "completed":
-        return "bg-gray-100 text-gray-800";
-      case "cancelled":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
+    if (status === "open") { return "bg-green-100 text-green-800"; }
+    if (status === "in_review") { return "bg-yellow-100 text-yellow-800"; }
+    if (status === "assigned") { return "bg-blue-100 text-blue-800"; }
+    if (status === "completed") { return "bg-gray-100 text-gray-800"; }
+    if (status === "cancelled") { return "bg-red-100 text-red-800"; }
+    return "bg-gray-100 text-gray-800";
   };
 
   const getStatusText = (status: string) => {
-    switch (status) {
-      case "open":
-        return "เปิดรับข้อเสนอ";
-      case "in_review":
-        return "กำลังพิจารณา";
-      case "assigned":
-        return "เลือกไกด์แล้ว";
-      case "completed":
-        return "เสร็จสิ้น";
-      case "cancelled":
-        return "ยกเลิก";
-      default:
-        return status;
+    if (status === "open") { return "เปิดรับข้อเสนอ"; }
+    if (status === "in_review") { return "กำลังพิจารณา"; }
+    if (status === "assigned") { return "เลือกไกด์แล้ว"; }
+    if (status === "completed") { return "เสร็จสิ้น"; }
+    if (status === "cancelled") { return "ยกเลิก"; }
+    return status;
+  };
+
+  const getOfferGuideName = (o: any) => {
+    const u = o?.Guide?.User;
+    if (u?.FirstName || u?.LastName) {
+      return `${u?.FirstName || ""} ${u?.LastName || ""}`.trim();
+    } else {
+      return o?.GuideName || o?.guide_name || "ไกด์ไม่ระบุชื่อ";
+    }
+  };
+
+  const getOfferTitle = (o: any) => o?.Title || `ข้อเสนอจาก ${getOfferGuideName(o)}`;
+
+  const getOfferPrice = (o: any) => {
+    const q =
+      o?.Quotation ||
+      (Array.isArray(o?.TripOfferQuotation)
+        ? o.TripOfferQuotation[o.TripOfferQuotation.length - 1]
+        : null);
+    const price = q?.TotalPrice ?? o?.TotalPrice;
+    if (typeof price === "number") {
+      return price;
+    } else {
+      return undefined;
     }
   };
 
@@ -143,263 +188,97 @@ export default function TripRequireDetailPage() {
     );
   }
 
+  // สีแทบบนโมดอล (โทนอันตราย)
+  const toneBar = "bg-red-600";
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-6">
-          {/* Breadcrumb */}
-          <nav className="flex items-center text-sm text-gray-500 mb-4">
-            <Link href="/dashboard" className="hover:text-gray-700">
-              หน้าหลัก
-            </Link>
-            <svg
-              className="w-4 h-4 mx-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-            <Link href="/user/trip-requires" className="hover:text-gray-700">
-              ความต้องการทริป
-            </Link>
-            <svg
-              className="w-4 h-4 mx-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-            <span className="text-gray-900">{tripRequire.Title}</span>
-          </nav>
+    <>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <Navbar />
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <TripRequireHeader
+            tripRequire={tripRequire}
+            offersCount={offersCount}
+            offersLoading={offersLoading}
+            deleteLoading={deleteLoading}
+            getStatusColor={getStatusColor}
+            getStatusText={getStatusText}
+            onDelete={handleDelete}
+          />
 
-          <div className="flex items-center mb-4">
-            <Link
-              href="/user/trip-requires"
-              className="text-blue-600 hover:text-blue-700 flex items-center"
-            >
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              กลับ
-            </Link>
-          </div>
+          <OffersHighlight
+            tripRequire={tripRequire}
+            offersCount={offersCount}
+            offersLoading={offersLoading}
+          />
 
-          <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-            <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                {tripRequire.Title}
-              </h1>
-              <span
-                className={`inline-block px-3 py-1 text-sm rounded-full ${getStatusColor(
-                  tripRequire.Status
-                )}`}
-              >
-                {getStatusText(tripRequire.Status)}
-              </span>
+          <OffersPreview
+            tripRequire={tripRequire}
+            offersPreview={offersPreview}
+            getOfferTitle={getOfferTitle}
+            getOfferGuideName={getOfferGuideName}
+            getOfferPrice={getOfferPrice}
+          />
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <TripRequireDetails tripRequire={tripRequire} />
             </div>
-
-            {/* Mobile Action Buttons */}
-            <div className="flex sm:hidden space-x-2 w-full">
-              <Link
-                href={`/user/trip-requires/${tripRequire.ID}/offers`}
-                className="flex-1 bg-green-600 text-white text-center py-2 px-3 rounded-md hover:bg-green-700 transition-colors text-sm"
-              >
-                ดูข้อเสนอ
-              </Link>
-              {tripRequire.Status === "open" && (
-                <Link
-                  href={`/user/trip-requires/${tripRequire.ID}/edit`}
-                  className="flex-1 bg-blue-600 text-white text-center py-2 px-3 rounded-md hover:bg-blue-700 transition-colors text-sm"
-                >
-                  แก้ไข
-                </Link>
-              )}
+            <div className="lg:col-start-3">
+              <TripRequireSidebar tripRequire={tripRequire} />
             </div>
           </div>
+
+          <MobileActionButtons
+            tripRequire={tripRequire}
+            offersCount={offersCount}
+            offersLoading={offersLoading}
+            deleteLoading={deleteLoading}
+            onDelete={handleDelete}
+          />
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Description Card */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                รายละเอียดความต้องการ
-              </h2>
-              <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                {tripRequire.Description}
-              </p>
-            </div>
-
-            {/* Requirements Card */}
-            {tripRequire.Requirements && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  ความต้องการพิเศษ
-                </h2>
-                <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                  {tripRequire.Requirements}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Trip Info Card */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                ข้อมูลทริป
-              </h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">📍 จังหวัด:</span>
-                  <span className="font-medium text-right">
-                    {tripRequire.Province?.Name || "ไม่ระบุ"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">👥 จำนวนคน:</span>
-                  <span className="font-medium">
-                    {tripRequire.GroupSize} คน
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">📅 จำนวนวัน:</span>
-                  <span className="font-medium">{tripRequire.Days} วัน</span>
-                </div>
-                <div className="flex justify-between items-start">
-                  <span className="text-gray-600">💰 งบประมาณ:</span>
-                  <span className="font-medium text-right">
-                    {tripRequire.MinPrice.toLocaleString()}
-                    <br />- {tripRequire.MaxPrice.toLocaleString()} บาท
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">⭐ Rating ขั้นต่ำ:</span>
-                  <span className="font-medium">
-                    {tripRequire.MinRating} ดาว
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Date Info Card */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                วันที่
-              </h3>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <span className="text-gray-600">📅 วันเริ่ม:</span>
-                  <div className="font-medium">
-                    {new Date(tripRequire.StartDate).toLocaleDateString(
-                      "th-TH",
-                      {
-                        weekday: "long",
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      }
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-gray-600">📅 วันสิ้นสุด:</span>
-                  <div className="font-medium">
-                    {new Date(tripRequire.EndDate).toLocaleDateString("th-TH", {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-gray-600">📝 โพสต์เมื่อ:</span>
-                  <div className="font-medium">
-                    {new Date(tripRequire.PostedAt).toLocaleDateString("th-TH")}
-                  </div>
-                </div>
-                {tripRequire.ExpiresAt && (
-                  <div>
-                    <span className="text-gray-600">⏰ หมดอายุ:</span>
-                    <div className="font-medium">
-                      {new Date(tripRequire.ExpiresAt).toLocaleDateString(
-                        "th-TH"
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Action Buttons - Desktop Only */}
-            <div className="hidden sm:block space-y-3">
-              <Link
-                href={`/user/trip-requires/${tripRequire.ID}/offers`}
-                className="w-full bg-green-600 text-white text-center py-3 px-4 rounded-md hover:bg-green-700 transition-colors block"
-              >
-                ดูข้อเสนอที่ได้รับ
-              </Link>
-
-              {tripRequire.Status === "open" && (
-                <>
-                  <Link
-                    href={`/user/trip-requires/${tripRequire.ID}/edit`}
-                    className="w-full bg-blue-600 text-white text-center py-3 px-4 rounded-md hover:bg-blue-700 transition-colors block"
-                  >
-                    แก้ไขความต้องการ
-                  </Link>
-                  <button
-                    onClick={handleDelete}
-                    disabled={deleteLoading}
-                    className="w-full bg-red-600 text-white py-3 px-4 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {deleteLoading ? "กำลังลบ..." : "ลบความต้องการ"}
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Action Buttons - Bottom Fixed */}
-        {tripRequire.Status === "open" && (
-          <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 space-y-2">
-            <button
-              onClick={handleDelete}
-              disabled={deleteLoading}
-              className="w-full bg-red-600 text-white py-3 px-4 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {deleteLoading ? "กำลังลบ..." : "ลบความต้องการ"}
-            </button>
-          </div>
-        )}
       </div>
-    </div>
+      <Footer />
+
+      {/* ===== โมดอลยืนยันการลบ (แทน window.confirm) ===== */}
+      {confirmOpen ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => {
+              // ป้องกันกดพื้นหลังปิด ถ้าอยากปิดให้เปิดบรรทัดถัดไป
+              // setConfirmOpen(false);
+            }}
+          />
+          <div className="relative w-full max-w-md rounded-2xl bg-white shadow-xl">
+            <div className={`${toneBar} h-2 rounded-t-2xl`} />
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900">{confirmTitle}</h3>
+              <p className="mt-2 text-gray-700">{confirmMessage}</p>
+              <div className="mt-6 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={deleteLoading}
+                  onClick={() => {
+                    setConfirmOpen(false);
+                  }}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  disabled={deleteLoading}
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                >
+                  {deleteLoading ? "กำลังลบ..." : "ลบเลย"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }

@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { tripRequireAPI } from "../../lib/api";
 import { TripRequire } from "../../types";
-import Loading from "../../components/Loading";
+import Loading from "@/app/components/Loading";
+import Navbar from "@/app/components/Navbar";
 
 export default function GuideTripRequiresPage() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
@@ -22,12 +23,22 @@ export default function GuideTripRequiresPage() {
   });
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
+    // Wait for auth to finish loading
+    if (authLoading) {
+      return;
+    }
+
+    if (!isAuthenticated) {
       router.push("/auth/login");
       return;
     }
 
-    if (user?.role !== 2) {
+    // Wait for user object to be available
+    if (!user) {
+      return;
+    }
+
+    if (user.role !== 2) {
       router.push("/dashboard");
       return;
     }
@@ -106,6 +117,7 @@ export default function GuideTripRequiresPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+      <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -228,7 +240,7 @@ export default function GuideTripRequiresPage() {
                 <div className="grid md:grid-cols-3 gap-4 mb-4 text-sm">
                   <div className="space-y-2">
                     <div>
-                      <span className="font-medium">💰 ง예산งวน:</span>{" "}
+                      <span className="font-medium">💰 ค่าใช้จ่าย:</span>{" "}
                       {tripRequire.MinPrice.toLocaleString()} -{" "}
                       {tripRequire.MaxPrice.toLocaleString()} บาท
                     </div>

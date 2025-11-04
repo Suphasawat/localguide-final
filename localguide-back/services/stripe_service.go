@@ -19,7 +19,7 @@ func NewStripeService() *StripeService {
 func (s *StripeService) CreatePaymentIntent(booking *models.TripBooking, userEmail string) (*stripe.PaymentIntent, error) {
 	// แปลง amount เป็น cents (Stripe ใช้หน่วยย่อยสุด)
 	amountInCents := int64(booking.TotalAmount * 100)
-	
+
 	params := &stripe.PaymentIntentParams{
 		Amount:   stripe.Int64(amountInCents),
 		Currency: stripe.String("thb"), // Thai Baht
@@ -60,15 +60,28 @@ func (s *StripeService) RefundPayment(paymentIntentID string, amount int64, reas
 	params := &stripe.RefundParams{
 		PaymentIntent: stripe.String(paymentIntentID),
 		Amount:        stripe.Int64(amount),
-		Reason:        stripe.String(reason),
 	}
 
-	refund, err := refund.New(params)
+	// Map internal reasons to Stripe-supported refund reasons.
+	// Stripe only accepts: duplicate, fraudulent, requested_by_customer
+	switch reason {
+	case "duplicate":
+		params.Reason = stripe.String(string(stripe.RefundReasonDuplicate))
+	case "fraudulent":
+		params.Reason = stripe.String(string(stripe.RefundReasonFraudulent))
+	case "requested_by_customer":
+		params.Reason = stripe.String(string(stripe.RefundReasonRequestedByCustomer))
+	default:
+		// For any internal/custom reason, default to requested_by_customer
+		params.Reason = stripe.String(string(stripe.RefundReasonRequestedByCustomer))
+	}
+
+	ref, err := refund.New(params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create refund: %w", err)
 	}
 
-	return refund, nil
+	return ref, nil
 }
 
 // GetPaymentIntent ดึงข้อมูล PaymentIntent
@@ -79,4 +92,25 @@ func (s *StripeService) GetPaymentIntent(paymentIntentID string) (*stripe.Paymen
 	}
 
 	return pi, nil
+}
+
+// GetRefundableAmountCents คืนจำนวนเงิน (หน่วยเซ็นต์) ที่ยังสามารถ refund ได้ของ PaymentIntent
+func (s *StripeService) GetRefundableAmountCents(paymentIntentID string) (int64, error) {
+	params := &stripe.PaymentIntentParams{}
+	params.AddExpand("latest_charge")
+	pi, err := paymentintent.Get(paymentIntentID, params)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get payment intent: %w", err)
+	}
+	if pi.LatestCharge == nil {
+		return 0, fmt.Errorf("latest charge not found for payment intent")
+	}
+	ch := pi.LatestCharge
+	amount := ch.Amount
+	refunded := ch.AmountRefunded
+	remaining := amount - refunded
+	if remaining < 0 {
+		remaining = 0
+	}
+	return remaining, nil
 }

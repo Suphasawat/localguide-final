@@ -1,377 +1,226 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Navbar from "@/app/components/Navbar";
+import Footer from "@/app/components/Footer";
+import Loading from "@/app/components/Loading";
+import TripRequireForm from "@/app/components/trip-require-form/TripRequireForm";
+import { useTripRequireForm } from "@/app/components/trip-require-form/useTripRequireForm";
 import { useAuth } from "../../../contexts/AuthContext";
 import { provinceAPI, tripRequireAPI } from "../../../lib/api";
-import { Province, CreateTripRequireData } from "../../../types";
-import Loading from "../../../components/Loading";
+import { Province } from "../../../types";
 
 export default function CreateTripRequirePage() {
-  const { isAuthenticated } = useAuth();
   const router = useRouter();
+  const { isAuthenticated, loading: authLoading } = useAuth();
 
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingProvinces, setLoadingProvinces] = useState(true);
-  const [error, setError] = useState("");
 
-  const [formData, setFormData] = useState<CreateTripRequireData>({
-    province_id: 0,
-    title: "",
-    description: "",
-    min_price: 0,
-    max_price: 0,
-    start_date: "",
-    end_date: "",
-    days: 1,
-    min_rating: 0,
-    group_size: 1,
-    requirements: "",
-    expires_at: "",
-  });
+  // ===== Modal (inline ไม่ต้องสร้างไฟล์ใหม่) =====
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+  const [modalTone, setModalTone] = useState<"success" | "error" | "info">("info");
+
+  function openModal(
+    title: string,
+    message: string,
+    tone: "success" | "error" | "info" = "info"
+  ) {
+    setModalTitle(title);
+    setModalMessage(message);
+    setModalTone(tone);
+    setModalOpen(true);
+  }
+
+  const {
+    formData,
+    handleChange,
+    isPriceInvalid,
+    isDateRangeInvalid,
+    isExpireAfterStart,
+    toBackendDate,
+  } = useTripRequireForm();
 
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
     if (!isAuthenticated) {
       router.push("/auth/login");
       return;
     }
-
     loadProvinces();
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, authLoading, router]);
 
-  const loadProvinces = async () => {
+  async function loadProvinces() {
     try {
-      const response = await provinceAPI.getAll();
-      setProvinces(response.data.provinces || []);
-    } catch (error) {
-      console.error("Failed to load provinces:", error);
-      setProvinces([]); // ป้องกัน map error
+      const res = await provinceAPI.getAll();
+      setProvinces(res.data.provinces || []);
+    } catch (_error: unknown) {
+      setProvinces([]);
     } finally {
       setLoadingProvinces(false);
     }
-  };
+  }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    setError("");
+    if (loading) {
+      return;
+    }
 
-    console.log("Trip require created:", formData);
-
-    // Validation
     if (
       !formData.title ||
       !formData.description ||
       !formData.start_date ||
       !formData.end_date
     ) {
-      setError("กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน");
-      setLoading(false);
+      openModal("กรอกข้อมูลไม่ครบ", "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน", "error");
       return;
     }
-
     if (formData.province_id === 0) {
-      setError("กรุณาเลือกจังหวัด");
-      setLoading(false);
+      openModal("ยังไม่ได้เลือกจังหวัด", "กรุณาเลือกจังหวัดก่อนส่งแบบฟอร์ม", "error");
       return;
     }
-
     if (formData.min_price >= formData.max_price) {
-      setError("ราคาสูงสุดต้องมากกว่าราคาต่ำสุด");
-      setLoading(false);
+      openModal("ช่วงราคาไม่ถูกต้อง", "ราคาสูงสุดต้องมากกว่าราคาต่ำสุด", "error");
+      return;
+    }
+    if (isExpireAfterStart) {
+      openModal("กำหนดวันหมดอายุไม่ถูกต้อง", "วันหมดอายุโพสต์ต้องไม่ช้ากว่าวันเริ่มต้นทริป", "error");
       return;
     }
 
-    try {
-      // Map form data to backend expected format
-      const tripRequireData = {
-        province_id: formData.province_id,
-        title: formData.title,
-        description: formData.description,
-        min_price: formData.min_price,
-        max_price: formData.max_price,
-        start_date: formData.start_date,
-        end_date: formData.end_date,
-        days: formData.days,
-        min_rating: formData.min_rating,
-        group_size: formData.group_size,
-        requirements: formData.requirements,
-        expires_at: formData.expires_at,
-      };
+    const payload = {
+      province_id: formData.province_id,
+      title: formData.title.trim(),
+      description: formData.description.trim(),
+      min_price: Math.max(0, formData.min_price),
+      max_price: Math.max(0, formData.max_price),
+      start_date: toBackendDate(formData.start_date),
+      end_date: toBackendDate(formData.end_date),
+      days: Math.max(1, formData.days),
+      min_rating: formData.min_rating,
+      group_size: Math.max(1, formData.group_size),
+      requirements: formData.requirements.trim(),
+      expires_at: formData.expires_at ? toBackendDate(formData.expires_at) : "",
+    };
 
-      const response = await tripRequireAPI.create(tripRequireData);
-      if (response.data) {
-        router.push("/user/trip-requires");
-      }
-    } catch (err: unknown) {
-      if (err && typeof err === "object" && "response" in err) {
-        const errorResponse = err as {
-          response?: { data?: { error?: string } };
-        };
-        setError(
-          errorResponse.response?.data?.error ||
-            "เกิดข้อผิดพลาดในการสร้างความต้องการ"
-        );
+    setLoading(true);
+    try {
+      const res = await tripRequireAPI.create(payload);
+      if (res.data) {
+        setModalTitle("สำเร็จ");
+        setModalMessage("สร้างความต้องการทริปสำเร็จ!");
+        setModalTone("success");
+        setModalOpen(true);
       } else {
-        setError("เกิดข้อผิดพลาดในการสร้างความต้องการ");
+        openModal("ไม่สำเร็จ", "ไม่สามารถสร้างความต้องการได้", "error");
       }
+    } catch (error: unknown) {
+      const err = error as {
+        response?: { data?: { error?: string; message?: string } };
+      };
+      const msg =
+        (err?.response?.data?.error as string) ||
+        (err?.response?.data?.message as string) ||
+        "เกิดข้อผิดพลาดในการสร้างความต้องการ";
+      openModal("เกิดข้อผิดพลาด", msg, "error");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]:
-        name === "province_id" ||
-        name === "min_price" ||
-        name === "max_price" ||
-        name === "days" ||
-        name === "group_size"
-          ? parseInt(value) || 0
-          : value,
-    }));
-  };
+  if (authLoading || loadingProvinces) {
+    return <Loading text="กำลังโหลดแบบฟอร์ม..." />;
+  }
 
-  if (loadingProvinces) {
-    return <Loading text="Loading form..." />;
+  let toneBar = "bg-emerald-600";
+  if (modalTone === "error") {
+    toneBar = "bg-red-600";
+  }
+  if (modalTone === "info") {
+    toneBar = "bg-amber-600";
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">
-          สร้างความต้องการเที่ยวใหม่
-        </h1>
+    <>
+      <Navbar />
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
+      <div className="min-h-[calc(100vh-200px)] bg-white px-4 py-10">
+        <div className="mx-auto w-full max-w-4xl">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="bg-emerald-600 px-8 py-8 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-emerald-100 text-sm font-medium uppercase tracking-wide">
+                    สร้างใหม่
+                  </p>
+                  <h1 className="mt-1 text-3xl font-extrabold">
+                    สร้างความต้องการเที่ยวใหม่
+                  </h1>
+                  <p className="mt-2 text-emerald-50">
+                    กรอกรายละเอียดเพื่อค้นหาไกด์ที่เหมาะสม
+                  </p>
+                </div>
+                <Link
+                  href="/dashboard"
+                  className="hidden sm:inline-flex rounded-full bg-white/90 hover:bg-white px-5 py-2.5 text-sm font-semibold text-emerald-700 transition shadow-sm"
+                >
+                  ← กลับ
+                </Link>
+              </div>
             </div>
-          )}
 
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              หัวข้อ *
-            </label>
-            <input
-              type="text"
-              name="title"
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="เช่น หาไกด์เที่ยวเชียงใหม่ 3 วัน 2 คืน"
-              value={formData.title}
-              onChange={handleChange}
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              รายละเอียด *
-            </label>
-            <textarea
-              name="description"
-              required
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="อธิบายรายละเอียดการเที่ยวที่คุณต้องการ"
-              value={formData.description}
-              onChange={handleChange}
-            />
-          </div>
-
-          {/* Province */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              จังหวัด *
-            </label>
-
-            <select
-              name="province_id"
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={formData.province_id}
-              onChange={handleChange}
-            >
-              <option value={0}>เลือกจังหวัด</option>
-              {provinces.map((province) => (
-                <option key={province.ID} value={province.ID}>
-                  {province.Name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Price Range */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                ราคาต่ำสุด (บาท) *
-              </label>
-              <input
-                type="number"
-                name="min_price"
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={formData.min_price}
+            <div className="px-8 py-8">
+              <TripRequireForm
+                formData={formData}
+                provinces={provinces}
+                loading={loading}
+                onSubmit={handleSubmit}
                 onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                ราคาสูงสุด (บาท) *
-              </label>
-              <input
-                type="number"
-                name="max_price"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={formData.max_price}
-                onChange={handleChange}
+                onCancel={() => router.back()}
+                submitButtonText="สร้างความต้องการ"
+                isPriceInvalid={isPriceInvalid}
+                isDateRangeInvalid={isDateRangeInvalid}
               />
             </div>
           </div>
-
-          {/* Dates */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                วันเริ่มต้น * (DD/MM/YYYY)
-              </label>
-              <input
-                type="text"
-                name="start_date"
-                required
-                placeholder="15/02/2024"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={formData.start_date}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                วันสิ้นสุด * (DD/MM/YYYY)
-              </label>
-              <input
-                type="text"
-                name="end_date"
-                required
-                placeholder="17/02/2024"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={formData.end_date}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          {/* Days and Group Size */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                จำนวนวัน *
-              </label>
-              <input
-                type="number"
-                name="days"
-                required
-                min="1"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={formData.days}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                จำนวนคน *
-              </label>
-              <input
-                type="number"
-                name="group_size"
-                required
-                min="1"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={formData.group_size}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          {/* Min Rating */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              คะแนนไกด์ขั้นต่ำ
-            </label>
-            <select
-              name="min_rating"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={formData.min_rating}
-              onChange={handleChange}
-            >
-              <option value={0}>ไม่กำหนด</option>
-              <option value={3}>3 ดาวขึ้นไป</option>
-              <option value={4}>4 ดาวขึ้นไป</option>
-              <option value={4.5}>4.5 ดาวขึ้นไป</option>
-            </select>
-          </div>
-
-          {/* Requirements */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              ความต้องการพิเศษ
-            </label>
-            <textarea
-              name="requirements"
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="เช่น ต้องการไกด์พูดภาษาอังกฤษได้, มีรถรับส่ง"
-              value={formData.requirements}
-              onChange={handleChange}
-            />
-          </div>
-
-          {/* Expires At */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              วันหมดอายุโพสต์ (DD/MM/YYYY)
-            </label>
-            <input
-              type="text"
-              name="expires_at"
-              placeholder="10/02/2024"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={formData.expires_at}
-              onChange={handleChange}
-            />
-          </div>
-
-          {/* Submit Buttons */}
-          <div className="flex space-x-4">
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium disabled:opacity-50"
-            >
-              {loading ? "กำลังสร้าง..." : "สร้างความต้องการ"}
-            </button>
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-            >
-              ยกเลิก
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
-    </div>
+
+      <Footer />
+
+      {/* ===== Inline Modal (เหลือแค่ปุ่มไปที่รายการของฉัน) ===== */}
+      {modalOpen ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" />
+          <div className="relative w-full max-w-md rounded-2xl bg-white shadow-xl">
+            <div className={`${toneBar} h-2 rounded-t-2xl`} />
+            <div className="p-6 text-center">
+              <h3 className="text-lg font-semibold text-gray-900">{modalTitle}</h3>
+              <p className="mt-2 text-gray-700 whitespace-pre-wrap">{modalMessage}</p>
+              <div className="mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModalOpen(false);
+                    router.push("/user/trip-requires");
+                  }}
+                  className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                >
+                  ไปที่รายการของฉัน
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }

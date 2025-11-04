@@ -65,8 +65,8 @@ func AuthRequired() fiber.Handler {
 		}
 
 		// เก็บข้อมูล user ใน context
-		c.Locals("userID", uint(userIDFloat))
-		c.Locals("roleID", uint(roleIDFloat))
+		c.Locals("user_id", uint(userIDFloat))
+		c.Locals("role_id", uint(roleIDFloat))
 
 		return c.Next()
 	}
@@ -75,7 +75,7 @@ func AuthRequired() fiber.Handler {
 // AdminRequired middleware - ตรวจสอบว่าเป็น admin (roleID = 3)
 func AdminRequired() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		roleID := c.Locals("roleID")
+		roleID := c.Locals("role_id")
 		if roleID == nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "User role not found",
@@ -96,7 +96,7 @@ func AdminRequired() fiber.Handler {
 // GuideRequired middleware - ตรวจสอบว่าเป็น guide (roleID = 2)
 func GuideRequired() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		roleID := c.Locals("roleID")
+		roleID := c.Locals("role_id")
 		if roleID == nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "User role not found",
@@ -117,7 +117,7 @@ func GuideRequired() fiber.Handler {
 // UserRequired middleware - ตรวจสอบว่าเป็น user หรือ guide หรือ admin (roleID = 1, 2, 3)
 func UserRequired() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		roleID := c.Locals("roleID")
+		roleID := c.Locals("role_id")
 		if roleID == nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "User role not found",
@@ -138,8 +138,8 @@ func UserRequired() fiber.Handler {
 // OwnerOrAdminRequired middleware - ตรวจสอบว่าเป็นเจ้าของข้อมูลหรือ admin
 func OwnerOrAdminRequired() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		userID := c.Locals("userID")
-		roleID := c.Locals("roleID")
+		userID := c.Locals("user_id")
+		roleID := c.Locals("role_id")
 		
 		if userID == nil || roleID == nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{

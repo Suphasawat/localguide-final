@@ -88,7 +88,7 @@ func handlePaymentSuccess(paymentIntent *stripe.PaymentIntent) error {
 
 	// อัปเดตสถานะ booking
 	var booking models.TripBooking
-	if err := config.DB.First(&booking, payment.TripBookingID).Error; err != nil {
+	if err := config.DB.Preload("TripOffer.TripRequire").First(&booking, payment.TripBookingID).Error; err != nil {
 		return fmt.Errorf("booking not found: %w", err)
 	}
 

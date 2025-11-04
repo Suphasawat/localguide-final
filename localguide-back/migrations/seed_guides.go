@@ -14,7 +14,6 @@ func SeedGuides(db *gorm.DB) error {
             Bio:         "มัคคุเทศก์มืออาชีพ",
             Description: "ไกด์ท้องถิ่นที่มีประสบการณ์มากกว่า 5 ปี สามารถพูดได้หลายภาษา",
             Available:   true,
-            Price:       2500.0,
             Rating:      4.8,
             ProvinceID:  1, // กรุงเทพมหานคร
         },
@@ -23,7 +22,6 @@ func SeedGuides(db *gorm.DB) error {
             Bio:         "ไกด์ท้องถิ่นเชียงใหม่",
             Description: "รู้จักเชียงใหม่ดีมาก ทั้งวัฒนธรรมและประเพณี",
             Available:   true,
-            Price:       2000.0,
             Rating:      4.5,
             ProvinceID:  2, // เชียงใหม่
         },
@@ -32,7 +30,6 @@ func SeedGuides(db *gorm.DB) error {
             Bio:         "ไกด์ทะเลภูเก็ต",
             Description: "เชี่ยวชาญเรื่องกิจกรรมทางน้ำและเกาะต่างๆ",
             Available:   true,
-            Price:       3000.0,
             Rating:      4.7,
             ProvinceID:  3, // ภูเก็ต
         },

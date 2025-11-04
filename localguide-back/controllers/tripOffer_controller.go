@@ -35,7 +35,7 @@ func CreateTripOffer(c *fiber.Ctx) error {
 	}
 
 	// ตรวจสอบว่าเป็น Guide
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("user_id").(uint)
 	var guide models.Guide
 	if err := config.DB.Where("user_id = ?", userID).First(&guide).Error; err != nil {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
@@ -51,6 +51,7 @@ func CreateTripOffer(c *fiber.Ctx) error {
 		})
 	}
 
+	// ให้ TripRequire รับ offer ได้ทั้ง open และ in_review
 	if tripRequire.Status == "assigned" || tripRequire.Status == "completed" || tripRequire.Status == "cancelled" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Trip requirement is no longer accepting offers",
@@ -99,16 +100,12 @@ func CreateTripOffer(c *fiber.Ctx) error {
 	}
 
 	// สร้าง TripOfferQuotation
-	validUntil := now.AddDate(0, 0, req.ValidDays)
 	quotation := models.TripOfferQuotation{
 		TripOfferID:     offer.ID,
 		Version:         1,
 		TotalPrice:      req.TotalPrice,
 		PriceBreakdown:  req.PriceBreakdown,
-		Terms:           req.Terms,
-		PaymentTerms:    req.PaymentTerms,
 		QuotationNumber: "QT" + strconv.Itoa(int(offer.ID)) + "-" + strconv.Itoa(int(now.Unix())),
-		ValidUntil:      validUntil,
 		Status:          "sent",
 		SentAt:          &now,
 	}
@@ -120,8 +117,10 @@ func CreateTripOffer(c *fiber.Ctx) error {
 		})
 	}
 
-	// อัปเดตสถานะ TripRequire เป็น in_review
-	config.DB.Model(&tripRequire).Update("status", "in_review")
+	// ไม่ต้องเปลี่ยนสถานะ TripRequire เป็น in_review ถ้ายังเป็น open
+	if tripRequire.Status == "open" {
+		config.DB.Model(&tripRequire).Update("status", "in_review")
+	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message":   "Offer created successfully",
@@ -143,6 +142,8 @@ func GetTripOffers(c *fiber.Ctx) error {
     var offers []models.TripOffer
     if err := config.DB.
         Preload("Guide.User").
+        Preload("Guide.Province").
+        Preload("Guide.Language").
         Preload("TripOfferQuotation").
         Where("trip_require_id = ?", tripRequireID).
         Order("created_at DESC").
@@ -163,13 +164,20 @@ func GetTripOfferByID(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Offer ID must be greater than 0"})
 	}
     var offer models.TripOffer
-    if err := config.DB.First(&offer, id).Error; err != nil {
+    if err := config.DB.
+        Preload("TripRequire.User").
+        Preload("TripRequire.Province").
+        Preload("Guide.User").
+        Preload("Guide.Province").
+        Preload("Guide.Language").
+        Preload("TripOfferQuotation").
+        First(&offer, id).Error; err != nil {
         if err == gorm.ErrRecordNotFound {
             return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Offer not found"})
         }
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get offer"})
     }
-    return c.Status(fiber.StatusOK).JSON(fiber.Map{"offer": offer})
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{"data": offer})
 }
 
 // แก้ไข TripOffer
@@ -219,7 +227,7 @@ func AcceptTripOffer(c *fiber.Ctx) error {
 		})
 	}
 
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("user_id").(uint)
 
 	// เริ่ม transaction
 	tx := config.DB.Begin()
@@ -270,12 +278,6 @@ func AcceptTripOffer(c *fiber.Ctx) error {
 		})
 	}
 
-	// ตรวจสอบว่า quotation หมดอายุหรือยัง
-	if time.Now().After(quotation.ValidUntil) {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Offer quotation has expired",
-		})
-	}
 
 	// อัปเดตสถานะ offer ที่ถูกเลือก
 	now := time.Now()
@@ -299,6 +301,14 @@ func AcceptTripOffer(c *fiber.Ctx) error {
 	}
 
 	// ปฏิเสธ offers อื่นๆ ที่เหลือ (auto reject)
+	var rejectedOffers []models.TripOffer
+	if err := tx.Where("trip_require_id = ? AND id != ? AND status IN (?)", offer.TripRequireID, offer.ID, []string{"sent", "negotiating"}).
+		Find(&rejectedOffers).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to get other offers",
+		})
+	}
+
 	if err := tx.Model(&models.TripOffer{}).
 		Where("trip_require_id = ? AND id != ? AND status IN (?)", offer.TripRequireID, offer.ID, []string{"sent", "negotiating"}).
 		Updates(map[string]interface{}{
@@ -352,29 +362,107 @@ func AcceptTripOffer(c *fiber.Ctx) error {
 }
 
 func RejectTripOffer(c *fiber.Ctx) error {
-    id, err := strconv.Atoi(c.Params("id"))
-    if err != nil {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid offer ID"})
-    }
-
-	if id <= 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Offer ID must be greater than 0"})
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil || id <= 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid offer ID"})
 	}
 
-    var offer models.TripOffer
-    if err := config.DB.First(&offer, id).Error; err != nil {
-        if err == gorm.ErrRecordNotFound {
-            return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Offer not found"})
-        }
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get offer"})
-    }
+	// Optional body with reason
+	var body struct {
+		Reason string `json:"reason"`
+	}
+	_ = c.BodyParser(&body)
 
-    offer.Status = "rejected" 
-    if err := config.DB.Save(&offer).Error; err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to reject offer"})
-    }
+	userID := c.Locals("user_id").(uint)
 
-    return c.Status(fiber.StatusOK).JSON(fiber.Map{
-        "offer":   offer,
-    })
+	// Start transaction for consistency
+	tx := config.DB.Begin()
+	defer tx.Rollback()
+
+	var offer models.TripOffer
+	if err := tx.Preload("TripRequire").First(&offer, id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Offer not found"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get offer"})
+	}
+
+	// Load the related TripRequire to validate ownership
+	var tripRequire models.TripRequire
+	if err := tx.First(&tripRequire, offer.TripRequireID).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get trip requirement"})
+	}
+
+	// Only the owner of the TripRequire can reject a guide's offer
+	if tripRequire.UserID != userID {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "You can only reject offers for your own trip requirements"})
+	}
+
+	// Only reject if in a rejectable state
+	if offer.Status != "sent" && offer.Status != "negotiating" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Only pending offers can be rejected"})
+	}
+
+	now := time.Now()
+	updates := map[string]interface{}{
+		"status":           "rejected",
+		"rejected_at":      &now,
+		"rejection_reason": func() string { if body.Reason != "" { return body.Reason }; return "manual_reject" }(),
+	}
+
+	if err := tx.Model(&offer).Updates(updates).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to reject offer"})
+	}
+
+	// Update latest quotation status (if exists)
+	var quotation models.TripOfferQuotation
+	if err := tx.Where("trip_offer_id = ?", offer.ID).Order("version DESC").First(&quotation).Error; err == nil {
+		_ = tx.Model(&quotation).Updates(map[string]interface{}{
+			"status":      "rejected",
+			"rejected_at": &now,
+		}).Error
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to complete rejection"})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Offer rejected successfully",
+		"offer":   offer,
+	})
+}
+
+// GetGuideOffers - ดึงข้อเสนอทั้งหมดของ Guide ที่ login อยู่
+func GetGuideOffers(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uint)
+	
+	// ตรวจสอบว่าเป็น Guide
+	var guide models.Guide
+	if err := config.DB.Where("user_id = ?", userID).First(&guide).Error; err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "Only guides can view their offers",
+		})
+	}
+	
+	// ดึงข้อเสนอทั้งหมดของ guide
+	var offers []models.TripOffer
+	if err := config.DB.
+		Preload("TripRequire.User").
+		Preload("TripRequire.Province").
+		Preload("TripOfferQuotation").
+		Preload("Guide.User").
+		Preload("Guide.Province").
+		Preload("Guide.Language").
+		Where("guide_id = ?", guide.ID).
+		Order("created_at DESC").
+		Find(&offers).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to get offers",
+		})
+	}
+	
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"offers": offers,
+	})
 }

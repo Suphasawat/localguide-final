@@ -122,7 +122,7 @@ func GetTripPayment(c *fiber.Ctx) error {
 
 // GetTripBookings - ดู bookings ของตัวเอง (enrich response)
 func GetTripBookings(c *fiber.Ctx) error {
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("user_id").(uint)
 
 	// ดู role ว่าเป็น user หรือ guide
 	var user models.User
@@ -139,15 +139,25 @@ func GetTripBookings(c *fiber.Ctx) error {
 		Preload("Guide.User")
 
 	// Filter ตาม role
-	if user.Role.Name == "guide" {
-		// ถ้าเป็น guide ให้ดู booking ที่ตัวเองเป็น guide
-		query = query.Where("guide_id = ?", userID)
+	if user.Role.Name == "guide" || user.RoleID == 2 {
+		// ถ้าเป็น guide ต้องหา guide_id ก่อน
+		var guide models.Guide
+		if err := config.DB.Where("user_id = ?", userID).First(&guide).Error; err != nil {
+			// ถ้าไม่พบ guide record (ยังไม่ได้ลงทะเบียน) ให้ return empty
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"bookings": []fiber.Map{},
+				"total":   0,
+				"message": "No guide profile found",
+			})
+		}
+		// ใช้ guide.ID ในการกรอง
+		query = query.Where("guide_id = ?", guide.ID)
 	} else {
 		// ถ้าเป็น user ให้ดู booking ที่ตัวเองเป็น user
 		query = query.Where("user_id = ?", userID)
 	}
 
-	if err := query.Find(&bookings).Error; err != nil {
+	if err := query.Order("created_at DESC").Find(&bookings).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to get bookings",
 		})
@@ -169,6 +179,14 @@ func GetTripBookings(c *fiber.Ctx) error {
 			config.DB.Where("trip_payment_id = ?", payment.ID).Find(&releases)
 		}
 
+		// Check if user has reviewed this booking
+		hasReview := false
+		if user.Role.Name != "guide" {
+			var reviewCount int64
+			config.DB.Model(&models.TripReview{}).Where("trip_booking_id = ? AND user_id = ?", booking.ID, userID).Count(&reviewCount)
+			hasReview = reviewCount > 0
+		}
+
 		enriched := fiber.Map{
 			"id":               booking.ID,
 			"trip_offer_id":    booking.TripOfferID,
@@ -187,6 +205,7 @@ func GetTripBookings(c *fiber.Ctx) error {
 			"notes":           booking.Notes,
 			"created_at":      booking.CreatedAt,
 			"updated_at":      booking.UpdatedAt,
+			"has_review":      hasReview,
 		}
 
 		// Add trip require info
@@ -241,7 +260,7 @@ func GetTripBookingByID(c *fiber.Ctx) error {
 		})
 	}
 
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("user_id").(uint)
 
 	var booking models.TripBooking
 	if err := config.DB.Preload("TripOffer.TripRequire.Province").
@@ -260,7 +279,21 @@ func GetTripBookingByID(c *fiber.Ctx) error {
 	}
 
 	// ตรวจสอบสิทธิ์ - ต้องเป็นเจ้าของ booking หรือไกด์ของ booking
-	if booking.UserID != userID && booking.GuideID != userID {
+	isOwner := booking.UserID == userID
+	isGuideOwner := false
+	
+	// ตรวจสอบว่าเป็นไกด์ของ booking หรือไม่ (ต้องตรวจสอบว่า Guide และ User ไม่เป็น nil)
+	if booking.Guide.ID != 0 {
+		// Load guide user if not loaded
+		if booking.Guide.User.ID == 0 {
+			config.DB.Preload("User").First(&booking.Guide, booking.GuideID)
+		}
+		if booking.Guide.User.ID == userID {
+			isGuideOwner = true
+		}
+	}
+	
+	if !isOwner && !isGuideOwner {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"error": "You can only view your own bookings",
 		})
@@ -282,6 +315,14 @@ func GetTripBookingByID(c *fiber.Ctx) error {
 	// Get trip reviews
 	var reviews []models.TripReview
 	config.DB.Where("trip_booking_id = ?", booking.ID).Find(&reviews)
+
+	// Check if the current user has reviewed this booking
+	hasReview := false
+	if isOwner {
+		var reviewCount int64
+		config.DB.Model(&models.TripReview{}).Where("trip_booking_id = ? AND user_id = ?", booking.ID, userID).Count(&reviewCount)
+		hasReview = reviewCount > 0
+	}
 
 	// Get trip reports
 	var reports []models.TripReport
@@ -306,6 +347,8 @@ func GetTripBookingByID(c *fiber.Ctx) error {
 		"notes":           booking.Notes,
 		"created_at":      booking.CreatedAt,
 		"updated_at":      booking.UpdatedAt,
+		"has_review":      hasReview,
+		"guide_user_id":    booking.Guide.User.ID, 
 
 		// Trip info
 		"trip_title":       booking.TripOffer.TripRequire.Title,
