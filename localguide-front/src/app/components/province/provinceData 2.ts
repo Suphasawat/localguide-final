@@ -1,0 +1,98 @@
+export const northernProvinces = [
+  {
+    name: "เชียงราย",
+    nameEn: "Chiang Rai",
+    description: "เหนือสุดแดนสยาม วิวภูเขา ชุมชนชาวเขา วัดและศิลปะร่วมสมัย",
+    imageSrc: "/provinces/chiang-rai.jpg",
+  },
+  {
+    name: "พิษณุโลก",
+    nameEn: "Phitsanulok",
+    description: "เมืองประวัติศาสตร์ ริมแม่น้ำน่าน ใกล้อุทยานธรรมชาติใหญ่",
+    imageSrc: "/provinces/phitsanilok.jpg",
+  },
+  {
+    name: "ตาก",
+    nameEn: "Tak",
+    description: "ภูเขา น้ำตก สายลมหนาว วิวงามตามแนวชายแดน",
+    imageSrc: "/provinces/tak.jpg",
+  },
+  {
+    name: "เพชรบูรณ์",
+    nameEn: "Phetchabun",
+    description: "เขาค้อ-ภูทับเบิก ทะเลหมอก ผักผลไม้เมืองหนาว",
+    imageSrc: "/provinces/phetchabun-wadphakech.jpg",
+  },
+  {
+    name: "นครสวรรค์",
+    nameEn: "Nakhon Sawan",
+    description: "ปากน้ำโพ เมืองประตูสู่เหนือ งานเทศกาลคึกคัก",
+    imageSrc: "/provinces/nakhon-sawan.jpg",
+  },
+  {
+    name: "สุโขทัย",
+    nameEn: "Sukhothai",
+    description: "อุทยานประวัติศาสตร์มรดกโลก ประเพณีสวยงาม",
+    imageSrc: "/provinces/sukothai.jpg",
+  },
+  {
+    name: "ลำพูน",
+    nameEn: "Lamphun",
+    description: "เมืองเก่า วัดพระธาตุหริภุญชัย และประเพณีท้องถิ่น",
+    imageSrc: "/provinces/lamphun.jpg",
+  },
+  {
+    name: "อุตรดิตถ์",
+    nameEn: "Uttaradit",
+    description: "เมืองสงบ จุดเชื่อมภูเขา-น้ำตก ผลไม้ท้องถิ่นอร่อย",
+    imageSrc: "/provinces/uttaradit.jpg",
+  },
+  {
+    name: "ลำปาง",
+    nameEn: "Lampang",
+    description: "เมืองรถม้า วัดไม้โบราณ กาแฟดี บรรยากาศชิล",
+    imageSrc: "/provinces/lampang.jpg",
+  },
+  {
+    name: "แม่ฮ่องสอน",
+    nameEn: "Mae Hong Son",
+    description: "เส้นทางโค้ง วิวภูเขา ชุมชนไทใหญ่-ปกาเกอะญอ",
+    imageSrc: "/provinces/mae-hong-son.jpg",
+  },
+  {
+    name: "พิจิตร",
+    nameEn: "Phichit",
+    description: "เมืองริมน้ำ วัดเก่า วิถีประมงพื้นถิ่น ของกินหลากหลาย",
+    imageSrc: "/provinces/phichit.jpg",
+  },
+  {
+    name: "แพร่",
+    nameEn: "Phrae",
+    description: "เมืองเก่ามีเสน่ห์ บ้านไม้สัก ผ้าหม้อฮ่อม คาเฟ่โลคอล",
+    imageSrc: "/provinces/phrae.jpg",
+  },
+  {
+    name: "น่าน",
+    nameEn: "Nan",
+    description: "สายหมอก วัดงาม วิวภูเขา คาเฟ่ริมทุ่ง บรรยากาศชิล",
+    imageSrc: "/provinces/nan.jpg",
+  },
+  {
+    name: "กำแพงเพชร",
+    nameEn: "Kamphaeng Phet",
+    description: "อุทยานประวัติศาสตร์ เมืองมรดกโลก บ่อน้ำพุร้อน",
+    imageSrc: "/provinces/kamphaeng-phet.jpg",
+  },
+  {
+    name: "อุทัยธานี",
+    nameEn: "Uthai Thani",
+    description: "เมืองเงียบสงบ ริเวอร์ไซด์ ตลาดเก่า ธรรมชาติครบ",
+    imageSrc: "/provinces/uthaithani.jpg",
+  },
+  {
+    name: "พะเยา",
+    nameEn: "Phayao",
+    description: "ชิลริมกว๊านพะเยา ชมพระอาทิตย์ตก วิถีล้านนาเรียบง่าย",
+    imageSrc: "/provinces/phayao.jpg",
+  },
+];
